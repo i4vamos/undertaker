@@ -1,9 +1,9 @@
-#
-#   vamos - common auxiliary functionality
-#
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
-#
+# Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
+
+"""vamos - common auxiliary functionality"""
+
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -16,12 +16,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
 
+import re
 import logging
 import os.path
 
 from subprocess import *
+from shutil import rmtree
 
 
 class CommandFailed(RuntimeError):
@@ -39,6 +40,7 @@ class CommandFailed(RuntimeError):
         self.repr = "Command %s failed to execute (returncode: %d)" % \
             (command, returncode)
         RuntimeError.__init__(self, self.repr)
+
     def __str__(self):
         return self.repr
 
@@ -147,6 +149,7 @@ def check_tool(tool):
 
     return True
 
+
 def get_online_processors():
     """
     tries to determine how many processors are currently online
@@ -160,3 +163,30 @@ def get_online_processors():
         logging.error("Unable to determine number of online processors, " +\
                           "assuming 1")
     return threads
+
+
+def get_kconfig_items(line):
+    """Return a list of all Kconfig items in @line."""
+    return re.findall(r"(?:D|\W|\b)+(CONFIG_\w*[A-Z0-9]{1}\w*)", line)
+
+
+def generate_models(arch="", cnf=False):
+    """Generate RSF/CNF models and return path to model file or model directory.
+    If @arch is specified, a model for only this architecture is generated."""
+    logging.info("Generating new variability models")
+    flags = ""
+    if cnf:
+        flags = "-c"
+    model_path = os.path.abspath("./models") + "/"
+    if os.path.exists(model_path):
+        rmtree(model_path)
+    (out, err) = execute("undertaker-kconfigdump %s %s" % (flags, arch))
+    if err != 0:
+        raise RuntimeError("Could not generate model %s" % out)
+    if arch:
+        model_path += arch
+        if cnf:
+            model_path += ".cnf"
+        else:
+            model_path += ".model"
+    return model_path

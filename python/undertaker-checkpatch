@@ -1,0 +1,303 @@
+#!/usr/bin/env python
+
+"""Check a specified patch for variability related defects in a Linux tree."""
+
+# Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+import os
+import re
+import sys
+import logging
+import whatthepatch
+import vamos.tools as tools
+import vamos.golem.kbuild as kbuild
+import vamos.defect_analysis as defect_analysis
+from optparse import OptionParser
+from vamos.block import Block
+from vamos.model import RsfModel
+
+
+# regex expressions
+OPERATORS = r"&|\(|\)|\||\!"
+FEATURE = r"\w*[A-Z0-9]{1}\w*"
+CONFIG_DEF = r"^\s*(?:menu){,1}config\s+(" + FEATURE + r")\s*"
+EXPR = r"(?:" + OPERATORS + r"|\s|" + FEATURE + r")+"
+STMT = r"^\s*(?:if|select|depends\s+on)\s+" + EXPR
+
+# regex objects
+REGEX_FILE_KCONFIG = re.compile(r".*Kconfig[\.\w+\-]*$")
+REGEX_FILE_SOURCE = re.compile(r".*\.c$")
+REGEX_FEATURE = re.compile(r"(" + FEATURE + r")")
+REGEX_KCONFIG_DEF = re.compile(CONFIG_DEF)
+REGEX_KCONFIG_EXPR = re.compile(EXPR)
+REGEX_KCONFIG_STMT = re.compile(STMT)
+REGEX_FILTER_FEATURES = re.compile(r"[A-Za-z0-9]$")
+
+
+def parse_options():
+    """The user interface of this module."""
+    parser = OptionParser(usage="undertaker-check-patch file [options]\n" +
+            "This tool needs to run in a Linux tree. Specify a patch file\n" +
+            "to check if any defects are introduced, fixed, changed, or if\n" +
+            "they remained present (unchanged).")
+
+    parser.add_option('-a', '--arch', dest='arch', action='store', default="",
+            help="Generate models for only this architecture.")
+
+    parser.add_option('-m', '--models', dest='models', action='store',
+            default=None, help="Consider only these models for analysis.")
+
+    parser.add_option('-c', '--check', dest='check', action='store_true',
+            default=False, help="Try to find defect causes and effects." +
+            "If no architecture is specified, the model defaults" +
+            " to the x86 architecture.")
+
+    parser.add_option('-u', '--mus', dest='mus', action='store_true',
+            default=False, help="Generate minimally unsatisfiable" +
+            "subformulas (MUS) for dead Kconfig defects.")
+
+    parser.add_option('-v', '--verbose', dest='verbose', action='count',
+            help="Increase verbosity (specify multiple times for more)")
+
+    (opts, args) = parser.parse_args()
+    tools.setup_logging(opts.verbose)
+
+    if not args or not os.path.exists(args[0]):
+        sys.exit("Please specify a valid patch file.")
+
+    if opts.models and not os.path.exists(opts.models):
+        sys.exit("The specified models do not exist.")
+
+    if not apply_patch(args[0]):
+        sys.exit("The specified patch cannot be applied.")
+    else:
+        apply_patch(args[0], "-R")
+
+    return (opts, args)
+
+
+def main():
+    """Main function of this module."""
+    (opts, args) = parse_options()
+    try:
+        logging.info("Detected Linux version " + kbuild.get_linux_version())
+    except kbuild.NotALinuxTree:
+        sys.exit("Cannot detect Linux version.")
+
+    patchfile = args[0]
+    models = opts.models
+    blocks_a = {}
+    blocks_b = {}
+    kconfig_change = False
+    (worklist_a, worklist_b, removals, statements) = parse_patch(patchfile)
+
+    for item in list(worklist_a):
+        if REGEX_FILE_KCONFIG.match(item):
+            kconfig_change = True
+        if not REGEX_FILE_SOURCE.match(item) or not os.path.exists(item):
+            worklist_a.remove(item)
+
+    for item in list(worklist_b):
+        if REGEX_FILE_KCONFIG.match(item):
+            kconfig_change = True
+        if not REGEX_FILE_SOURCE.match(item):
+            worklist_b.remove(item)
+
+    # if no model is specified, we need to generate new ones
+    if not models:
+        models = tools.generate_models(arch=opts.arch)
+
+    # detect defects before applying the patch
+    blocks_a = defect_analysis.batch_analysis(worklist_a, models, "")
+
+    # apply patch and update block ranges
+    apply_patch(patchfile)
+    Block.parse_patchfile(patchfile, blocks_a)
+
+    # for any Kconfig change we need to generate new models
+    if kconfig_change:
+        models = tools.generate_models(arch=opts.arch)
+
+    # detect defects after applying the patch
+    flags = ""
+    if opts.mus:
+        logging.info("Generating MUS reports")
+        flags = "-u"
+    blocks_b = defect_analysis.batch_analysis(worklist_b, models, flags)
+
+    # compare blocks before and after applying the patch to detect if a defect
+    # is a) introduced, b) fixed, c) changed or d) remained unchanged
+    print "Reporting defects:"
+    defects = {}
+    is_defect = False
+    for srcfile in set(worklist_a + worklist_b):
+        list_a = blocks_a.get(srcfile, [])
+        list_b = blocks_b.get(srcfile, [])
+        defects[srcfile] = defect_analysis.compare_and_report(list_a, list_b)
+        if defects[srcfile]:
+            is_defect = True
+
+    # get an rsf model for further Kconfig analysis
+    rsfmodel = None
+    if ".model" in models:
+        # single file
+        rsfmodel = RsfModel(models)
+    else:
+        # model directory
+        if not models.endswith("/"):
+            models += "/"
+        if opts.arch == "":
+            logging.info("no arch specified, defaulting to 'x86'")
+            opts.arch = "x86"
+        rsfmodel = RsfModel(models + opts.arch + ".model")
+
+    # check if changes to Kconfig cause defects
+    if check_kconfig_constraints(removals, statements, rsfmodel):
+        is_defect = True
+
+    # if no defect is detected, we can stop here
+    if not is_defect:
+        apply_patch(patchfile, "-R")
+        sys.exit(0)
+
+    if opts.check:
+        print "Analyzing defects:"
+        for srcfile in defects:
+            for block in defects[srcfile]:
+                if "missing" in block.defect:
+                    defect_analysis.check_missing_defect(block, rsfmodel)
+                elif "kconfig" in block.defect:
+                    defect_analysis.check_kconfig_defect(block, rsfmodel)
+                elif "code" in block.defect:
+                    defect_analysis.check_code_defect(block)
+
+    if opts.mus:
+        print "MUS reports (only for dead blocks):"
+        for srcfile in defects:
+            for block in defects[srcfile]:
+                if block.mus:
+                    print block.mus
+
+    # remove generated models and revert patch
+    apply_patch(patchfile, "-R")
+
+
+def apply_patch(patchfile, flags=""):
+    """Apply @patchfile and return True if it could is applied successfully."""
+    patch = "patch -p1 -i %s " % patchfile
+    (_, err) = tools.execute(patch + flags)
+    return err == 0
+
+
+def search_item_tree(item):
+    """Return a list of files referencing @item."""
+    item += "[^_]"  # avoid substring matches (e.g., for CONFIG_X86*)
+    (files, _) = tools.execute("git grep '%s'" % item)
+    # if there is no reference we get [""]
+    if files[0] == "":
+        return []
+    return files
+
+
+def get_kconfig_definition(line):
+    """Return defined Kconfig item in @line or None."""
+    definition = REGEX_KCONFIG_DEF.findall(line)
+    if definition:
+        return definition[0]
+    else:
+        return None
+
+
+def check_kconfig_constraints(removals, statements, rsfmodel):
+    """Cross-check changes of Kconfig files with the RsfModel and report
+    referential integrity violations."""
+    defect = False
+    # removed Kconfig features
+    for srcfile in removals:
+        for feature in removals[srcfile]:
+            if not rsfmodel.is_defined(feature):
+                references = search_item_tree(feature)
+                if not references:
+                    continue
+                defect = True
+                print "Feature %s is removed but still referenced in:" % \
+                        feature
+                for reference in references:
+                    print reference
+    # added Kconfig statements
+    for srcfile in statements:
+        for feature in statements[srcfile]:
+            if not rsfmodel.is_defined(feature):
+                defect = True
+                print "%s: patch adds undefined reference on %s" % \
+                        (srcfile, feature)
+    return defect
+
+
+def parse_patch(patchfile):
+    """Parse @patchfile and return related data."""
+    diffs = []
+    worklist_a = []
+    worklist_b = []
+    removals = {}
+    statements = {}
+
+    # https://pypi.python.org/pypi/whatthepatch/0.0.2
+    with open(patchfile) as stream:
+        diffs = whatthepatch.parse_patch(stream.read())
+
+    for diff in diffs:
+        path = ""
+
+        # extend the worklists
+        if diff.header.old_path == diff.header.new_path:
+            path = diff.header.old_path
+            worklist_a.append(diff.header.old_path)
+            worklist_b.append(diff.header.old_path)
+        else:
+            path = diff.header.new_path[2:]
+            worklist_a.append(diff.header.old_path[2:])
+            worklist_b.append(diff.header.new_path[2:])
+
+        # for now, we only parse Kconfig files
+        if not REGEX_FILE_KCONFIG.match(path):
+            continue
+
+        # change = [line# before, line# after, text]
+        for change in diff.changes:
+            # Removed features ({menu}config FOO)
+            if change[0] and not change[1] and \
+                    REGEX_KCONFIG_DEF.match(change[2]):
+                feature = get_kconfig_definition(change[2])
+                if feature:
+                    removed = removals.get(path, set())
+                    removed.add("CONFIG_" + feature)
+                    removals[path] = removed
+
+            # added statements (if, select, depends on)
+            elif change[0] and not change[1] and \
+                    REGEX_KCONFIG_STMT.match(change[2]):
+                stmts = statements.get(path, set())
+                for feature in REGEX_FEATURE.findall(change[2]):
+                    stmts.add("CONFIG_" + feature)
+                statements[path] = stmts
+
+    return (worklist_a, worklist_b, removals, statements)
+
+
+if __name__ == "__main__":
+    main()

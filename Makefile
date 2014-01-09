@@ -90,6 +90,7 @@ install: all $(MANPAGES)
 
 	@install -v python/undertaker-calc-coverage $(DESTDIR)$(BINDIR)
 	@install -v python/undertaker-kconfigdump $(DESTDIR)$(BINDIR)
+	@install -v python/undertaker-checkpatch $(DESTDIR)$(BINDIR)
 	@install -v python/vampyr-spatch-wrapper $(DESTDIR)$(BINDIR)
 	@install -v python/fakecc $(DESTDIR)$(BINDIR)
 
