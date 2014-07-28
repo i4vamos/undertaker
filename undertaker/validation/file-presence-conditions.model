@@ -4,3 +4,4 @@ CONFIG_FOO "CONFIG_BAR"
 CONFIG_BAR
 FILE_inference.c "CONFIG_FOO"
 FILE_test-foo.c "CONFIG_BAR"
+FILE_mus_test.c "CONFIG_FOO"

@@ -128,6 +128,7 @@ clean-check:
 	                 -o -name "*.c.cppflags*" \
 	                 -o -name "*.c.source*" \
 	                 -o -name "*.dead" \
+	                 -o -name "*.dead.mus" \
 	                 -o -name "*.undead" \
 	                 \) -delete
 	rm -vf coverage-tests/coverage-cat.c.got
@@ -164,7 +165,7 @@ check-satyr: satyr
 
 check-undertaker: undertaker
 	cd def-tests && env PATH=$(CURDIR):$(PATH) ./run-tests
-	cd validation && env PATH=$(CURDIR):$(PATH) ./test-suite -t $$(getconf _NPROCESSORS_ONLN)
+	cd validation && env PATH=$(CURDIR):$(CURDIR)/../picosat:$(PATH) ./test-suite -t $$(getconf _NPROCESSORS_ONLN)
 
 check: $(PROGS)
 	@$(MAKE) -s clean-check
