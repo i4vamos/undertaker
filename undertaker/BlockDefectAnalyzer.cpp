@@ -26,6 +26,7 @@
 #include "SatChecker.h"
 #include "PicosatCNF.h"
 #include "ModelContainer.h"
+#include "ConfigurationModel.h"
 #include "Logging.h"
 #include "Tools.h"
 #include "exceptions/CNFBuilderError.h"
@@ -53,7 +54,8 @@ std::string BlockDefectAnalyzer::getBlockPrecondition(ConditionalBlock *cb,
         /* Adding kconfig constraints and kconfig missing */
         std::set<std::string> missingSet;
         std::string kconfig_formula;
-        model->doIntersect(code_formula, cb->getFile()->getChecker(), missingSet, kconfig_formula);
+        model->doIntersect(code_formula, cb->getFile()->getDefineChecker(), missingSet,
+                           kconfig_formula);
         formula.push_back(kconfig_formula);
         if (model->isComplete())
             formula.push_back(ConfigurationModel::getMissingItemsConstraints(missingSet));
@@ -267,7 +269,7 @@ void DeadBlockDefect::reportMUS() const {
     // Note: The formula might be incomplete, since a lot operators create new CNF-IDs without
     // having a destinct Symbolname, which are ignored in this output
     int vars, lines; std::string p, cnfstr;
-    ss >> p; ss >> cnfstr; ss >> vars; ss >> lines;
+    ss >> p >> cnfstr >> vars >> lines;
     if (p != "p" || cnfstr != "cnf") {
         Logging::error("Mismatched output format, skipping MUS analysis.");
         return;
@@ -345,7 +347,7 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
     if (model) {
         std::set<std::string> missingSet;
         std::string kconfig_formula = _cb->getCodeConstraints();
-        model->doIntersect(code_formula, _cb->getFile()->getChecker(), missingSet,
+        model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
                            kconfig_formula);
         formula.push_back(kconfig_formula);
         std::string formula_str = formula.join("\n&&\n");
@@ -423,7 +425,7 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     if (model) {
         std::set<std::string> missingSet;
         std::string kconfig_formula = _cb->getCodeConstraints();
-        model->doIntersect(code_formula, _cb->getFile()->getChecker(), missingSet,
+        model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
                            kconfig_formula);
         formula.push_back(kconfig_formula);
         std::string formula_str = formula.join("\n&&\n");

@@ -23,7 +23,6 @@
 #endif
 
 #include "CnfConfigurationModel.h"
-#include "Tools.h"
 #include "StringJoiner.h"
 #include "Logging.h"
 #include "PicosatCNF.h"
@@ -34,14 +33,13 @@
 
 
 CnfConfigurationModel::CnfConfigurationModel(const std::string &filename) {
-    const StringList *configuration_space_regex = nullptr;
     boost::filesystem::path filepath(filename);
     _name = filepath.stem().string();
 
     _cnf = new kconfig::PicosatCNF();
     _cnf->readFromFile(filename);
-    configuration_space_regex = _cnf->getMetaValue("CONFIGURATION_SPACE_REGEX");
 
+    const StringList *configuration_space_regex = _cnf->getMetaValue("CONFIGURATION_SPACE_REGEX");
     if (configuration_space_regex != nullptr && configuration_space_regex->size() > 0) {
         Logging::info("Set configuration space regex to '", configuration_space_regex->front(),
                       "'");
@@ -55,89 +53,17 @@ CnfConfigurationModel::CnfConfigurationModel(const std::string &filename) {
     }
 }
 
-CnfConfigurationModel::~CnfConfigurationModel() {
-    delete _cnf;
-}
-
-void CnfConfigurationModel::addFeatureToWhitelist(const std::string feature) {
-    const std::string magic("ALWAYS_ON");
-    _cnf->addMetaValue(magic, feature);
-}
-
-const StringList *CnfConfigurationModel::getWhitelist() const {
-    const std::string magic("ALWAYS_ON");
-    return _cnf->getMetaValue(magic);
-}
-
-void CnfConfigurationModel::addFeatureToBlacklist(const std::string feature) {
-    const std::string magic("ALWAYS_OFF");
-    _cnf->addMetaValue(magic, feature);
-}
-
-const StringList *CnfConfigurationModel::getBlacklist() const {
-    const std::string magic("ALWAYS_OFF");
-    return _cnf->getMetaValue(magic);
-}
-
-const StringList *CnfConfigurationModel::getMetaValue(const std::string &key) const {
-    return _cnf->getMetaValue(key);
-}
-
-std::set<std::string> CnfConfigurationModel::findSetOfInterestingItems(
-                                    const std::set<std::string> &) const {
-    return {};
-}
-
-int CnfConfigurationModel::doIntersect(const std::string exp,
-                                    const ConfigurationModel::Checker *c,
-                                    std::set<std::string> &missing,
-                                    std::string &intersected) const {
-    const std::set<std::string> start_items = undertaker::itemsOfString(exp);
-    return doIntersect(start_items, c, missing, intersected);
-}
-
+CnfConfigurationModel::~CnfConfigurationModel() { delete _cnf; }
 
 int CnfConfigurationModel::doIntersect(const std::set<std::string> start_items,
-                                    const ConfigurationModel::Checker *c,
-                                    std::set<std::string> &missing,
-                                    std::string &intersected) const {
+                                       const std::function<bool(std::string)> &c,
+                                       std::set<std::string> &missing,
+                                       std::string &intersected) const {
     StringJoiner sj;
-    int valid_items = 0;
+    // add all items from start_items into 'sj' if they are in the model && in ALWAYS_{ON,OFF}
+    // and if they are not in the model, check if they could be missing
+    int valid_items = addMetaSymbolsAndFindMissings(sj, start_items, c, missing);
 
-
-    const std::string magic_on("ALWAYS_ON");
-    const std::string magic_off("ALWAYS_OFF");
-    const StringList *always_on = _cnf->getMetaValue(magic_on);
-    const StringList *always_off = _cnf->getMetaValue(magic_off);
-
-    for (const std::string &str : start_items) {
-        if (containsSymbol(str)) {
-            valid_items++;
-            if (always_on) {
-                const auto &cit = std::find(always_on->begin(), always_on->end(), str);
-                if (cit != always_on->end()) // str is found
-                    sj.push_back(str);
-            }
-            if (always_off) {
-                const auto &cit = std::find(always_off->begin(), always_off->end(), str);
-                if (cit != always_off->end()) // str is found
-                    sj.push_back("!" + str);
-            }
-        } else {
-            // check if the symbol might be in the model space.
-            // if not it can't be missing!
-            Logging::debug(str);
-            if (!inConfigurationSpace(str))
-                continue;
-            // iff we are given a checker for items, skip if it doesn't pass the test
-            if (c && ! (*c)(str)) {
-                continue;
-            }
-            /* free variables are never missing -> check if str starts with __FREE__ */
-            if (str.size() > 1 && !boost::starts_with(str, "__FREE__"))
-                missing.insert(str);
-        }
-    }
     sj.push_back("._." + _name + "._.");
     intersected = sj.join("\n&& ");
     Logging::debug("Out of ", start_items.size(), " items ", missing.size(),
@@ -145,24 +71,12 @@ int CnfConfigurationModel::doIntersect(const std::set<std::string> start_items,
     return valid_items;
 }
 
-bool CnfConfigurationModel::inConfigurationSpace(const std::string &symbol) const {
-    if (boost::regex_match(symbol, _inConfigurationSpace_regexp))
-        return true;
-    return false;
-}
-
-bool CnfConfigurationModel::isComplete() const {
-    const StringList *configuration_space_complete = _cnf->getMetaValue("CONFIGURATION_SPACE_INCOMPLETE");
-    // Reverse logic at this point to ensure Legacy models for kconfig to work
-    return !(configuration_space_complete != nullptr);
-}
-
 bool CnfConfigurationModel::isBoolean(const std::string &item) const {
-    return _cnf->getSymbolType(item) == 1;
+    return _cnf->getSymbolType(item) == K_S_BOOLEAN;
 }
 
 bool CnfConfigurationModel::isTristate(const std::string &item) const {
-    return _cnf->getSymbolType(item) == 2;
+    return _cnf->getSymbolType(item) == K_S_TRISTATE;
 }
 
 std::string CnfConfigurationModel::getType(const std::string &feature_name) const {
@@ -172,18 +86,21 @@ std::string CnfConfigurationModel::getType(const std::string &feature_name) cons
     if (boost::regex_match(feature_name, what, item_regexp)) {
         std::string item = what[2];
         int type = _cnf->getSymbolType(item);
-        static const std::string types[] = { "MISSING", "BOOLEAN", "TRISTATE", "INTEGER", "HEX", "STRING", "other"} ;
+        static const std::string types[]{"MISSING", "BOOLEAN", "TRISTATE", "INTEGER",
+                                         "HEX",     "STRING",  "other"};
         return types[type];
     }
     return "#ERROR";
 }
 
 bool CnfConfigurationModel::containsSymbol(const std::string &symbol) const {
-    if (symbol.substr(0, 5) == "FILE_") {
-        return true;
-    }
-    if (_cnf->getAssociatedSymbol(symbol) != nullptr) {
-        return true;
-    }
-    return false;
+    return boost::starts_with(symbol, "FILE_") || _cnf->getAssociatedSymbol(symbol) != nullptr;
+}
+
+void CnfConfigurationModel::addMetaValue(const std::string &key, const std::string &val) const {
+    return _cnf->addMetaValue(key, val);
+}
+
+const StringList *CnfConfigurationModel::getMetaValue(const std::string &key) const {
+    return _cnf->getMetaValue(key);
 }

@@ -28,50 +28,46 @@
 #include <deque>
 #include <map>
 #include <string>
-#include <iostream>
+#include <ostream>
 
-typedef std::deque<std::string> StringList;
+using StringList = std::deque<std::string>;
 
 
 /**
- * \brief Reads RSF files
+ * \brief Reads .model files
  */
-class RsfReader : public std::map<std::string, StringList> {
+class RsfReader : public std::map<std::string, std::string> {
 public:
-
-    RsfReader(std::istream &f, const std::string metaflag = "");
+    RsfReader(const std::string &filename, const std::string metaflag = "UNDERTAKER_SET");
     virtual ~RsfReader() = default;
 
     const std::string *getValue(const std::string &key) const;
-    const StringList *getMetaValue(const std::string &key) const;
 
     //! adds value to key in meta_information
     void addMetaValue(const std::string &key, const std::string &value);
+    const StringList *getMetaValue(const std::string &key) const;
+
     void print_contents(std::ostream &out);
 
-protected:
+private:
     RsfReader() = default;
     std::map<std::string, StringList> meta_information;
-    StringList parse(const std::string& line);
-    virtual size_t read_rsf(std::istream &rsf_file);
-    std::string metaflag;
 };
 
 /**
- * \brief Special RSF reader that only reads 'Item' lines
+ * \brief Special RSF reader that only reads 'Item' lines of .rsf-Files
  *
  * An RSF file as produced by dumpconf will in general contain a line
  * with the key 'Item' for each Kconfig option, i.e., we will expect key
  * collisions. Since RsfReader is based on a std::map, the key needs to
  * be unique.
- *
- * This RsfReader 'skips' the first 'Item' line. The key of this Map is
- * the item name, the value is the type of the item.
+ * This class is mapping the 'item name' to 'item type'
  */
-class ItemRsfReader : public RsfReader {
+class ItemRsfReader : public std::map<std::string, std::string> {
 public:
-    ItemRsfReader(std::istream &f);
-    virtual size_t read_rsf(std::istream &rsf_file) final override;
+    ItemRsfReader(const std::string &filename);
+    ItemRsfReader() = default;
+    const std::string *getValue(const std::string &key) const;
 };
 
 #endif

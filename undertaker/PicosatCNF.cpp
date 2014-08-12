@@ -70,13 +70,13 @@ void PicosatCNF::readFromStream(std::istream &i) {
                 // beginning of this line matches: ("^c var (.+) (\\d+)$")
                 std::string varname;
                 int cnfnumber;
-                i >> varname; i >> cnfnumber;
+                i >> varname >> cnfnumber;
                 this->setCNFVar(varname, cnfnumber);
             } else if (tmp == "sym") {
                 // beginning of this line matches: ("^c sym (.+) (\\d)$")
                 std::string varname;
                 int typeId;
-                i >> varname; i >> typeId;
+                i >> varname >> typeId;
                 this->setSymbolType(varname, (kconfig_symbol_type) typeId);
             } else if (tmp == "meta_value") {
                 // beginning of this line matches: ("^c meta_value ([^\\s]+)\\s+(.+)$")
@@ -97,7 +97,7 @@ void PicosatCNF::readFromStream(std::istream &i) {
                 Logging::error("Invalid DIMACs CNF dimension descriptor.");
                 throw IOException("parse error while reading CNF file");
             }
-            i >> varcount; i >> clausecount;
+            i >> varcount >> clausecount;
             // minimize reallocation of the clauses vector, each clause has 3-4 variables
             clauses.reserve(4*clausecount);
             int val;
@@ -304,7 +304,7 @@ const std::deque<std::string> *PicosatCNF::getMetaValue(const std::string &key) 
     const auto &i = meta_information.find(key); // pair<string, deque<string>>
     if (i == meta_information.end()) // key not found
         return nullptr;
-    return &((*i).second);
+    return &(i->second);
 }
 
 int PicosatCNF::newVar(void) {

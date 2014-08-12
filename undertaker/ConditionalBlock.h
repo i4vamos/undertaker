@@ -24,7 +24,6 @@
 #ifndef _CONDITIONALBLOCK_H_
 #define _CONDITIONALBLOCK_H_
 
-#include "ConfigurationModel.h"
 #include "BlockDefectAnalyzer.h"
 
 #include <boost/regex.hpp>
@@ -42,7 +41,18 @@ typedef std::list<ConditionalBlock *> CondBlockList;
 /************************************************************************/
 
 class CppFile : public CondBlockList {
- public:
+    std::string filename;
+    std::string fileVar;  // the inference Variable for this file
+    std::string specific_arch;
+    ConditionalBlock *top_block;
+    std::map<std::string, CppDefine *> define_map;
+    std::unique_ptr<PumaConditionalBlockBuilder> _builder;
+
+    void printCppFile();
+
+    static const boost::regex filename_regex;
+
+public:
     //! \param filename file with cpp expressions to parse
     CppFile(const std::string &filename);
     ~CppFile();
@@ -81,29 +91,12 @@ class CppFile : public CondBlockList {
     //! get specific_arch string
     const std::string &getSpecificArch() const { return specific_arch; }
 
-    //! Functor that checks if a given symbol was touched by an define
-    class ItemChecker : public ConfigurationModel::Checker {
-    public:
-        ItemChecker(CppFile *cf) : file(cf) {}
-        virtual bool operator()(const std::string &item) const final override;
-    private:
-        CppFile * file;
-    };
-
-    const ItemChecker *getChecker() const { return &checker;}
-
- private:
-    std::string filename;
-    std::string fileVar;  // the inference Variable for this file
-    std::string specific_arch;
-    ConditionalBlock *top_block = nullptr;
-    std::map<std::string, CppDefine *> define_map;
-    const CppFile::ItemChecker checker;
-    std::unique_ptr<PumaConditionalBlockBuilder> _builder;
-
-    void printCppFile();
-
-    static const boost::regex filename_regex;
+    const std::function<bool(std::string)> getDefineChecker() const {
+        return [this](std::string item) {
+            const std::map<std::string, CppDefine *> *defines = getDefines();
+            return defines->find(item.substr(0, item.find('.'))) == defines->end();
+        };
+    }
 };
 
 /************************************************************************/
@@ -175,8 +168,8 @@ public:
 
     void addDefine(CppDefine* define) { _defines.push_back(define); }
 
-    std::string getConstraintsHelper(UniqueStringJoiner *and_clause = nullptr);
-    const std::list<CppDefine *> &getDefines() const { return _defines; };
+    std::string getConstraintsHelper(UniqueStringJoiner *and_clause = nullptr) const;
+    const std::deque<CppDefine *> &getDefines() const { return _defines; };
 
     //! the following functions have to be public because decisionCoverage() is
     // called on the CppFile-Object to be able to print the contents of the CppFile.
@@ -191,7 +184,7 @@ public:
 protected:
     CppFile *cpp_file;
     const ConditionalBlock *_parent, *_prev;
-    std::list<CppDefine *> _defines;
+    std::deque<CppDefine *> _defines;
     //!< if set blocknames of getName() are extended with a normalized filename
     static bool useBlockWithFilename;
 
@@ -215,7 +208,7 @@ public:
     void replaceDefinedSymbol(std::string &exp);
 
     std::string getConstraints(UniqueStringJoiner *and_clause = nullptr,
-                                  std::set<ConditionalBlock *> *visited = nullptr);
+                               std::set<ConditionalBlock *> *visited = nullptr) const;
 
     void getConstraintsHelper(UniqueStringJoiner *and_clause) const;
 
@@ -228,7 +221,7 @@ private:
     std::string defined_symbol; // The defined symbol
 
     std::deque <ConditionalBlock *> defined_in;
-    std::list <std::string> defineExpressions;
+    std::deque<std::string> defineExpressions;
 
     boost::regex replaceRegex;
 };

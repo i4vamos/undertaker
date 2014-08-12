@@ -20,77 +20,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 // -*- mode: c++ -*-
 #ifndef configuration_model_h__
 #define configuration_model_h__
 
-#include "RsfReader.h" // for 'StringList'
-
 #include <string>
 #include <set>
+#include <deque>
 #include <boost/regex.hpp>
+
+using StringList = std::deque<std::string>;
+struct StringJoiner;
 
 
 class ConfigurationModel {
-public:
-    struct Checker {
-        //! checks if the item is a candidate for addition in the 'missing' set
-        virtual bool operator()(const std::string &item) const = 0;
-    };
-
-    //! destructor
-    virtual ~ConfigurationModel() {};
-
-    //! add feature to whitelist ('ALWAYS_ON')
-    virtual void addFeatureToWhitelist(const std::string feature) = 0;
-
-    //! gets the current feature whitelist ('ALWAYS_ON')
-    /*!
-     * NB: The referenced list gets invalidated by addFeatureToWhitelist!
-     *
-     * The referenced object must not be freed, the model class manages it.
-     */
-    virtual const StringList *getWhitelist() const = 0;
-
-    //! add feature to blacklist ('ALWAYS_OFF')
-    /*!
-     * NB: This invalidates possibly returned StringList objects
-     * referenced by getWhitelist(). Be sure to call getWhitelist()
-     * again after using this method.
-     */
-    virtual void addFeatureToBlacklist(const std::string feature) = 0;
-
-    //!< gets the current feature blacklist ('ALWAYS_OFF')
-    virtual const StringList *getBlacklist() const = 0;
-
-
-    virtual int doIntersect(const std::string exp,
-                    const ConfigurationModel::Checker *c,
-                    std::set<std::string> &missing,
-                    std::string &intersected) const = 0;
-
     virtual int doIntersect(const std::set<std::string> exp,
-                    const ConfigurationModel::Checker *c,
-                    std::set<std::string> &missing,
-                    std::string &intersected) const = 0;
+                            const std::function<bool(std::string)> &c,
+                            std::set<std::string> &missing, std::string &intersected) const = 0;
 
-    virtual std::set<std::string> findSetOfInterestingItems(const std::set<std::string> &) const = 0;
+    virtual void addMetaValue(const std::string &key, const std::string &feature) const = 0;
+
+public:
+    //! destructor
+    virtual ~ConfigurationModel(){};
 
     //! returns the version identifier for the current model
     virtual const std::string getModelVersionIdentifier() const = 0;
 
-    //! checks if a given item should be in the model space
-    virtual bool inConfigurationSpace(const std::string &symbol) const = 0;
-
-    //! checks if we can assume that the configuration space is complete
-    virtual bool isComplete() const = 0;
-
     //@{
     //! checks the type of a given symbol.
     //! @return false if not found
-    virtual bool isBoolean(const std::string&) const = 0;
-    virtual bool isTristate(const std::string&) const = 0;
+    virtual bool isBoolean(const std::string &) const = 0;
+    virtual bool isTristate(const std::string &) const = 0;
     //@}
 
     //! returns the type of the given symbol
@@ -104,11 +65,43 @@ public:
 
     virtual const StringList *getMetaValue(const std::string &key) const = 0;
 
-    static std::string getMissingItemsConstraints(const std::set<std::string> &missing);
+/************************************************************************/
+/* non virtual methods                                                  */
+/************************************************************************/
+
+    int doIntersect(const std::string exp, const std::function<bool(std::string)> &c,
+                    std::set<std::string> &missing, std::string &intersected) const;
+
+    //! add feature to whitelist ('ALWAYS_ON')
+    void addFeatureToWhitelist(const std::string &feature);
+
+    //! gets the current feature whitelist ('ALWAYS_ON')
+    //! The referenced object must not be freed, the model class manages it.
+    const StringList *getWhitelist() const;
+
+    //! add feature to blacklist ('ALWAYS_OFF')
+    void addFeatureToBlacklist(const std::string &feature);
+
+    //!< gets the current feature blacklist ('ALWAYS_OFF')
+    //! The referenced object must not be freed, the model class manages it.
+    const StringList *getBlacklist() const;
+
+    //! checks if we can assume that the configuration space is complete
+    bool isComplete() const;
+    //! checks if a given item should be in the model space
+    bool inConfigurationSpace(const std::string &symbol) const;
     std::string getName() const { return _name; }
 
-protected:
-    std::string _name;
-};
+    static std::string getMissingItemsConstraints(const std::set<std::string> &missing);
 
+protected:
+    ConfigurationModel() = default;
+
+    int addMetaSymbolsAndFindMissings(StringJoiner &sj, const std::set<std::string> &it,
+                                      const std::function<bool(std::string)> &c,
+                                      std::set<std::string> &missing) const;
+
+    std::string _name;
+    boost::regex _inConfigurationSpace_regexp;
+};
 #endif

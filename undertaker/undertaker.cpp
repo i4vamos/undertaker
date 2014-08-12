@@ -659,7 +659,7 @@ void process_file_interesting(const std::string &check_item) {
     std::cout << check_item;
 
     for (const std::string &str : interesting) {
-        if (main_model->find(str) != main_model->end()) {
+        if (main_model->containsSymbol(str)) {
             /* Item is present in model */
             std::cout << " " << str;
         } else {

@@ -21,16 +21,85 @@
 
 #include "ConfigurationModel.h"
 #include "StringJoiner.h"
+#include "Tools.h"
+
+#include <boost/algorithm/string/predicate.hpp>
 
 
 std::string ConfigurationModel::getMissingItemsConstraints(const std::set<std::string> &missing) {
     StringJoiner sj;
-
     for (const std::string &str : missing)
         sj.push_back(str);
 
-    std::stringstream ss;
     if (sj.size() > 0)
-        ss << "( ! ( " <<  sj.join(" || ") << " ) )";
-    return ss.str();
-};
+        return "( ! ( " + sj.join(" || ") + " ) )";
+    return {};
+}
+
+int ConfigurationModel::doIntersect(const std::string exp,
+                                    const std::function<bool(std::string)> &c,
+                                    std::set<std::string> &missing,
+                                    std::string &intersected) const {
+    const std::set<std::string> start_items = undertaker::itemsOfString(exp);
+    return doIntersect(start_items, c, missing, intersected);
+}
+
+int ConfigurationModel::addMetaSymbolsAndFindMissings(StringJoiner &sj,
+                                                      const std::set<std::string> &it,
+                                                      const std::function<bool(std::string)> &c,
+                                                      std::set<std::string> &missing) const {
+    int valid_items = 0;
+    const StringList *always_on = getWhitelist();
+    const StringList *always_off = getBlacklist();
+    for (const std::string &str : it) {
+        if (containsSymbol(str)) {
+            valid_items++;
+            if (always_on) {
+                const auto &cit = std::find(always_on->begin(), always_on->end(), str);
+                if (cit != always_on->end())  // str is found
+                    sj.push_back(str);
+            }
+            if (always_off) {
+                const auto &cit = std::find(always_off->begin(), always_off->end(), str);
+                if (cit != always_off->end())  // str is found
+                    sj.push_back("!" + str);
+            }
+        } else {
+            // check if the symbol might be in the model space. if not it can't be missing!
+            if (!inConfigurationSpace(str))
+                continue;
+            // if we are given a checker for items, skip if it doesn't pass the test
+            if (c && !c(str))
+                continue;
+            /* free variables are never missing */
+            if (!boost::starts_with(str, "__FREE__"))
+                missing.insert(str);
+        }
+    }
+    return valid_items;
+}
+
+void ConfigurationModel::addFeatureToWhitelist(const std::string &feature) {
+    addMetaValue("ALWAYS_ON", feature);
+}
+
+const StringList *ConfigurationModel::getWhitelist() const {
+    return getMetaValue("ALWAYS_ON");
+}
+
+void ConfigurationModel::addFeatureToBlacklist(const std::string &feature) {
+    addMetaValue("ALWAYS_OFF", feature);
+}
+
+const StringList *ConfigurationModel::getBlacklist() const {
+    return getMetaValue("ALWAYS_OFF");
+}
+
+bool ConfigurationModel::isComplete() const {
+    // metaValue is only present (!= nullptr) when conf_space is incomplete
+    return getMetaValue("CONFIGURATION_SPACE_INCOMPLETE") == nullptr;
+}
+
+bool ConfigurationModel::inConfigurationSpace(const std::string &symbol) const {
+    return boost::regex_match(symbol, _inConfigurationSpace_regexp);
+}

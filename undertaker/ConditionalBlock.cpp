@@ -85,7 +85,7 @@ static ConditionalBlockImpl *createDummyElseBlock(ConditionalBlock *i, Condition
 // initialize static filename_regex at startup
 const boost::regex CppFile::filename_regex(R"(^.*/arch/([A-Za-z0-9]+)/.*$)");
 
-CppFile::CppFile(const std::string &f) : checker(this) {
+CppFile::CppFile(const std::string &f) {
     if (!boost::filesystem::exists(f))
         return;
     if (f[0] != '.' && f[1] != '/')
@@ -115,11 +115,6 @@ CppFile::~CppFile() {
     // Remove also all defines
     for (auto &entry : *getDefines())  // pair<string, CppDefine *>
         delete entry.second;
-}
-
-bool CppFile::ItemChecker::operator()(const std::string &item) const {
-    std::map<std::string, CppDefine*> *defines =  file->getDefines();
-    return defines->find(item.substr(0, item.find('.'))) == defines->end();
 }
 
 ConditionalBlock *CppFile::getBlockAtPosition(const std::string &position) {
@@ -264,7 +259,7 @@ void ConditionalBlock::lateConstructor() {
         entry.second->replaceDefinedSymbol(_exp);
 }
 
-std::string ConditionalBlock::getConstraintsHelper(UniqueStringJoiner *and_clause) {
+std::string ConditionalBlock::getConstraintsHelper(UniqueStringJoiner *and_clause) const {
     if (!_parent) return "B00"; // top_level block, represents file
 
     UniqueStringJoiner sj; // on our stack
@@ -283,7 +278,8 @@ std::string ConditionalBlock::getConstraintsHelper(UniqueStringJoiner *and_claus
 
     while(block) {
         // #ifdef reached
-        if (block->isIfBlock()) break;
+        if (block->isIfBlock())
+            break;
         block = block->getPrev();
 
         predecessors.push_back(block->getName());
@@ -338,7 +334,7 @@ std::string ConditionalBlock::getCodeConstraints(UniqueStringJoiner *and_clause,
             and_clause->push_back("B00");
         } else {
             const ConditionalBlock *block = this;
-            const_cast<ConditionalBlock *>(block)->getConstraintsHelper(and_clause);
+            this->getConstraintsHelper(and_clause);
 
             if (block->isIfBlock())
                 block = block->getParent();
@@ -436,7 +432,7 @@ void CppDefine::getConstraintsHelper(UniqueStringJoiner *and_clause) const {
 }
 
 std::string CppDefine::getConstraints(UniqueStringJoiner *and_clause,
-        std::set<ConditionalBlock *> *visited) {
+                                      std::set<ConditionalBlock *> *visited) const {
     UniqueStringJoiner sj; // on our stack
     bool join = false;
     if (!and_clause) {

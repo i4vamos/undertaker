@@ -27,7 +27,6 @@
 #include "Logging.h"
 #include "bool.h"
 
-#include <fstream>
 #include <boost/regex.hpp>
 
 using namespace kconfig;
@@ -45,11 +44,11 @@ static void usage(void){
     exit(1);
 }
 
-static void addTypeInfo(kconfig::PicosatCNF &cnf, ItemRsfReader *rsf){
+static void addTypeInfo(kconfig::PicosatCNF &cnf, const std::string &rsf_file) {
     // add all CONFIG_* items
-    for (const auto &entry : *rsf) {  // pair<string, StringList>
+    for (const auto &entry : ItemRsfReader(rsf_file)) {  // pair<string, string>
         const std::string symbolname = entry.first;
-        const std::string nameOfType = entry.second[0];
+        const std::string nameOfType = entry.second;
 
         if (nameOfType == "boolean") {
             cnf.setSymbolType(symbolname, K_S_BOOLEAN);
@@ -67,17 +66,17 @@ static void addTypeInfo(kconfig::PicosatCNF &cnf, ItemRsfReader *rsf){
     }
 }
 
-static void addClauses(kconfig::CNFBuilder &builder, RsfReader &model){
+static void addClauses(kconfig::CNFBuilder &builder, RsfReader &model) {
     boost::regex isconfig = boost::regex("^(CONFIG|FILE)_[^ ]+$");
     // add all CONFIG_* items
-    for (const auto &entry : model) {  // pair<string, StringList>
-        if(boost::regex_match(entry.first, isconfig)){
+    for (const auto &entry : model) {  // pair<string, string>
+        if (boost::regex_match(entry.first, isconfig)) {
             std::string clause = entry.first;
             builder.addVar(clause);
 
-            if (!entry.second.empty()){
+            if (!entry.second.empty()) {
                 // CONFIG_FOO depends on EXPR
-                clause += " -> (" + entry.second[0] + ")";
+                clause += " -> (" + entry.second + ")";
                 BoolExp *exp = BoolExp::parseString(clause);
                 if (exp) {
                     builder.pushClause(exp);
@@ -90,12 +89,11 @@ static void addClauses(kconfig::CNFBuilder &builder, RsfReader &model){
                 // can be ignored
                 clause += " -> 1";
             }
-
         }
     }
 }
 
-static void addAllwaysOnOff(kconfig::CNFBuilder &builder, RsfReader &model){
+static void addAlwaysOnOff(kconfig::CNFBuilder &builder, RsfReader &model) {
     const std::string magic_on("ALWAYS_ON");
     const std::string magic_off("ALWAYS_OFF");
 
@@ -110,7 +108,7 @@ static void addAllwaysOnOff(kconfig::CNFBuilder &builder, RsfReader &model){
             BoolExp *exp = BoolExp::parseString(clause);
             builder.pushClause(exp);
             delete exp;
-            builder.cnf->addMetaValue("ALWAYS_ON", clause);
+            builder.cnf->addMetaValue(magic_on, clause);
         }
     }
     if (model.getMetaValue(magic_off)) {
@@ -119,7 +117,7 @@ static void addAllwaysOnOff(kconfig::CNFBuilder &builder, RsfReader &model){
             BoolExp *exp = BoolExp::parseString(clause);
             builder.pushClause(exp);
             delete exp;
-            builder.cnf->addMetaValue("ALWAYS_OFF", str);
+            builder.cnf->addMetaValue(magic_off, str);
         }
     }
 }
@@ -178,49 +176,24 @@ int main(int argc, char **argv) {
             break;
         }
     }
-
     if (model_file == "")
         usage();
 
     PicosatCNF cnf;
-
     if (cnf_file != "")
         cnf.readFromFile(cnf_file);
 
     kconfig::CNFBuilder builder(&cnf);
 
-    ItemRsfReader *rsf = nullptr;
-
-    std::fstream model_stream (model_file, std::fstream::in);
-    if (!model_stream.good()) {
-        Logging::error("could not open modelfile \"", model_file, "\"");
-        return 1;
-    }
-    RsfReader model(model_stream, "UNDERTAKER_SET");
-
-    if (rsf_file != "") {
-        std::fstream rsf_stream (rsf_file, std::fstream::in);
-        if (!rsf_stream.good()) {
-            Logging::error("could not open rsffile \"", argv[2], "\"");
-            return 1;
-        }
-        rsf = new ItemRsfReader(rsf_stream);
-    }
+    RsfReader model(model_file);
     addClauses(builder, model);
-    addAllwaysOnOff(builder, model);
-    if (rsf)
-        addTypeInfo(cnf, rsf);
+    addAlwaysOnOff(builder, model);
+
+    if (rsf_file != "")
+        addTypeInfo(cnf, rsf_file);
 
     std::string magic_inc("CONFIGURATION_SPACE_INCOMPLETE");
-
-    if (model.getMetaValue(magic_inc)) {
-        cnf.addMetaValue("CONFIGURATION_SPACE_INCOMPLETE", "True");
-    }
-    try {
-        cnf.toStream(std::cout);
-    } catch (IOException e) {
-        Logging::error(e.what());
-        return 1;
-    }
-    delete rsf;
+    if (model.getMetaValue(magic_inc))
+        cnf.addMetaValue(magic_inc, "True");
+    cnf.toStream(std::cout);
 }

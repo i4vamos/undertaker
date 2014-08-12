@@ -29,85 +29,46 @@
 #include "RsfReader.h"
 #include "Logging.h"
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
-#include <fstream>
 #include <stack>
 
 
 RsfConfigurationModel::RsfConfigurationModel(const std::string &filename) {
-    const StringList *configuration_space_regex;
     boost::filesystem::path filepath(filename);
     _name = filepath.stem().string();
-
-    _model_stream = new std::ifstream(filename);
-
-    if (filename != "/dev/null" && _model_stream->good()) {
-        bool have_rsf = false;
-
-        if (filepath.extension() == ".model") {
-            filepath.replace_extension(".rsf");
-            _rsf_stream = new std::ifstream(filepath.string());
-            have_rsf = true;
-        } else {
-            _rsf_stream = new std::ifstream("/dev/null");
-        }
-        if (!have_rsf || !_rsf_stream->good()) {
-            Logging::warn("could not open file for reading: ", filename);
-            Logging::warn("checking the type of symbols will fail");
-        }
-    } else {
-        delete _model_stream;
-        _model_stream = new std::ifstream("/dev/null");
-        _rsf_stream = new std::ifstream("/dev/null");
+    // load .model file (modelcontainer checks if filename is valid)
+    _model = new RsfReader(filename);
+    // load .rsf file (or create empty ItemRsfReader if file is not existent)
+    if (filepath.extension() == ".model") {
+        filepath.replace_extension(".rsf");
+        if (boost::filesystem::exists(filepath))
+            _rsf = new ItemRsfReader(filepath.string());
     }
-    _model = new RsfReader(*_model_stream, "UNDERTAKER_SET");
-    _rsf   = new ItemRsfReader(*_rsf_stream);
-
-    configuration_space_regex = _model->getMetaValue("CONFIGURATION_SPACE_REGEX");
-
-    if (configuration_space_regex != nullptr && configuration_space_regex->size() > 0) {
-        Logging::info("Set configuration space regex to '", configuration_space_regex->front(),
-                      "'");
-        _inConfigurationSpace_regexp = boost::regex(configuration_space_regex->front());
+    if (nullptr == _rsf) {
+        Logging::warn("Couldn't open ", filepath.string(), " checking symbol types will fail");
+        _rsf = new ItemRsfReader();  // create empty ItemRsfReader
+    }
+    // set configuration space regex
+    const StringList *cfg_space_regex = _model->getMetaValue("CONFIGURATION_SPACE_REGEX");
+    if (cfg_space_regex != nullptr && cfg_space_regex->size() > 0) {
+        Logging::info("Set configuration space regex to '", cfg_space_regex->front(), "'");
+        _inConfigurationSpace_regexp = boost::regex(cfg_space_regex->front());
     } else {
         _inConfigurationSpace_regexp = boost::regex("^CONFIG_[^ ]+$");
     }
-    if (_model->size() == 0) {
+    if (_model->size() == 0)
         // if the model is empty (e.g., if /dev/null was loaded), it cannot possibly be complete
         _model->addMetaValue("CONFIGURATION_SPACE_INCOMPLETE", "1");
-    }
 }
 
 RsfConfigurationModel::~RsfConfigurationModel() {
     delete _model;
     delete _rsf;
-    delete _rsf_stream;
-    delete _model_stream;
 }
 
-void RsfConfigurationModel::addFeatureToWhitelist(const std::string feature) {
-    const std::string magic("ALWAYS_ON");
-    _model->addMetaValue(magic, feature);
-}
-
-const StringList *RsfConfigurationModel::getWhitelist() const {
-    const std::string magic("ALWAYS_ON");
-    return _model->getMetaValue(magic);
-}
-
-void RsfConfigurationModel::addFeatureToBlacklist(const std::string feature) {
-    const std::string magic("ALWAYS_OFF");
-    _model->addMetaValue(magic, feature);
-}
-
-const StringList *RsfConfigurationModel::getBlacklist() const {
-    const std::string magic("ALWAYS_OFF");
-    return _model->getMetaValue(magic);
-}
-
-std::set<std::string> RsfConfigurationModel::findSetOfInterestingItems(const std::set<std::string> &initialItems) const {
+std::set<std::string>
+RsfConfigurationModel::findSetOfInterestingItems(const std::set<std::string> &initialItems) const {
     std::set<std::string> result;
     std::stack<std::string> workingStack;
     /* Initialize the working stack with the given elements */
@@ -118,7 +79,7 @@ std::set<std::string> RsfConfigurationModel::findSetOfInterestingItems(const std
     while (!workingStack.empty()) {
         const std::string *item = _model->getValue(workingStack.top());
         workingStack.pop();
-        if (item != nullptr && item->compare("") != 0) {
+        if (item != nullptr && *item != "") {
             for (const std::string &str : undertaker::itemsOfString(*item)) {
                 /* Item already seen? continue */
                 if (result.count(str) == 0) {
@@ -131,31 +92,18 @@ std::set<std::string> RsfConfigurationModel::findSetOfInterestingItems(const std
     return result;
 }
 
-int RsfConfigurationModel::doIntersect(const std::string exp,
-                                    const ConfigurationModel::Checker *c,
-                                    std::set<std::string> &missing,
-                                    std::string &intersected) const {
-    const std::set<std::string> start_items = undertaker::itemsOfString(exp);
-    return doIntersect(start_items, c, missing, intersected);
-}
-
-
 int RsfConfigurationModel::doIntersect(const std::set<std::string> start_items,
-                                    const ConfigurationModel::Checker *c,
-                                    std::set<std::string> &missing,
-                                    std::string &intersected) const {
-    int valid_items = 0;
+                                       const std::function<bool(std::string)> &c,
+                                       std::set<std::string> &missing,
+                                       std::string &intersected) const {
     StringJoiner sj;
 
     std::set<std::string> interesting = findSetOfInterestingItems(start_items);
+    const StringList *always_on = getWhitelist();
+    const StringList *always_off = getBlacklist();
 
-    const std::string magic_on("ALWAYS_ON");
-    const std::string magic_off("ALWAYS_OFF");
-    const StringList *always_on = this->getMetaValue(magic_on);
-    const StringList *always_off = this->getMetaValue(magic_off);
-
-    // ALWAYS_ON and ALWAYS_OFF items and their transitive dependencies
-    // always need to appear in the slice.
+    // ALWAYS_ON and ALWAYS_OFF items and their transitive dependencies always need to appear in
+    // the slice.
     if (always_on) {
         for (const std::string &str : *always_on)
             interesting.insert(str);
@@ -164,74 +112,33 @@ int RsfConfigurationModel::doIntersect(const std::set<std::string> start_items,
         for (const std::string &str : *always_off)
             interesting.insert(str);
     }
-
+    // for all symbols in 'interesting', retrieve the formula from the model and push it into sj
     for (const std::string &str : interesting) {
         const std::string *item = _model->getValue(str);
-
-//        Logging::debug("interesting item: ", str);
-        if (item != nullptr) {
-            valid_items++;
-            if (item->compare("") != 0) {
-                sj.push_back("(" + str + " -> (" + *item + "))");
-            }
-            if (always_on) {
-                const auto &cit = std::find(always_on->begin(), always_on->end(), str);
-                if (cit != always_on->end()) // str is found
-                    sj.push_back(str);
-            }
-            if (always_off) {
-                const auto &cit = std::find(always_off->begin(), always_off->end(), str);
-                if (cit != always_off->end()) // str is found
-                    sj.push_back("!" + str);
-            }
-        } else {
-            // check if the symbol might be in the model space. if not it can't be missing!
-            if (!inConfigurationSpace(str))
-                continue;
-
-            // if we are given a checker for items, skip if it doesn't pass the test
-            if (c && ! (*c)(str))
-                continue;
-
-            /* free variables are never missing */
-            if (str.size() > 1 && !boost::starts_with(str, "__FREE__"))
-                missing.insert(str);
-        }
+        if(item != nullptr && *item != "")
+            sj.push_back("(" + str + " -> (" + *item + "))");
     }
+    // add all items from interesting into 'sj' if they are in the model && in ALWAYS_{ON,OFF}
+    // and if they are not in the model, check if they could be missing
+    int valid_items = addMetaSymbolsAndFindMissings(sj, interesting, c, missing);
+
     intersected = sj.join("\n&& ");
     Logging::debug("Out of ", start_items.size(), " items ", missing.size(),
                    " have been put in the MissingSet");
     return valid_items;
 }
 
-bool RsfConfigurationModel::inConfigurationSpace(const std::string &symbol) const {
-    if (boost::regex_match(symbol, _inConfigurationSpace_regexp)) {
-        return true;
-    }
-    return false;
-}
-
-bool RsfConfigurationModel::isComplete() const {
-    const StringList *configuration_space_complete = _model->getMetaValue("CONFIGURATION_SPACE_INCOMPLETE");
-    // Reverse logic at this point to ensure Legacy models for kconfig to work
-    return !(configuration_space_complete != nullptr);
-}
-
 bool RsfConfigurationModel::isBoolean(const std::string &item) const {
     const std::string *value = _rsf->getValue(item);
-
-    if (value && 0 == value->compare("boolean")) {
+    if (value && *value == "boolean")
         return true;
-    }
     return false;
 }
 
 bool RsfConfigurationModel::isTristate(const std::string &item) const {
     const std::string *value = _rsf->getValue(item);
-
-    if (value && 0 == value->compare("tristate")) {
+    if (value && *value == "tristate")
         return true;
-    }
     return false;
 }
 
@@ -248,8 +155,20 @@ std::string RsfConfigurationModel::getType(const std::string &feature_name) cons
             std::transform(type.begin(), type.end(), type.begin(), ::toupper);
             return type;
         } else {
-            return std::string("MISSING");
+            return "MISSING";
         }
     }
-    return std::string("#ERROR");
+    return "#ERROR";
+}
+
+bool RsfConfigurationModel::containsSymbol(const std::string &symbol) const {
+    return _model->find(symbol) != _model->end();
+}
+
+void RsfConfigurationModel::addMetaValue(const std::string &key, const std::string &val) const {
+    return _model->addMetaValue(key, val);
+}
+
+const StringList *RsfConfigurationModel::getMetaValue(const std::string &key) const {
+    return _model->getMetaValue(key);
 }

@@ -21,93 +21,80 @@
  */
 
 #include "RsfReader.h"
+#include "Logging.h"
 
 #include <sstream>
-#include <iostream>
+#include <fstream>
 #include <algorithm>
 
 
-RsfReader::RsfReader(std::istream &f, std::string metaflag) : metaflag(std::move(metaflag)) {
-    this->read_rsf(f);
+/************************************************************************/
+/* RsfReader - to read .model files                                     */
+/************************************************************************/
+
+// remove leading / trailing '"' char from string s
+static inline void trim(std::string &s) {
+    if (s.front() == '"')
+        s.erase(0, 1);
+    if (s.back() == '"')
+        s.pop_back();
+}
+
+RsfReader::RsfReader(const std::string &filename, std::string metaflag) {
+    std::ifstream f(filename);
+    if (!f.good()) {
+        Logging::error("couldn't open modelfile: ", filename);
+        return;
+    }
+    std::string line;
+    while (std::getline(f, line)) {
+        if (line == "")  // skip empty lines
+            continue;
+        std::stringstream ss(line);
+        std::string key;
+        ss >> key;
+        if (metaflag != "" && key == metaflag) {
+            // if the current line contains meta information, add them to the meta_information map
+            ss >> key;
+            std::deque<std::string> meta_items;
+            std::string item;
+            while (ss >> item) {
+                if (item.back() != '"') {  // special case for meta items containing white spaces
+                    std::string tmp;
+                    std::getline(ss, tmp, '"');
+                    item += tmp;
+                }
+                trim(item);
+                meta_items.emplace_back(item);
+            }
+            meta_information.emplace(key, meta_items);
+        } else {
+            std::string formula;
+            ss >> std::ws;  // skip leading whitespaces
+            std::getline(ss, formula);
+            trim(formula);
+            emplace(key, formula);
+        }
+    }
 }
 
 void RsfReader::print_contents(std::ostream &out) {
-    for (const auto &entry : *this)  // pair<string, deque<string>>
-        out << entry.first << " : " << entry.second.front() << std::endl;
-}
-
-StringList RsfReader::parse(const std::string& line) {
-    StringList result;
-    std::string item;
-    std::stringstream ss(line);
-
-    while(ss >> item){
-        if (item[0] == '"') {
-            if (item[item.length() - 1] == '"') {
-                // special case: single word was needlessly quoted
-                result.push_back(item.substr(1, item.length() - 2));
-            } else {
-                // use the free-standing std::getline to read a "line"
-                // into another string
-                // starting after the current word, delimited by double-quote
-                std::string restOfItem;
-                getline(ss, restOfItem, '"');
-                // That trailing quote is removed from the stream
-                // and not copied to restOfItem.
-                result.push_back(item.substr(1) + restOfItem);
-            }
-        } else {
-            result.push_back(item);
-        }
-    }
-    return result;
-}
-
-size_t RsfReader::read_rsf(std::istream &rsf_file) {
-    std::string line;
-
-    /* Read all lines, and store it into the key value store */
-    while (std::getline(rsf_file, line)) {
-        StringList columns = parse(line);
-
-        if (columns.size() == 0)
-            continue;
-
-        std::string key = columns.front();
-        columns.pop_front();
-        // Check if the current line is a metainformation line if so, put it there
-        // UNDERTAKER_SET ALWAYS_ON fooooo
-        // self.meta_information("ALWAYS_ON") == ["foooo"]
-        if (metaflag.size() > 0 && key == metaflag) {
-            if (columns.size() == 0)
-                continue;
-            std::string key = columns.front();
-            columns.pop_front();
-            meta_information.emplace(key, columns);
-        } else {
-            this->emplace(key, columns);
-        }
-    }
-    return this->size();
+    for (const auto &entry : *this)  // pair<string, string>
+        out << entry.first << " : " << entry.second << std::endl;
 }
 
 const std::string *RsfReader::getValue(const std::string &key) const {
-    static std::string null_string("");
     auto i = find(key);
-
     if (i == end())  // key not found
         return nullptr;
-    if (i->second.size() == 0)
-        return &null_string;
-
-    return &(i->second.front());
+    return &(i->second);
 }
 
 const StringList *RsfReader::getMetaValue(const std::string &key) const {
     const auto &it = meta_information.find(key); // pair<string, StringList>
     if (it == meta_information.end())  // key not found
         return nullptr;
-    return &((*it).second);
+    return &(it->second);
 }
 
 void RsfReader::addMetaValue(const std::string &key, const std::string &value) {
@@ -117,29 +104,32 @@ void RsfReader::addMetaValue(const std::string &key, const std::string &value) {
         values.push_back(value);
 }
 
-ItemRsfReader::ItemRsfReader(std::istream &f) {
-    read_rsf(f);
+/************************************************************************/
+/* ItemRsfReader - to read .rsf files                                   */
+/************************************************************************/
+
+ItemRsfReader::ItemRsfReader(const std::string &filename) {
+    std::ifstream f(filename);
+    if (!f.good()) {
+        Logging::warn("couldn't open file: ", filename, " checking the type of symbols will fail");
+        return;
+    }
+    std::string item;
+    // if a line starts with Item, read the symbol and type information and store them together
+    while (f >> item) {
+        if(item != "Item") {
+            std::getline(f, item); // discard the remaining line
+            continue;
+        }
+        std::string symbol, type;
+        f >> symbol >> type;
+        this->emplace(symbol, type);
+    }
 }
 
-size_t ItemRsfReader::read_rsf(std::istream &rsf_file) {
-    std::string line;
-
-    /* Read all lines, and store it into the key value store */
-    while (std::getline(rsf_file, line)) {
-        StringList columns = parse(line);
-
-        if (columns.size() == 0)
-            continue;
-
-        std::string key = columns.front();
-        columns.pop_front();
-
-        // Skip lines that do not start with 'Item'
-        if (key != "Item")
-            continue;
-
-        key = columns.front(); columns.pop_front();
-        this->emplace(key, columns);
-    }
-    return this->size();
+const std::string *ItemRsfReader::getValue(const std::string &key) const {
+    auto i = find(key);
+    if (i == end())  // key not found
+        return nullptr;
+    return &(i->second);
 }

@@ -38,7 +38,7 @@ std::string CoverageAnalyzer::baseFileExpression(const ConfigurationModel *model
 
     if (model) {
         std::string kconfig_formula;
-        model->doIntersect(code_formula, file->getChecker(), missingSet, kconfig_formula);
+        model->doIntersect(code_formula, file->getDefineChecker(), missingSet, kconfig_formula);
         formula.push_back(kconfig_formula);
         // only add missing items if we can assume the model is complete
         if (model->isComplete()) {
@@ -46,16 +46,14 @@ std::string CoverageAnalyzer::baseFileExpression(const ConfigurationModel *model
                 formula.push_back("!" + str);
         }
         // add ALWAYS_ON items to the formula
-        const std::string magic1("ALWAYS_ON");
-        const StringList *always_on = model->getMetaValue(magic1);
+        const StringList *always_on = model->getWhitelist();
         if (always_on) {
             Logging::info(always_on->size(), " Items have been forcefully set");
             for (const std::string &str : *always_on)
                 formula.push_back(str);
         }
         // add ALWAYS_OFF items to the formula
-        const std::string magic2("ALWAYS_OFF");
-        const StringList *always_off = model->getMetaValue(magic2);
+        const StringList *always_off = model->getBlacklist();
         if (always_off) {
             Logging::info(always_off->size(), " Items have been forcefully unset");
             for (const std::string &str : *always_off)

@@ -93,7 +93,6 @@ struct UniqueStringJoiner : public StringJoiner {
             if (_unique_set.count(x) > 0) return;
             _unique_set.insert(x);
         }
-
         StringJoiner::push_back(x);
     }
 
@@ -103,13 +102,9 @@ struct UniqueStringJoiner : public StringJoiner {
             if (_unique_set.count(x) > 0) return;
             _unique_set.insert(x);
         }
-
         StringJoiner::push_front(x);
     }
-
-    void disableUniqueness() {
-        uniqueFlag = false;
-    }
+    void disableUniqueness() { uniqueFlag = false; }
 
  private:
     bool uniqueFlag = true;
