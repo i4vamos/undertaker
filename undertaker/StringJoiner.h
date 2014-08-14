@@ -43,7 +43,7 @@ struct StringJoiner : public std::deque<std::string> {
      * Join all the collected strings to one string. The separator is
      * inserted between each element.
      */
-    std::string join(const std::string &j) {
+    std::string join(const std::string &j) const {
         if (size() == 0)
             return "";
 
