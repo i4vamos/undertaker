@@ -110,7 +110,7 @@ fi
 echo "Running on Linux Version $(git describe || echo '(no git)')"
 echo "Using $(undertaker -V)"
 
-if ! git clean -fxq; then
+if ! git clean -fdxq; then
     echo "git clean failed - check for write permissions in $GIT_DIRECTORY"
     exit 1
 fi
