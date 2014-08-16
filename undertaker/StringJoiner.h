@@ -4,6 +4,7 @@
  * Copyright (C) 2009-2011 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
  * Copyright (C) 2009-2011 Julio Sincero <Julio.Sincero@informatik.uni-erlangen.de>
  * Copyright (C) 2010-2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+ * Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +20,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 // -*- mode: c++ -*-
 #ifndef string_joiner_h__
 #define string_joiner_h__
@@ -28,7 +28,7 @@
 #include <set>
 #include <string>
 #include <sstream>
-#include <iostream>
+
 
 /**
  * \brief Helper subclass of std::deque<std::string> for convenient
@@ -55,60 +55,93 @@ struct StringJoiner : public std::deque<std::string> {
 
         return ss.str();
     }
-
     /**
      * \brief append strings to list.
      *
-     * Appends the given value to the list of values if it isn't the
-     * empty string. "" will be ignored.
+     * Appends the given value to the list of values. The empty string "" will be ignored.
      */
     void push_back(const value_type &x) {
-        if (x.compare("") == 0)
+        if (x == "")
             return;
         std::deque<value_type>::push_back(x);
     }
-
     /**
      * \brief append strings to list.
      *
-     * Appends the given value to the list of values if it isn't the
-     * empty string. "" will be ignored.
+     * Appends the given value to the list of values. The empty string "" will be ignored.
+     */
+    void emplace_back(const value_type &x) {
+        if (x == "")
+            return;
+        std::deque<value_type>::emplace_back(x);
+    }
+    /**
+     * \brief prepend strings to list.
+     *
+     * Prepends the given value to the list of values. The empty string "" will be ignored.
      */
     void push_front(const value_type &x) {
-        if (x.compare("") == 0)
+        if (x == "")
             return;
         std::deque<value_type>::push_front(x);
+    }
+    /**
+     * \brief prepend strings to list.
+     *
+     * Prepends the given value to the list of values. The empty string "" will be ignored.
+     */
+    void emplace_front(const value_type &x) {
+        if (x == "")
+            return;
+        std::deque<value_type>::emplace_front(x);
     }
 };
 
 struct UniqueStringJoiner : public StringJoiner {
-    UniqueStringJoiner() = default;
-
-    bool count (const value_type &x) {
-        return _unique_set.count(x);
-    }
     void push_back(const value_type &x) {
         if (uniqueFlag) {
-            /* Simulate an map when StringJoiner is unique */
-            if (_unique_set.count(x) > 0) return;
-            _unique_set.insert(x);
+            /* Simulate a set when StringJoiner is unique,
+             * return if 'x' was already in the unique_set */
+            if (!(_unique_set.insert(x)).second)
+                return;
         }
         StringJoiner::push_back(x);
     }
 
+    void emplace_back(const value_type &x) {
+        if (uniqueFlag) {
+            /* Simulate a set when StringJoiner is unique,
+             * return if 'x' was already in the unique_set */
+            if (!(_unique_set.insert(x)).second)
+                return;
+        }
+        StringJoiner::emplace_back(x);
+    }
+
     void push_front(const value_type &x) {
         if (uniqueFlag) {
-            /* Simulate an map when StringJoiner is unique */
-            if (_unique_set.count(x) > 0) return;
-            _unique_set.insert(x);
+            /* Simulate a set when StringJoiner is unique,
+             * return if 'x' was already in the unique_set */
+            if (!(_unique_set.insert(x)).second)
+                return;
         }
         StringJoiner::push_front(x);
     }
+
+    void emplace_front(const value_type &x) {
+        if (uniqueFlag) {
+            /* Simulate a set when StringJoiner is unique,
+             * return if 'x' was already in the unique_set */
+            if (!(_unique_set.insert(x)).second)
+                return;
+        }
+        StringJoiner::emplace_front(x);
+    }
+
     void disableUniqueness() { uniqueFlag = false; }
 
- private:
+private:
     bool uniqueFlag = true;
     std::set<std::string> _unique_set;
 };
-
 #endif
