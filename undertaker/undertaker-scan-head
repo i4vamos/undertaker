@@ -92,8 +92,6 @@ if [ ! -d "$GIT_DIRECTORY" ]; then
 fi
 
 cd "$GIT_DIRECTORY"
-resultdir=results
-mkdir -p "$resultdir"
 
 if ! git fetch -q --tags "$giturl" "$COMMIT"; then
     echo "Repository on kernel.org failed, fetching sources from github instead"
@@ -114,6 +112,9 @@ if ! git clean -fdxq; then
     echo "git clean failed - check for write permissions in $GIT_DIRECTORY"
     exit 1
 fi
+
+resultdir=results
+mkdir -p "$resultdir"
 
 version="$(git describe || date +%Y-%m-%d-%H:%M)"
 report="${resultdir}/${version}-report.txt"
