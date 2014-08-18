@@ -114,7 +114,7 @@ class BareConfiguration(Configuration):
                             ":1: error: cannot compile file [ARTIFICIAL, rc=%d]" % statuscode)
 
         messages = SparseMessage.preprocess_messages(messages)
-        messages = map(lambda x: SparseMessage(self, x), messages)
+        messages = [SparseMessage(self, x) for x in messages]
         return messages
 
 
@@ -125,7 +125,7 @@ class BareConfiguration(Configuration):
                             ":1: error: cannot compile file [ARTIFICIAL, rc=%d]" % statuscode)
 
         messages = GccMessage.preprocess_messages(messages)
-        messages = map(lambda x: GccMessage(self, x), messages)
+        messages = [GccMessage(self, x) for x in messages]
         return messages
 
 
@@ -137,7 +137,7 @@ class BareConfiguration(Configuration):
                             ":1: error: cannot compile file [ARTIFICIAL, rc=%d]" % statuscode)
 
         messages = ClangMessage.preprocess_messages(messages)
-        messages = map(lambda x: ClangMessage(self, x), messages)
+        messages = [ClangMessage(self, x) for x in messages]
         return messages
 
     def expand(self, verify=True):
@@ -150,7 +150,7 @@ class BareConfiguration(Configuration):
 
             if len(out) > 1 or out[0] != '':
                 out = SpatchMessage.preprocess_messages(out)
-                messages += map(lambda x: SpatchMessage(self, x, on_file, test), out)
+                messages += [SpatchMessage(self, x, on_file, test) for x in out]
 
         return messages
 
@@ -396,12 +396,12 @@ class KbuildConfiguration(Configuration):
 
         # GCC messages
         messages = GccMessage.preprocess_messages(CC)
-        messages = map(lambda x: GccMessage(self, x), messages)
+        messages = [GccMessage(self, x) for x in messages]
         self.result_cache["CC"] = messages
 
         # Sparse messages
         messages = SparseMessage.preprocess_messages(CHECK)
-        messages = map(lambda x: SparseMessage(self, x), messages)
+        messages = [SparseMessage(self, x) for x in messages]
         self.result_cache["SPARSE"] = messages
 
         return messages
@@ -423,13 +423,13 @@ class KbuildConfiguration(Configuration):
             # GCC messages
             if "CC" not in self.result_cache:
                 messages = GccMessage.preprocess_messages(CC)
-                messages = map(lambda x: GccMessage(self, x), messages)
+                messages = [GccMessage(self, x) for x in messages]
                 self.result_cache["CC"] = messages
 
             if len(CHECK) > 1 or (len(CHECK) > 0 and CHECK[0] != ''):
                 # Sparse messages
                 out = SpatchMessage.preprocess_messages(CHECK)
-                messages += map(lambda x: SpatchMessage(self, x, on_file, test), out)
+                messages += [SpatchMessage(self, x, on_file, test) for x in out]
 
         self.result_cache["SPATCH"] = messages
         return messages

@@ -146,7 +146,7 @@ class Inferencer:
                         else:
                             delete_from_var.append(i)
 
-                variation = filter(lambda (var_int, value): not var_int in delete_from_var, variation)
+                variation = [(var_int, value) for (var_int, value) in variation if not var_int in delete_from_var]
 
                 if not skip:
                     ret.append(variation)
@@ -220,7 +220,7 @@ class Inferencer:
                                 selection[i] = m
                                 selection[x] = None
 
-            self.var_impl_selections[var_impl] = filter(lambda x: x, selection)
+            self.var_impl_selections[var_impl] = [x for x in selection if x]
 
         for i in self.var_impl_selections:
             if len(self.var_impl_selections[i]) > 0:

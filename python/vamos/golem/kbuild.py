@@ -70,7 +70,7 @@ def find_autoconf():
         return vamos.golem.autoconf_h
 
     (autoconf, _) = execute("find include -name autoconf.h", failok=False)
-    autoconf = filter(lambda x: len(x) > 0, autoconf)
+    autoconf = [x for x in autoconf if len(x) > 0]
     if len(autoconf) != 1:
         logging.error("Found %d autoconf.h files (%s)",
                       len(autoconf), ", ".join(autoconf))

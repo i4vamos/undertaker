@@ -74,7 +74,7 @@ def get_conditional_blocks(filename, autoconf_h=None, all_cpp_blocks=False,
         cmd = normalizer
     (stdout, rc) = execute(cmd, echo=True, failok=True)
 
-    blocks = filter(lambda x: len(x) != 0 and x.startswith("B"), stdout)
+    blocks = [x for x in stdout if len(x) != 0 and x.startswith("B")]
     # With never versions of zizler line numbers for each block are
     # also printed. By default they are stripped, to retain backward
     # compatibility

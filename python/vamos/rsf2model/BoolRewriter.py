@@ -41,10 +41,10 @@ class BoolRewriter(tools.UnicodeMixin):
         if tree[0] == BoolParser.NOT and type(tree[1]) == list:
             tree = tree[1]
             if tree[0] == BoolParser.AND:
-                tree = [BoolParser.OR] + map(lambda x: [BoolParser.NOT, x], tree[1:])
+                tree = [BoolParser.OR] + [[BoolParser.NOT, x] for x in tree[1:]]
                 return tree_change(self.__rewrite_not, tree)
             elif tree[0] == BoolParser.OR:
-                tree = [BoolParser.AND] + map(lambda x: [BoolParser.NOT, x], tree[1:])
+                tree = [BoolParser.AND] + [[BoolParser.NOT, x] for x in tree[1:]]
                 return tree_change(self.__rewrite_not, tree)
             elif tree[0] == BoolParser.NOT:
                 return tree_change(self.__rewrite_not, tree[1])
@@ -89,7 +89,7 @@ class BoolRewriter(tools.UnicodeMixin):
     def rewrite_choice(self):
         """Removes all CHOICE_ items"""
         def __recr(tree):
-            tree = filter(lambda x: not(type(x) == str and x.startswith("CHOICE_")), tree)
+            tree = [x for x in tree if not(type(x) == str and x.startswith("CHOICE_"))]
             if len(tree) == 1:
                 return []
             return tree

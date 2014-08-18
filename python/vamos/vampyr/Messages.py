@@ -40,9 +40,9 @@ class SparseMessage:
         last_prefix = None
         result = []
         # Remove empty lines
-        lines = filter(lambda x: len(x) > 0, lines)
+        lines = [x for x in lines if len(x) > 0]
         # Strip coloumn numbers
-        lines = map(lambda x: re.sub(r'(:\d+):\d+: ', r'\1: ', x), lines)
+        lines = [re.sub(r'(:\d+):\d+: ', r'\1: ', x) for x in lines]
         for line in lines:
             m = re.match(r'^\s*([^ \t]+)([ \t]+)(.*)', line)
             if not m:
@@ -114,13 +114,13 @@ class GccMessage(SparseMessage):
     def preprocess_messages(messages):
         # Remove [-W<flag>]$ messages
         expr = re.compile(r"\s*\[(-W[^[]+|enabled by default)\]$")
-        messages = map(lambda x: re.sub(expr, "", x), messages)
+        messages = [re.sub(expr, "", x) for x in messages]
         # Remove '       ^'  messages
         expr = re.compile(r"\s*\^")
-        messages = map(lambda x: re.sub(expr, "", x), messages)
+        messages = [re.sub(expr, "", x) for x in messages]
         messages = SparseMessage.preprocess_messages(messages)
-        messages = filter(lambda x: re.match(".*:[0-9]+: (fatal )?(warning|error):", x), messages)
-        messages = map(lambda x: re.sub(r'(:\d+):\d+: ', r'\1: ', x), messages)
+        messages = [x for x in messages if re.match(".*:[0-9]+: (fatal )?(warning|error):", x)]
+        messages = [re.sub(r'(:\d+):\d+: ', r'\1: ', x) for x in messages]
         return messages
 
     def __init__(self, configuration, line):
@@ -146,9 +146,9 @@ class ClangMessage(SparseMessage):
     def preprocess_messages(messages):
         # Remove [-W<flag>]$ messages
         expr = re.compile(r"\s*\[(-W[^[]+|enabled by default)\]$")
-        messages = map(lambda x: re.sub(expr, "", x), messages)
+        messages = [re.sub(expr, "", x) for x in messages]
 
-        messages = filter(lambda x: re.match(".*:[0-9]+:.*(warning|error):", x), messages)
+        messages = [x for x in messages if re.match(".*:[0-9]+:.*(warning|error):", x)]
         return messages
 
 
@@ -175,10 +175,10 @@ class SpatchMessage(SparseMessage):
     @staticmethod
     def preprocess_messages(lines):
         # Remove unwanted, boring lines
-        lines = filter(lambda x: len(x) > 0, lines)
-        lines = filter(lambda x: not x.startswith("  "), lines)
-        lines = filter(lambda x: not "***" in x, lines)
-        lines = filter(lambda x: not "Killed" == x , lines)
+        lines = [x for x in lines if len(x) > 0]
+        lines = [x for x in lines if not x.startswith("  ")]
+        lines = [x for x in lines if not "***" in x]
+        lines = [x for x in lines if not "Killed" == x ]
         return lines
 
     def __init__(self, configuration, line, filename, test):
