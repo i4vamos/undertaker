@@ -59,26 +59,28 @@ namespace Logging {
         return s.str();
     }
 
+    // && has a special meaning when it is used in "template parameter"-context,
+    // it's necessary for std::forward to work correctly
     template <typename... Ts>
-    void debug(Ts... args) {
+    void debug(Ts &&... args) {
         if (logger.logLevel <= LOG_DEBUG)
             std::cout << buildStringFromArgs("D: ", std::forward<Ts>(args)...);
     }
 
     template <typename... Ts>
-    void info(Ts... args) {
+    void info(Ts &&... args) {
         if (logger.logLevel <= LOG_INFO)
             std::cout << buildStringFromArgs("I: ", std::forward<Ts>(args)...);
     }
 
     template <typename... Ts>
-    void warn(Ts... args) {
+    void warn(Ts &&... args) {
         if (logger.logLevel <= LOG_WARNING)
             std::cerr << buildStringFromArgs("W: ", std::forward<Ts>(args)...);
     }
 
     template <typename... Ts>
-    void error(Ts... args) {
+    void error(Ts &&... args) {
         if (logger.logLevel <= LOG_ERROR)
             std::cerr << buildStringFromArgs("E: ", std::forward<Ts>(args)...);
     }
