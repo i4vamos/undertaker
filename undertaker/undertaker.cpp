@@ -1080,6 +1080,9 @@ int main(int argc, char **argv) {
                 process_file(line);
         }
     } else if (workfiles.size() > 1) {
+        // flush stdout to prevent printing of stdout-buffer contents multiple times
+        // (can happen with fork() when startup (i.e., model loading) is finished too fast)
+        std::cout << flush;
         for (const std::string &file : workfiles) {
             pid_t pid = fork();
             if (pid == 0) { /* child */
