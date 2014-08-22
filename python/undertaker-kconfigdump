@@ -179,17 +179,18 @@ function do_convert() {
     # arch/{um/Kconfig.x86 => x86/um/Kconfig}
     # get the right file even in historic linux trees.
     SUBARCH=$ARCH
+    ARCHSTR=$ARCH
     KCONFIG=Kconfig
-    if [ x"$ARCH" = x"um" ]; then
+    if [ "$ARCH" = "um" ]; then
         SUBARCH=x86
-        if [ -r arch/um/Kconfig ]; then
-            KCONFIG=Kconfig
+        if [ -r arch/x86/um/Kconfig ]; then
+            ARCHSTR=x86/um
         else
-            KCONFIG=Kconfig.um
+            KCONFIG=Kconfig.x86
         fi
     fi
 
-    test -f arch/$ARCH/$KCONFIG || {
+    test -f arch/$ARCHSTR/$KCONFIG || {
        echo "ERROR: Architecture $ARCH not found";
        return
     }
@@ -197,7 +198,7 @@ function do_convert() {
     if [ $MODE = "rsf" ]; then
         echo "Calculating RSF model for $ARCH"
         # remove all the comments from dumpconf because they will confuse rsf2model
-        SUBARCH=$SUBARCH ARCH=$ARCH dumpconf arch/$ARCH/$KCONFIG | sort -u \
+        SUBARCH=$SUBARCH ARCH=$ARCH dumpconf arch/$ARCHSTR/$KCONFIG | sort -u \
             | grep -v '^#' > "$MODELS/$ARCH.rsf"
 
         do_rsf2model_conversion $ARCH
@@ -206,7 +207,7 @@ function do_convert() {
     if [ $MODE = "cnf" ]; then
         # run satyr
         echo "Calculating CNF model for $ARCH"
-        SUBARCH=$SUBARCH SRCARCH=$ARCH ARCH=$ARCH satyr arch/$ARCH/$KCONFIG -c "$MODELS/$ARCH.cnf"
+        SUBARCH=$SUBARCH SRCARCH=$ARCH ARCH=$ARCH satyr arch/$ARCHSTR/$KCONFIG -c "$MODELS/$ARCH.cnf"
     fi
 }
 
