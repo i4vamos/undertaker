@@ -274,42 +274,26 @@ void DeadBlockDefect::reportMUS() const {
         Logging::error("Mismatched output format, skipping MUS analysis.");
         return;
     }
-    std::vector<std::string> vec;
+    StringJoiner sj;
     for (int i = 0, tmp; i < lines; i++) {
-        bool valid = false;
-        std::stringstream tmpstr;
-        tmpstr << "(";
-        ss >> tmp;
-        // process a line
-        while (tmp != 0) {
-            std::string sym = cnf->getSymbolName(abs(tmp));
-            if (sym == "") {
-                ss >> tmp;
+        StringJoiner clause;
+        // process a line (i.e.: int int -int 0, where 0 terminates the clause)
+        while (ss >> tmp) {
+            if (tmp == 0)
+                break;
+            const std::string &sym = cnf->getSymbolName(abs(tmp));
+            if (sym == "")
                 continue;
-            }
-            valid = true;
             if (tmp < 0)
-                tmpstr << "!";
-            tmpstr << sym;
-            // get next int in the current line
-            ss >> tmp;
-            if (tmp != 0)
-                tmpstr << " v ";
+                clause.emplace_back("!" + sym);
+            else
+                clause.emplace_back(sym);
         }
-        tmpstr << ")";
-        if (valid)  // collect valid clauses
-            vec.emplace_back(tmpstr.str());
-    }
-    // build minimized CNF Formula
-    std::stringstream formula;
-    for (std::string &str : vec) {
-        formula << str;
-        if (str != vec.back())
-            formula << " ^ ";
+        if (clause.size() > 0)  // collect only clauses with valid symbols
+            sj.emplace_back("(" + clause.join(" v ") + ")");
     }
     // create filename for mus-defect report and open the outputfilestream
     std::string filename = this->getDefectReportFilename() + ".mus";
-
     std::ofstream ofs(filename);
     if (!ofs.good()) {
         Logging::error("Failed to open ", filename, " for writing.");
@@ -322,7 +306,7 @@ void DeadBlockDefect::reportMUS() const {
     ofs << "p cnf " << cnf->getVarCount() << " " << cnf->getClauseCount() << std::endl;
     ofs << "to" << std::endl;
     ofs << "p cnf " << vars               << " " << lines                 << std::endl;
-    ofs << formula.str() << std::endl;
+    ofs << sj.join(" ^ ") << std::endl;
 }
 
 bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_model) {
