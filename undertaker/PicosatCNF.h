@@ -44,6 +44,9 @@ namespace Picosat {
 
 namespace kconfig {
     class PicosatCNF {
+        std::vector<int> clauses;
+        std::vector<int> assumptions;
+        unsigned int pushed_clauses_index = 0;
         //! this map contains the the type of each Kconfig symbol
         std::map<std::string, kconfig_symbol_type> symboltypes;
 
@@ -60,15 +63,14 @@ namespace kconfig {
         **/
         std::map<std::string, std::string> associatedSymbols;
         /** contains the variable name for cnf-id.
-            Not all cnf-id will have a name. Must kept in sync with "symboltypes"
+            Not all cnf-id will have a name. Must kept in sync with "cnfvars"
         **/
         std::map<int, std::string> boolvars;
-        std::vector<int> clauses;
-        std::vector<int> assumptions;
         std::map<std::string, std::deque<std::string>> meta_information;
         Picosat::SATMode defaultPhase;
         int varcount = 0;
         int clausecount = 0;
+        inline void setCNFVar_fast(const std::string &var, int CNFVar);
     public:
         PicosatCNF(Picosat::SATMode = Picosat::SAT_MIN);
         PicosatCNF(const PicosatCNF &, Picosat::SATMode);
@@ -77,35 +79,42 @@ namespace kconfig {
         void readFromStream(std::istream &i);
         void toFile(const std::string &filename) const;
         void toStream(std::ostream &out) const;
+        void incrementWith(const PicosatCNF &);
         kconfig_symbol_type getSymbolType(const std::string &name) const;
         void setSymbolType(const std::string &sym, kconfig_symbol_type type);
         int getCNFVar(const std::string &var) const;
         void setCNFVar(const std::string &var, int CNFVar);
-        std::string &getSymbolName(int CNFVar);
+        const std::string getSymbolName(int CNFVar) const;
         void pushVar(int v);
         void pushVar(std::string  &v, bool val);
-        void pushClause(void);
+        void pushClause();
         void pushClause(int *c);
         void pushAssumption(int v);
         void pushAssumption(const std::string &v,bool val);
         void pushAssumptions(std::map<std::string, bool> &a);
-        bool checkSatisfiable(void);
+        bool checkSatisfiable();
         /** returns cnf-id of assumtions, that cause unresolvable conflicts.
             If checkSatisfiable returns false, this returns an array of assumptions
             that derived unsatisfiability (= failed assumptions).
             It does not contain all unsatisfiable assumptions.
             @returns array if of failed cnf-ids
         **/
-        const int *failedAssumptions(void) const;
+        const int *failedAssumptions() const;
         bool deref(int s) const;
         bool deref(const std::string &s) const;
         bool deref(const char *s) const;
-        int getVarCount(void) const { return varcount; }
-        int getClauseCount(void) const { return clausecount; }
-        const std::vector<int> &getClauses(void) const { return clauses; }
-        int newVar(void);
+        int getVarCount() const { return varcount; }
+        int getClauseCount() const { return clausecount; }
+        const std::vector<int> &getClauses() const { return clauses; }
+        int newVar();
         const std::string *getAssociatedSymbol(const std::string &var) const;
         const std::map<std::string, int> &getSymbolMap() const { return cnfvars; }
+        const std::map<std::string, kconfig_symbol_type> &getSymbolTypes() const {
+            return symboltypes;
+        }
+        const std::map<std::string, std::deque<std::string>> &getMetaInformation() const {
+            return meta_information;
+        }
         const std::deque<std::string> *getMetaValue(const std::string &key) const;
         void addMetaValue(const std::string &key, const std::string &value);
     };

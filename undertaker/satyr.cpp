@@ -61,16 +61,15 @@ int process_assumptions(PicosatCNF &cnf, const std::vector<boost::filesystem::pa
             cnf.pushAssumptions(a);
         }
         bool sat = cnf.checkSatisfiable();
-        const std::string result = sat ? "satisfiable" : "not satisfiable";
         if (!sat) {
             const int *failed = cnf.failedAssumptions();
             for (int i = 0; failed != nullptr && failed[i] != 0; i++) {
-                std::string vn = cnf.getSymbolName(abs(failed[i]));
+                const std::string &vn = cnf.getSymbolName(abs(failed[i]));
                 Logging::debug("failed Assumption: ", failed[i], " ", vn);
             }
         }
         errors += (int)!sat;
-        Logging::info(assumption, " is ", result);
+        Logging::info(assumption, " is ", (sat ? "satisfiable" : "not satisfiable"));
     }
     return errors;
 }

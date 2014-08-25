@@ -46,21 +46,19 @@ class CppFile;
 class SatChecker {
     enum class state {no, yes, module};
 public:
-    SatChecker(std::string sat) : _sat(std::move(sat)) {}
+    SatChecker(const ConfigurationModel * = nullptr, Picosat::SATMode mode = Picosat::SAT_MAX);
 
     virtual ~SatChecker() {};
 
     /**
      * Checks the given string with an sat solver
-     * @param sat the formula to be checked
-     * @param picosat_mode set picosat's initial phase. Defaults to 1
+     * @param formula the formula to be checked
      * @returns true, if satisfiable, false otherwise
-     * @throws if syntax error
+     * @throws CnfBuilderError when a syntax error occured
      */
-    bool operator()(Picosat::SATMode mode=Picosat::SAT_MAX);
+    bool operator()(const std::string &formula);
 
     static bool check(const std::string &sat);
-    const std::string str() { return _sat; }
 
     /**
      * \brief Representation of a variable selection
@@ -176,32 +174,25 @@ public:
             const MissingSet& missingSet, unsigned number) const;
     }; // end struct AssignmentMap
 
-    /**
-     * After doing the check, you can get the assignments for the
-     * formula
-     */
-    const AssignmentMap &getAssignment() const { return assignmentTable; }
+    // After doing the check, you can get the assignments for the formula
+    const AssignmentMap &getAssignment();
 
-    kconfig::PicosatCNF *getCNF() {
+    const kconfig::PicosatCNF *getCNF() const {
         return _cnf.get();
     }
 
-    /**
-     * Prints the assignments in an human readable way on stdout
-     */
+    // Prints the assignments in an human readable way on stdout
     static void pprintAssignments(std::ostream& out,
         const std::list<AssignmentMap> solution,
         const ConfigurationModel *model,
         const MissingSet &missingSet);
 
+    void loadCnfModel(const ConfigurationModel *);
+
 protected:
     std::unique_ptr<kconfig::PicosatCNF> _cnf;
-    std::map<std::string, int> symbolTable;
     AssignmentMap assignmentTable;
-    Picosat::SATMode mode;
-    const std::string _sat;
 };
-
 
 /************************************************************************/
 /* BaseExpressionSatChecker                                             */
@@ -209,12 +200,8 @@ protected:
 
 class BaseExpressionSatChecker : public SatChecker {
 public:
-    BaseExpressionSatChecker(std::string base_expression);
-
-    virtual ~BaseExpressionSatChecker() { }
+    BaseExpressionSatChecker(std::string base_expression, const ConfigurationModel * = nullptr);
+    virtual ~BaseExpressionSatChecker() {}
     bool operator()(const std::set<std::string> &assumeSymbols);
-
-protected:
-    int base_clause;
 };
 #endif

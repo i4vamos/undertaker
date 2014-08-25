@@ -182,9 +182,8 @@ bool process_blockconf_helper(StringJoiner &sj, std::map<std::string, bool> &fil
                 fileCondition += " && ";
                 fileCondition += intersected;
             }
-
-            SatChecker fileChecker(fileCondition);
-            if (!fileChecker()) {
+            SatChecker fileChecker(main_model);
+            if (!fileChecker(fileCondition)) {
                 filesolvable[fileVar] = false;
                 Logging::warn("File condition for location ", locationname,
                               " conflicting with black-/whitelist - not added");
@@ -210,8 +209,8 @@ bool process_blockconf_helper(StringJoiner &sj, std::map<std::string, bool> &fil
 
     // check for satisfiability of block precondition before joining it
     try {
-        SatChecker constraintChecker(precondition);
-        if (!constraintChecker()) {
+        SatChecker constraintChecker(main_model);
+        if (!constraintChecker(precondition)) {
             Logging::warn("Code constraints for ", block->getName(),
                           " not satisfiable - override by black-/whitelist");
             return false;
@@ -248,9 +247,9 @@ void process_mergeblockconf(const std::string &filename) {
     for (const std::string &str : KconfigWhitelist::getBlacklist())
         sj.push_back("!" + str);
 
-    SatChecker sc(sj.join("\n&&\n"));
+    SatChecker sc(ModelContainer::lookupMainModel(), Picosat::SAT_MIN);
     // We want minimal configs, so we try to get many 'n's from the sat checker
-    if (sc(Picosat::SAT_MIN)) {
+    if (sc(sj.join("\n&&\n"))) {
         Logging::info("Solution found, result:");
         sc.getAssignment().formatKconfig(std::cout, {});
     } else {
@@ -264,9 +263,8 @@ void process_blockconf(const std::string &locationname) {
     if(!process_blockconf_helper(sj, filesolvable, locationname) && sj.size() == 0)
         std::exit(EXIT_FAILURE);
 
-    SatChecker sc(sj.join("\n&&\n"));
-
-    if (sc(Picosat::SAT_MIN))
+    SatChecker sc(ModelContainer::lookupMainModel(), Picosat::SAT_MIN);
+    if (sc(sj.join("\n&&\n")))
         sc.getAssignment().formatKconfig(std::cout, {});
 }
 
@@ -581,12 +579,10 @@ void process_file_blockpc(const std::string &filename) {
         main_model = ModelContainer::lookupMainModel();
 
     const BlockDefect *defect = BlockDefectAnalyzer::analyzeBlock(block, main_model);
-    std::string defect_string = "no";
-    if (defect) {
-        defect_string = defect->getSuffix() + "/" + defect->defectTypeToString();
-    }
-    Logging::info("Block ", block->getName(), " | Defect: ", defect_string, " | Global: ",
-                  (defect != nullptr ? defect->isGlobal() : 0));
+    std::string defect_string
+        = (defect ? defect->getSuffix() + "/" + defect->defectTypeToString() : "no");
+    Logging::info("Block ", block->getName(), " | Defect: ", defect_string,
+                  " | Global: ", (defect ? defect->isGlobal() : 0));
 
     /* Get and print the Precondition */
     std::cout << BlockDefectAnalyzer::getBlockPrecondition(block, main_model) << std::endl;
@@ -615,7 +611,7 @@ void process_file_dead_helper(const std::string &filename) {
         if (defect) {
             defect->writeReportToFile(skip_non_configuration_based_defects);
             if (do_mus_analysis)
-                defect->reportMUS();
+                defect->reportMUS(main_model);
             delete defect;
         }
     };
@@ -672,31 +668,27 @@ void process_file_interesting(const std::string &check_item) {
 }
 
 void process_file_checkexpr(const std::string &expression) {
-    ConfigurationModel *main_model = ModelContainer::lookupMainModel();
     Logging::debug("Checking expr ", expression);
 
+    ConfigurationModel *main_model = ModelContainer::lookupMainModel();
     if (!main_model) {
         Logging::error("for finding interesting items a model must be loaded");
         std::exit(EXIT_FAILURE);
     }
-    StringJoiner sj;
     std::set<std::string> missing;
     std::string intersected;
+    // No File, no defines
+    main_model->doIntersect("(" + expression + ")", nullptr, missing, intersected);
 
+    StringJoiner sj;
     sj.push_back(expression);
-
-    main_model->doIntersect("(" + expression + ")",
-                            nullptr,  // No ConfigurationModel::Checker
-                            missing, intersected);
-
     sj.push_back(intersected);
     sj.push_back(ConfigurationModel::getMissingItemsConstraints(missing));
-
     std::string formula = sj.join("\n&&\n");
     Logging::debug("formula: ", formula);
 
-    SatChecker sc(formula);
-    if (sc()) {
+    SatChecker sc(main_model);
+    if (sc(formula)) {
         sc.getAssignment().formatKconfig(std::cout, missing);
     } else {
         Logging::info("Expression is NOT satisfiable");

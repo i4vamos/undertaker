@@ -72,11 +72,8 @@ std::list<SatChecker::AssignmentMap> SimpleCoverageAnalyzer::blockCoverage(Confi
     std::set<std::string> blocks_set;
     std::list<SatChecker::AssignmentMap> ret;
     std::set<SatChecker::AssignmentMap> found_solutions;
-
-    const std::string base_formula = baseFileExpression(model);
-
     try {
-        BaseExpressionSatChecker sc(base_formula);
+        BaseExpressionSatChecker sc(baseFileExpression(model), model);
 
         for (const auto &block : *file) {      // ConditionalBlock *
             SatChecker::AssignmentMap current_solution;
@@ -105,10 +102,8 @@ std::list<SatChecker::AssignmentMap> SimpleCoverageAnalyzer::blockCoverage(Confi
                         continue;
                     }
 
-                    /* If no model is given or the symbol is in the
-                       model space we can push the assignment to the
-                       current solution.
-                    */
+                    // If no model is given or the symbol is in the model space we can push the
+                    // assignment to the current solution.
                     if (!model || model->inConfigurationSpace(name))
                         current_solution.emplace(name, enabled);
                 }
@@ -140,13 +135,10 @@ std::list<SatChecker::AssignmentMap> MinimizeCoverageAnalyzer::blockCoverage(Con
     try {
         std::set<std::string> configuration;
 
-        // Initial Phase, we start the SAT Solver for the whole
-        // formula. Because it tries so maximize the enabled
-        // variables we get a configuration for many of the blocks as
-        // in the simple algorithm. For the all blocks not enabled
-        // there we do the minimizer algorithm
-        const std::string base_formula = baseFileExpression(model);
-        BaseExpressionSatChecker sc(base_formula);
+        // Initial Phase, we start the SAT Solver for the whole formula. Because it tries so
+        // maximize the enabled variables we get a configuration for many of the blocks as in the
+        // simple algorithm. For the all blocks not enabled there we do the minimizer algorithm
+        BaseExpressionSatChecker sc(baseFileExpression(model), model);
 
         if(sc(configuration)) { // Configuration is an empty list here
             static const boost::regex block_regexp("^B\\d+$");
@@ -169,12 +161,10 @@ std::list<SatChecker::AssignmentMap> MinimizeCoverageAnalyzer::blockCoverage(Con
                 // Was already enabled in an other configuration
                 if (blocks_set.count(block_name) > 0) continue;
 
-                // We check here if the selected block is surely in
-                // conflict with another block already in the current
-                // configuration.
-                // e.g We have the if clause already in the set, then
-                // the else clause will surely not be in the
-                // configuration
+                // We check here if the selected block is surely in conflict with another block
+                // already in the current configuration.
+                // e.g We have the if clause already in the set, then the else clause will surely
+                // not be in the configuration
                 {
                     ConditionalBlock *block_it = block;
                     bool conflicting = false;
@@ -199,8 +189,7 @@ std::list<SatChecker::AssignmentMap> MinimizeCoverageAnalyzer::blockCoverage(Con
                         configuration.clear();
                     }
                     configuration.erase(block->getName());
-                    // Block cannot be enabled with current
-                    // <configuration> block set
+                    // Block cannot be enabled with current <configuration> block set
                     continue;
                 } else {
                     // Block will be enabled with this configuration

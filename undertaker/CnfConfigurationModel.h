@@ -32,8 +32,8 @@ namespace kconfig {
 class CnfConfigurationModel: public ConfigurationModel {
     kconfig::PicosatCNF *_cnf;
 
-    virtual void doIntersectPreprocess(std::set<std::string> &start_items,
-                                       StringJoiner &sj) const final override;
+    virtual void doIntersectPreprocess(std::set<std::string> &,
+                                       StringJoiner &) const final override {}
 
     virtual void addMetaValue(const std::string &key, const std::string &val) const final override;
 

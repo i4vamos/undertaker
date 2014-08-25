@@ -38,7 +38,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <pstreams/pstream.h>
 
-#include <iostream>
+#include <ostream>
 #include <map>
 #include <vector>
 #include <sstream>
@@ -52,10 +52,9 @@ using kconfig::CNFBuilder;
 /************************************************************************/
 
 bool SatChecker::check(const std::string &sat) {
-    SatChecker c(sat);
-
+    SatChecker c;
     try {
-        return c();
+        return c(sat);
     } catch (CNFBuilderError &e) {
         Logging::error("Syntax Error:");
         Logging::error(sat);
@@ -64,43 +63,29 @@ bool SatChecker::check(const std::string &sat) {
     }
 }
 
-static std::unique_ptr<PicosatCNF>
-getCnfWithModelInit(const std::string &formula, Picosat::SATMode mode, std::string *result) {
-    static const boost::regex modelvar_regexp("\\._\\.(.+)\\._\\.");
-    boost::match_results<std::string::const_iterator> what;
-    if (boost::regex_search(formula, what, modelvar_regexp)) {
-        // CNF model
-        std::string modelname = what[1];
-        CnfConfigurationModel *cm = dynamic_cast<CnfConfigurationModel *>(
-            ModelContainer::getInstance().lookupModel(modelname));
-        if (!cm) {
-            Logging::error("Could not add model \"", modelname, "\" to cnf");
-            return nullptr;
-        }
-        *result = boost::regex_replace(formula, modelvar_regexp, "1");
-        return make_unique<PicosatCNF>(*(cm->getCNF()), mode);  // call copy-delegate constructor
-    } else {
-        // RSF model
-        *result = formula;
-        return make_unique<PicosatCNF>(mode);
-    }
+SatChecker::SatChecker(const ConfigurationModel *model, Picosat::SATMode mode) {
+    if (model && model->getModelVersionIdentifier() == "cnf")
+        _cnf = make_unique<PicosatCNF>(
+            *dynamic_cast<const CnfConfigurationModel *>(model)->getCNF(), mode);
+    else
+        _cnf = make_unique<PicosatCNF>(mode);
 }
 
-bool SatChecker::operator()(Picosat::SATMode mode) {
-    std::string sat;
-    _cnf = getCnfWithModelInit(_sat, mode, &sat);
+void SatChecker::loadCnfModel(const ConfigurationModel *m) {
+    _cnf->incrementWith(*dynamic_cast<const CnfConfigurationModel *>(m)->getCNF());
+}
 
-    CNFBuilder builder(_cnf.get(), sat, true, CNFBuilder::ConstantPolicy::FREE);
-    int res = _cnf->checkSatisfiable();
-    if (res) {
-        /* Let's get the assigment out of picosat, because we have to
-            reset the sat solver afterwards */
-        for (const auto &entry : _cnf->getSymbolMap()) {  // pair<string, int>
-            bool selected = this->_cnf->deref(entry.second);
-            assignmentTable.emplace(entry.first, selected);
-        }
+const SatChecker::AssignmentMap &SatChecker::getAssignment() {
+    for (const auto &entry : _cnf->getSymbolMap()) {  // pair<string, int>
+        bool selected = this->_cnf->deref(entry.second);
+        assignmentTable.emplace(entry.first, selected);
     }
-    return res;
+    return assignmentTable;
+}
+
+bool SatChecker::operator()(const std::string &formula) {
+    CNFBuilder builder(_cnf.get(), formula, true, CNFBuilder::ConstantPolicy::FREE);
+    return _cnf->checkSatisfiable();
 }
 
 /************************************************************************/
@@ -501,21 +486,14 @@ bool BaseExpressionSatChecker::operator()(const std::set<std::string> &assumeSym
     for (const std::string &str : assumeSymbols)
         _cnf->pushAssumption(str, true);
 
-    int res = _cnf->checkSatisfiable();
-    if (res) {
-        /* Let's get the assigment out of picosat, because we have to
-            reset the sat solver afterwards */
+    bool res = _cnf->checkSatisfiable();
+    if (res)
         assignmentTable.clear();
-        for (const auto &entry : _cnf->getSymbolMap()) {  // pair<string, int>
-            bool selected = this->_cnf->deref(entry.second);
-            assignmentTable.emplace(entry.first, selected);
-        }
-    }
     return res;
 }
 
-BaseExpressionSatChecker::BaseExpressionSatChecker(std::string base_expression)
-        : SatChecker(base_expression) {
-    _cnf = getCnfWithModelInit(base_expression, Picosat::SAT_MAX, &base_expression);
+BaseExpressionSatChecker::BaseExpressionSatChecker(std::string base_expression,
+                                                   const ConfigurationModel *model)
+        : SatChecker(model) {
     CNFBuilder builder(_cnf.get(), base_expression, true, CNFBuilder::ConstantPolicy::BOUND);
 }

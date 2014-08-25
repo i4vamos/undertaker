@@ -55,11 +55,6 @@ CnfConfigurationModel::CnfConfigurationModel(const std::string &filename) {
 
 CnfConfigurationModel::~CnfConfigurationModel() { delete _cnf; }
 
-void CnfConfigurationModel::doIntersectPreprocess(std::set<std::string> &,
-                                                  StringJoiner &sj) const {
-    sj.push_back("._." + _name + "._.");
-}
-
 bool CnfConfigurationModel::isBoolean(const std::string &item) const {
     return _cnf->getSymbolType(item) == K_S_BOOLEAN;
 }

@@ -238,14 +238,14 @@ DeadBlockDefect::DeadBlockDefect(ConditionalBlock *cb) : BlockDefect(cb) {
     this->_suffix = "dead";
 }
 
-void DeadBlockDefect::reportMUS() const {
+void DeadBlockDefect::reportMUS(ConfigurationModel *main_model) const {
     // MUS only works on {code, kconfig} dead blocks
     if (_defectType == DEFECTTYPE::None)
         return;
     // call Satchecker and get the CNF-Object
-    SatChecker code_constraints(_musFormula);
-    code_constraints();
-    kconfig::PicosatCNF *cnf = code_constraints.getCNF();
+    SatChecker sc(main_model);
+    sc(_musFormula);
+    const kconfig::PicosatCNF *cnf = sc.getCNF();
     // call picosat in quiet mode with stdin as input and stdout as output
     redi::pstream cmd_process("picomus - -");
     // write to stdin of the process
@@ -274,9 +274,9 @@ void DeadBlockDefect::reportMUS() const {
         Logging::error("Mismatched output format, skipping MUS analysis.");
         return;
     }
-    StringJoiner sj;
+    StringJoiner sj, clause;
     for (int i = 0, tmp; i < lines; i++) {
-        StringJoiner clause;
+        clause.clear();
         // process a line (i.e.: int int -int 0, where 0 terminates the clause)
         while (ss >> tmp) {
             if (tmp == 0)
@@ -320,9 +320,8 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
     formula.push_back(code_formula);
     _formula = formula.join("\n&&\n");
 
-    SatChecker code_constraints(_formula);
-
-    if (!code_constraints()) {
+    SatChecker sc;
+    if (!sc(_formula)) {
         _defectType = DEFECTTYPE::Implementation;
         _isGlobal = true;
         _musFormula = _formula;
@@ -334,39 +333,33 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
         model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
                            kconfig_formula);
         formula.push_back(kconfig_formula);
-        std::string formula_str = formula.join("\n&&\n");
-        SatChecker kconfig_constraints(formula_str);
 
-//        Logging::debug("kconfig_constraints: ", formula_str);
-
-        if (!kconfig_constraints()) {
-            if (_defectType != DEFECTTYPE::Configuration) {
+        // increment sc with kconfig_formula and load model if necessary
+        if (model->getModelVersionIdentifier() == "cnf")
+            sc.loadCnfModel(model);
+        if (!sc(kconfig_formula)) {
+            if (_defectType != DEFECTTYPE::Configuration)
                 // Wasn't already identified as Configuration defect
                 _arch = ModelContainer::lookupArch(model);
-            }
-            _formula = formula_str;
+            _formula = formula.join("\n&&\n");
             // save formula for mus analysis when we are analysing the main_model
             if (is_main_model)
-                _musFormula = formula_str;
+                _musFormula = _formula;
             _defectType = DEFECTTYPE::Configuration;
             return true;
         } else {
             // An incomplete model (not all symbols mentioned) can't generate referential errors
             if (!model->isComplete())
                 return false;
-
-            formula.push_back(ConfigurationModel::getMissingItemsConstraints(missingSet));
-            std::string formula_str = formula.join("\n&&\n");
-            SatChecker missing_constraints(formula_str);
-
-            if (!missing_constraints()) {
-                if (_defectType != DEFECTTYPE::Configuration) {
+            std::string missing = ConfigurationModel::getMissingItemsConstraints(missingSet);
+            if (!sc(missing)) {
+                formula.push_back(missing);
+                _formula = formula.join("\n&&\n");
+                if (_defectType != DEFECTTYPE::Configuration)
                     _defectType = DEFECTTYPE::Referential;
-                }
                 // save formula for mus analysis when we are analysing the main_model
                 if (is_main_model)
-                    _musFormula = formula_str;
-                _formula = formula_str;
+                    _musFormula = _formula;
                 return true;
             }
         }
@@ -398,46 +391,39 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     formula.push_back(code_formula);
     _formula = formula.join("\n&&\n");
 
-    SatChecker code_constraints(_formula);
-
-    if (!code_constraints()) {
+    SatChecker sc;
+    if (!sc(_formula)) {
         _defectType = DEFECTTYPE::Implementation;
         _isGlobal = true;
         return true;
     }
-
     if (model) {
         std::set<std::string> missingSet;
         std::string kconfig_formula;
         model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
                            kconfig_formula);
         formula.push_back(kconfig_formula);
-        std::string formula_str = formula.join("\n&&\n");
-        SatChecker kconfig_constraints(formula_str);
 
-        if (!kconfig_constraints()) {
-            if (_defectType != DEFECTTYPE::Configuration) {
+        // increment sc with kconfig_formula and load model if necessary
+        if (model->getModelVersionIdentifier() == "cnf")
+            sc.loadCnfModel(model);
+        if (!sc(kconfig_formula)) {
+            if (_defectType != DEFECTTYPE::Configuration)
                 // Wasn't already identified as Configuration defect
                 _arch = ModelContainer::lookupArch(model);
-            }
-            _formula = formula_str;
+            _formula = formula.join("\n&&\n");
             _defectType = DEFECTTYPE::Configuration;
             return true;
         } else {
-            // An incomplete model (not all symbols mentioned) can't
-            // generate referential errors
+            // An incomplete model (not all symbols mentioned) can't generate referential errors
             if (!model->isComplete())
                 return false;
-
-            formula.push_back(ConfigurationModel::getMissingItemsConstraints(missingSet));
-            std::string formula_str = formula.join("\n&&\n");
-            SatChecker missing_constraints(formula_str);
-
-            if (!missing_constraints()) {
-                if (_defectType != DEFECTTYPE::Configuration) {
+            std::string missing = ConfigurationModel::getMissingItemsConstraints(missingSet);
+            if (!sc(missing)) {
+                formula.push_back(missing);
+                if (_defectType != DEFECTTYPE::Configuration)
                     _defectType = DEFECTTYPE::Referential;
-                }
-                _formula = formula_str;
+                _formula = formula.join("\n&&\n");
                 return true;
             }
         }

@@ -54,7 +54,7 @@ public:
     enum class DEFECTTYPE { None, Implementation, Configuration, Referential, NoKconfig };
 
     virtual bool isDefect(const ConfigurationModel *, bool = false) = 0;  //!< checks for a defect
-    virtual void reportMUS() const = 0;
+    virtual void reportMUS(ConfigurationModel *) const = 0;
     virtual ~BlockDefect() {}
 
     //!< human readable identifier for the defect type
@@ -125,7 +125,7 @@ public:
     //! c'tor for a Dead Block Defect
     DeadBlockDefect(ConditionalBlock *);
     virtual bool isDefect(const ConfigurationModel *, bool = false) final override;
-    virtual void reportMUS() const final override;
+    virtual void reportMUS(ConfigurationModel *) const final override;
 };
 
 /************************************************************************/
@@ -138,7 +138,7 @@ public:
     //! c'tor for a Undead Block Defect
     UndeadBlockDefect(ConditionalBlock *);
     virtual bool isDefect(const ConfigurationModel *, bool = false) final override;
-    virtual void reportMUS() const final override {}
+    virtual void reportMUS(ConfigurationModel *) const final override {}
 };
 
 #endif

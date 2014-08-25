@@ -6560,7 +6560,7 @@ picosat_adjust (int new_max_var)
   if (size_vars < new_size_vars)
     enlarge (new_size_vars);
 
-  while (max_var < (unsigned) new_max_var)
+  while (max_var < new_size_vars)
     inc_max_var ();
 
   leave ();

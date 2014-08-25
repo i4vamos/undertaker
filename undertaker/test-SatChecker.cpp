@@ -32,15 +32,15 @@
 
 
 int cnf_test(std::string s, bool result, std::runtime_error *error = nullptr) {
-    SatChecker checker(s);
+    SatChecker checker;
 
     if (error == nullptr)  {
-        fail_unless(checker() == result, "%s should evaluate to %d",
+        fail_unless(checker(s) == result, "%s should evaluate to %d",
                     s.c_str(), (int) result);
         return 0;
     } else {
         try {
-            fail_unless(checker() == result, "%s should evaluate to %d",
+            fail_unless(checker(s) == result, "%s should evaluate to %d",
                         s.c_str(), (int) result);
             return 0;
         } catch (std::runtime_error &e) {

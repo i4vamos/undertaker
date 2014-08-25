@@ -48,9 +48,8 @@ PicosatCNF::PicosatCNF(const PicosatCNF &cnf, Picosat::SATMode defaultPhase) : P
 }
 
 PicosatCNF::~PicosatCNF() {
-    if (this == currentContext) {
+    if (this == currentContext)
         currentContext = nullptr;
-    }
 }
 
 void PicosatCNF::readFromFile(const std::string &filename) {
@@ -102,7 +101,7 @@ void PicosatCNF::readFromStream(std::istream &i) {
             clauses.reserve(4*clausecount);
             int val;
             while(i >> val)
-                clauses.push_back(val);
+                clauses.emplace_back(val);
         } else {
             Logging::error("Line not starting with c or p.");
             throw IOException("parse error while reading CNF file");
@@ -158,6 +157,72 @@ void PicosatCNF::toStream(std::ostream &out) const {
     }
 }
 
+// this method transfers the the state from other to 'this'
+void PicosatCNF::incrementWith(const PicosatCNF &other) {
+    for (const auto &entry : other.getSymbolTypes())  // pair<string, kconfig_symbol_type>
+        setSymbolType(entry.first, entry.second);
+
+    for (const auto &entry : other.getMetaInformation())  // pair<string, deque<string>>
+        for (const std::string &item : entry.second)
+            addMetaValue(entry.first, item);
+
+    // add all CNFVars which aren't already contained in this and adjust variable-ids of those
+    // which are already contained in this to avoid conflicts
+    // 'inferenced' contains (positive and negative) variable-ids which have to be changed when the
+    // clauses are transfered to 'this'
+    std::map<int, int> inferenced;
+    // if 'other' has fewer variables than the current cnf-object, we have to take the maximum
+    int counter = std::max(other.getVarCount(), varcount);
+    const int oldvarcount = varcount;
+    for (const auto &entry : other.getSymbolMap()) {  // pair<string, int>
+        int cnfvar = getCNFVar(entry.first);
+        if (cnfvar) {
+            // if 'this' already has the symbol 'entry.first' we need to replace the variable-id
+            // from 'other' with the id from 'this'
+            inferenced.emplace(entry.second, cnfvar);
+            inferenced.emplace(-entry.second, -cnfvar);
+        } else if (entry.second <= oldvarcount) {
+            // if the variable from entry wasn't already mentioned but the id is smaller than
+            // varcount, we have to give it a new id to avoid conflicts
+            setCNFVar_fast(entry.first, ++counter);
+            inferenced.emplace(entry.second, counter);
+            inferenced.emplace(-entry.second, -counter);
+        } else {
+            setCNFVar_fast(entry.first, entry.second);
+        }
+    }
+    // there are variables in the model which don't have symbols but to avoid conflicts, they need
+    // a new variable
+    for (int i = 1; i <= oldvarcount; i++)
+        if (inferenced.find(i) == inferenced.end()) {
+            inferenced[i] = ++counter;
+            inferenced[-i] = -counter;
+        }
+#ifdef DEBUG
+    for (const auto &entry : inferenced) {
+//        std::cout << entry.first << " " << entry.second << std::endl;
+        if (other.getSymbolName(abs(entry.first)) != getSymbolName(abs(entry.second))) {
+            std::cout << "ERROR " << other.getSymbolName(entry.first) << " " << entry.first << " "
+                      << getSymbolName(entry.second) << " " << entry.second << std::endl;
+            std::exit(1);
+        }
+    }
+#endif
+    varcount = counter;
+    // add all clauses from 'other' to this
+    clauses.reserve(4 * (clausecount + other.getClauseCount()));
+    for (const int &i : other.getClauses()) {
+        if (i == 0) {
+            pushClause();
+            continue;
+        }
+        if (inferenced.find(i) != inferenced.end())  // abs(i) is found
+            clauses.emplace_back(inferenced[i]);
+        else
+            clauses.emplace_back(i);
+    }
+}
+
 kconfig_symbol_type PicosatCNF::getSymbolType(const std::string &name) const {
     const auto &it = this->symboltypes.find(name); // pair<string, kconfig_symbol_type>
     return (it == this->symboltypes.end()) ? K_S_UNKNOWN : it->second;
@@ -180,25 +245,27 @@ int PicosatCNF::getCNFVar(const std::string &var) const {
 }
 
 void PicosatCNF::setCNFVar(const std::string &var, int CNFVar) {
-    if (abs(CNFVar) > this->varcount) {
+    if (abs(CNFVar) > this->varcount)
         this->varcount = abs(CNFVar);
-    }
+    setCNFVar_fast(var, CNFVar);
+}
+
+void PicosatCNF::setCNFVar_fast(const std::string &var, int CNFVar) {
     this->cnfvars[var] = CNFVar;
     this->boolvars[CNFVar] = var;
 }
 
-std::string &PicosatCNF::getSymbolName(int CNFVar) {
-    return this->boolvars[CNFVar];
+const std::string PicosatCNF::getSymbolName(int CNFVar) const {
+    const auto &it = this->boolvars.find(CNFVar);
+    return it == this->boolvars.end() ? "" : it->second;
 }
 
 void PicosatCNF::pushVar(int v) {
-    if (abs(v) > this->varcount) {
+    if (abs(v) > this->varcount)
         this->varcount = abs(v);
-    }
-    if (v == 0) {
+    if (v == 0)
         this->clausecount++;
-    }
-    clauses.push_back(v);
+    clauses.emplace_back(v);
 }
 
 void PicosatCNF::pushVar(std::string &v, bool val) {
@@ -207,9 +274,9 @@ void PicosatCNF::pushVar(std::string &v, bool val) {
     this->pushVar(sign * cnfvar);
 }
 
-void PicosatCNF::pushClause(void) {
+void PicosatCNF::pushClause() {
     this->clausecount++;
-    clauses.push_back(0);
+    clauses.emplace_back(0);
 }
 
 void PicosatCNF::pushClause(int *c) {
@@ -221,7 +288,7 @@ void PicosatCNF::pushClause(int *c) {
 }
 
 void PicosatCNF::pushAssumption(int v) {
-    assumptions.push_back(v);
+    assumptions.emplace_back(v);
 }
 
 void PicosatCNF::pushAssumption(const std::string &v, bool val) {
@@ -237,23 +304,25 @@ void PicosatCNF::pushAssumption(const std::string &v, bool val) {
         this->pushAssumption(-cnfvar);
 }
 
-bool PicosatCNF::checkSatisfiable(void) {
+bool PicosatCNF::checkSatisfiable() {
     // make sure the current data is stored within picosat
     if (this != currentContext){
         // if not, reset the context....
-        if (picosatIsInitalized) {
+        if (picosatIsInitalized)
             Picosat::picosat_reset();
-        }
         Picosat::picosat_init();
         picosatIsInitalized = true;
         // and load the current context
         currentContext = this;
         Picosat::picosat_set_global_default_phase(defaultPhase);
+    }
+    if (pushed_clauses_index < clauses.size()) {
         // tell picosat how many different variables it will receive
         Picosat::picosat_adjust(varcount);
 
-        for (const int &clause : clauses)
-            Picosat::picosat_add(clause);
+        for (unsigned int i = pushed_clauses_index, e = clauses.size(); i < e; ++i)
+            Picosat::picosat_add(clauses[i]);
+        pushed_clauses_index = clauses.size();
     }
     for (const int &assumption : assumptions)
         Picosat::picosat_assume(assumption);
@@ -289,7 +358,7 @@ const std::string *PicosatCNF::getAssociatedSymbol(const std::string &var) const
     return (it == this->associatedSymbols.end()) ? nullptr : &(it->second);
 }
 
-const int *PicosatCNF::failedAssumptions(void) const {
+const int *PicosatCNF::failedAssumptions() const {
     return Picosat::picosat_failed_assumptions();
 }
 
@@ -307,7 +376,6 @@ const std::deque<std::string> *PicosatCNF::getMetaValue(const std::string &key) 
     return &(i->second);
 }
 
-int PicosatCNF::newVar(void) {
-    varcount++;
-    return varcount;
+int PicosatCNF::newVar() {
+    return ++varcount;
 }
