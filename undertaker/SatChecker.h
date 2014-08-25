@@ -44,8 +44,9 @@ class CppFile;
 /************************************************************************/
 
 class SatChecker {
+    enum class state {no, yes, module};
 public:
-    SatChecker(std::string sat, int debug = 0) : debug_flags(debug), _sat(std::move(sat)) {}
+    SatChecker(std::string sat) : _sat(std::move(sat)) {}
 
     virtual ~SatChecker() {};
 
@@ -60,20 +61,6 @@ public:
 
     static bool check(const std::string &sat);
     const std::string str() { return _sat; }
-
-    /** pretty prints the given string */
-    static std::string pprinter(const std::string sat) {
-        SatChecker c(sat);
-        return c.pprint();
-    }
-
-    /** pretty prints the saved expression */
-    std::string pprint();
-
-    enum Debug {
-        DEBUG_NONE = 0,
-        DEBUG_PARSER = 1,
-    };
 
     /**
      * \brief Representation of a variable selection
@@ -211,30 +198,8 @@ protected:
     std::unique_ptr<kconfig::PicosatCNF> _cnf;
     std::map<std::string, int> symbolTable;
     AssignmentMap assignmentTable;
-    int debug_flags;
-    std::string debug_parser;
-    int debug_parser_indent;
-
     Picosat::SATMode mode;
     const std::string _sat;
-
-    // Debugging stuff
-    void _debug_parser(std::string d = "", bool newblock = true) {
-        if (debug_flags & DEBUG_PARSER) {
-            if (d.size()) {
-                debug_parser += "\n";
-                for (int i = 0; i < debug_parser_indent; i++)
-                    debug_parser += " ";
-
-                debug_parser += d;
-                if (newblock)
-                    debug_parser_indent += 2;
-            } else {
-                debug_parser_indent -= 2;
-            }
-        }
-    }
-    enum class state {no, yes, module};
 };
 
 
@@ -244,7 +209,7 @@ protected:
 
 class BaseExpressionSatChecker : public SatChecker {
 public:
-    BaseExpressionSatChecker(std::string base_expression, int debug = 0);
+    BaseExpressionSatChecker(std::string base_expression);
 
     virtual ~BaseExpressionSatChecker() { }
     bool operator()(const std::set<std::string> &assumeSymbols);

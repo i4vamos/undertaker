@@ -224,7 +224,7 @@ bool BlockDefect::writeReportToFile(bool skip_no_kconfig) const {
             << _cb->filename() << ":" << _cb->lineStart() << ":" << _cb->colStart() << ":"
             << _cb->filename() << ":" << _cb->lineEnd() << ":" << _cb->colEnd() << ":"
             << std::endl;
-        out << SatChecker::pprinter(_formula);
+        out << _formula << std::endl;
         out.close();
     }
     return true;
@@ -330,7 +330,7 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
     }
     if (model) {
         std::set<std::string> missingSet;
-        std::string kconfig_formula = _cb->getCodeConstraints();
+        std::string kconfig_formula;
         model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
                            kconfig_formula);
         formula.push_back(kconfig_formula);
@@ -408,7 +408,7 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
 
     if (model) {
         std::set<std::string> missingSet;
-        std::string kconfig_formula = _cb->getCodeConstraints();
+        std::string kconfig_formula;
         model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
                            kconfig_formula);
         formula.push_back(kconfig_formula);

@@ -100,7 +100,7 @@ START_TEST(format_config_items_module_not_valid_in_kconfig) {
 } END_TEST
 
 START_TEST(test_base_expression) {
-    BaseExpressionSatChecker sat("X && Y  && !Z",0);
+    BaseExpressionSatChecker sat("X && Y  && !Z");
     std::set<std::string> a1;
     a1.insert("X");
     fail_if(!sat(a1));

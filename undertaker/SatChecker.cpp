@@ -103,19 +103,6 @@ bool SatChecker::operator()(Picosat::SATMode mode) {
     return res;
 }
 
-std::string SatChecker::pprint() {
-    if (debug_parser.size() == 0) {
-        int old_debug_flags = debug_flags;
-        debug_flags |= DEBUG_PARSER;
-        (*this)();
-        debug_flags = old_debug_flags;
-    }
-    if (debug_parser.size() > 0)
-        return _sat + "\n\n" + debug_parser + "\n";
-    else
-        return _sat + "\n";
-}
-
 /************************************************************************/
 /* Satchecker::AssignmentMap                                            */
 /************************************************************************/
@@ -527,8 +514,8 @@ bool BaseExpressionSatChecker::operator()(const std::set<std::string> &assumeSym
     return res;
 }
 
-BaseExpressionSatChecker::BaseExpressionSatChecker(std::string base_expression, int debug)
-        : SatChecker(base_expression, debug) {
+BaseExpressionSatChecker::BaseExpressionSatChecker(std::string base_expression)
+        : SatChecker(base_expression) {
     _cnf = getCnfWithModelInit(base_expression, Picosat::SAT_MAX, &base_expression);
     CNFBuilder builder(_cnf.get(), base_expression, true, CNFBuilder::ConstantPolicy::BOUND);
 }
