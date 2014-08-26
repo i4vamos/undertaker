@@ -108,15 +108,17 @@ int RsfConfigurationModel::doIntersect(const std::set<std::string> start_items,
         for (const std::string &str : *always_on)
             interesting.insert(str);
     }
-    if (always_off) {
-        for (const std::string &str : *always_off)
-            interesting.insert(str);
-    }
-    // for all symbols in 'interesting', retrieve the formula from the model and push it into sj
+    // For all symbols in 'interesting', retrieve the formula from the model and push it into sj.
     for (const std::string &str : interesting) {
         const std::string *item = _model->getValue(str);
         if(item != nullptr && *item != "")
             sj.push_back("(" + str + " -> (" + *item + "))");
+    }
+    if (always_off) {
+        // There is no point in adding the formulae of always_off items into sj, since we push the
+        // negated always_off symbol into sj, false -> {true,false}
+        for (const std::string &str : *always_off)
+            interesting.insert(str);
     }
     // add all items from interesting into 'sj' if they are in the model && in ALWAYS_{ON,OFF}
     // and if they are not in the model, check if they could be missing
