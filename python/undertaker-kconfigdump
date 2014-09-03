@@ -394,11 +394,16 @@ fi
 
 if [ "$CALC_FM" = "yes" ]; then
     for i in $(all_linux_archs); do
-        if [ "$i" = "um" ] && [ -r arch/um/Kconfig.um ]; then
-            ARCH=$i undertaker-kconfigpp arch/$i/Kconfig.um > $MODELS/$i.fm
-        else
-            ARCH=$i undertaker-kconfigpp arch/$i/Kconfig > $MODELS/$i.fm
+        ARCHSTR=$i
+        KCONFIG=Kconfig
+        if [ "$i" = "um" ]; then
+            if [ -r arch/x86/um/Kconfig ]; then
+                ARCHSTR=x86/um
+            else
+                KCONFIG=Kconfig.x86
+            fi
         fi
+        ARCH=$i undertaker-kconfigpp arch/$ARCHSTR/$KCONFIG > $MODELS/$i.fm
     done
     exit 0
 fi
