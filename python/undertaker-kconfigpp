@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-#
-#  undertaker-kconfigpp - preprocess 'source' directives in Kconfig files
-#
+
+"""undertaker-kconfigpp - preprocess 'source' directives in Kconfig files"""
+
 # Copyright (C) 2012 Ralf Hackner <rh@ralf-hackner.de>
 # Copyright (C) 2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # The purpose of this script is to have a complex Kconfig tree
 # strucuture, such as commonly found in Linux flattened to a single
@@ -22,19 +23,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
+import os
 import sys
-import os.path
-import logging
 
-from os.path import join, dirname
+sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib', 'python%d.%d' % \
+               (sys.version_info[0], sys.version_info[1]), 'site-packages')] + sys.path
+
+import vamos.tools as tools
+
+import re
+import logging
 from optparse import OptionParser
 
-sys.path = [join(dirname(sys.path[0]), 'lib', 'python%d.%d' % \
-                     (sys.version_info[0], sys.version_info[1]), 'site-packages')] \
-                     + sys.path
-
-from vamos.tools import setup_logging
 
 env_regex    = re.compile(r'"[^$]*\$([\w]+)[^"]*"')
 source_regex = re.compile(r"^\s*source\s+\"?([\w/\$\.\-]+)\"?")
@@ -77,21 +77,20 @@ def ppFile(filename):
 
 
 if __name__ == '__main__':
-    parser = OptionParser(usage="%prog [options] <filename>", description="""\
-preprocess 'source' directives in Kconfig files.
-
-The purpose of this script is to have a complex Kconfig tree
-structure, such as commonly found in Linux flattened to a single
-file, which helps writing test-cases and similar.
-""")
+    parser = OptionParser(usage="%prog [options] <filename>\n\n"
+                "preprocess 'source' directives in Kconfig files.\n"
+                "The purpose of this script is to have a complex Kconfig tree\n"
+                "structure, such as commonly found in Linux flattened to a single\n"
+                "file, which helps writing test-cases and similar.")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
+
     (opts, args) = parser.parse_args()
 
-    setup_logging(opts.verbose)
+    tools.setup_logging(opts.verbose)
 
     if len(args) < 1:
-        logging.error("usage: kconfigpp file (%d params given)", (len(args)))
+        logging.error("usage: kconfigpp file (%d params given)", len(args))
         parser.print_help()
         sys.exit(1)
 

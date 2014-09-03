@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-#
-#   busyfix - normalizes the '#if ENABLE', 'IF' and 'IF_NOT' statements in  Busybox source files
-#
+
+"""busyfix - normalizes the '#if ENABLE', 'IF' and 'IF_NOT' statements in  Busybox source files"""
+
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,19 +19,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-
+import os
 import logging
-
-from os.path import join, dirname
 
 from optparse import OptionParser
 
-sys.path = [join(dirname(sys.path[0]), 'lib', 'python%d.%d' % \
-                     (sys.version_info[0], sys.version_info[1]), 'site-packages')] \
-                     + sys.path
+sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib', 'python%d.%d' % \
+               (sys.version_info[0], sys.version_info[1]), 'site-packages')] + sys.path
 
-from vamos.tools import setup_logging, calculate_worklist
-from vamos.busyfix.normalizer import normalize_file
+import vamos.tools as tools
+import vamos.busyfix.normalizer as normalizer
 
 def main():
     parser = OptionParser(usage="%prog [options] <filename>")
@@ -43,13 +41,13 @@ def main():
 
     (opts, args) = parser.parse_args()
 
-    setup_logging(opts.verbose)
+    tools.setup_logging(opts.verbose)
 
-    worklist = calculate_worklist(args, opts.batch_mode)
+    worklist = tools.calculate_worklist(args, opts.batch_mode)
     logging.info("Working on %d files", len(worklist))
     for f in worklist:
         try:
-            lines = normalize_file(f)
+            lines = normalizer.normalize_file(f)
             if opts.inline:
                 with open(f, 'w') as fd:
                     fd.writelines(lines)

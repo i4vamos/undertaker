@@ -1,9 +1,11 @@
-# Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
-# Copyright (C) 2011 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
-# Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
 
 """vamos - common auxiliary functionality"""
 
+# Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+# Copyright (C) 2011 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -18,9 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+import os
 import logging
-import os.path
-
 from subprocess import *
 from shutil import rmtree
 

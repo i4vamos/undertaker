@@ -1,7 +1,8 @@
-#
-#   rsf2model - extracts presence implications from kconfig dumps
-#
+
+"""rsf2model - extracts presence implications from kconfig dumps"""
+
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +20,7 @@
 
 import functools
 import sys
+
 
 class UnicodeMixin(object):
     """3.0 compatible version of __str__"""

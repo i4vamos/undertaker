@@ -1,11 +1,11 @@
-#
-#   utility classes for working in source trees
-#
+
+"""utility classes for working in source trees"""
+
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Christoph Egger <siccegge@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
-# Copyright (C) 2012 Stefan Hengelein <stefan.hengelein@informatik.stud.uni-erlangen.de>
+# Copyright (C) 2012-2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from vamos.vampyr.Messages import SparseMessage, GccMessage, ClangMessage, SpatchMessage
-from vamos.vampyr.utils import ExpansionError
-from vamos.golem.kbuild import call_linux_makefile, \
-    files_for_current_configuration, guess_arch_from_filename
-from vamos.tools import execute, CommandFailed
-from vamos.model import get_model_for_arch, parse_model
+import vamos.vampyr.utils as utils
+import vamos.golem.kbuild as kbuild
+import vamos.tools as tools
+import vamos.model as Model
 from vamos.Config import Config
+from vamos.vampyr.Messages import SparseMessage, GccMessage, ClangMessage, SpatchMessage
 
 import logging
 import os.path
@@ -101,7 +100,7 @@ class BareConfiguration(Configuration):
             cmd += " " + self.framework.options['args'][compiler]
         cmd += " " + self.get_cppflags()
         cmd += " '" + on_file + "'"
-        (out, returncode) = execute(cmd, failok=True)
+        (out, returncode) = tools.execute(cmd, failok=True)
         if returncode == 127:
             raise RuntimeError(compiler + " not found on this system?")
         else:
@@ -222,13 +221,13 @@ class KbuildConfiguration(Configuration):
         self.expanded = self.save_expanded('.config')
 
         if verify:
-            modelf = get_model_for_arch(self.arch)
+            modelf = Model.get_model_for_arch(self.arch)
             if not modelf:
                 logging.error("Skipping verification as no model could be loaded")
                 return
 
             if not self.model:
-                self.model = parse_model(modelf)
+                self.model = Model.parse_model(modelf)
                 logging.info("Loaded %d items from %s", len(self.model), modelf)
 
             all_items, violators = self.verify(self.expanded)
@@ -236,7 +235,7 @@ class KbuildConfiguration(Configuration):
                 logging.warning("%d/%d mismatched items", len(violators), len(all_items))
                 for v in violators:
                     logging.info("violating item: %s", v)
-                raise ExpansionError("Config %s failed to expand properly" % self.kconfig)
+                raise utils.ExpansionError("Config %s failed to expand properly" % self.kconfig)
             else:
                 logging.info("All items are set correctly")
 
@@ -273,7 +272,7 @@ class KbuildConfiguration(Configuration):
 
         if not self.framework.options.has_key('stdconfig_files'):
             self.framework.options['stdconfig_files'] \
-                = set(files_for_current_configuration(self.arch, self.subarch))
+                = set(kbuild.files_for_current_configuration(self.arch, self.subarch))
 
     def verify(self, expanded_config='.config'):
         """
@@ -324,7 +323,7 @@ class KbuildConfiguration(Configuration):
             cmd = None
             (messages, statuscode) = \
                 self.call_makefile(on_object, failok=False, extra_variables=extra_args)
-        except CommandFailed as e:
+        except tools.CommandFailed as e:
             statuscode, cmd, messages = e.returncode, e.command, e.stdout
 
         state = None
@@ -479,7 +478,7 @@ class LinuxPartialConfiguration(LinuxConfiguration):
         if arch and subarch:
             self.arch, self.subarch = arch, subarch
         else:
-            self.arch, self.subarch = guess_arch_from_filename(filename)
+            self.arch, self.subarch = kbuild.guess_arch_from_filename(filename)
 
     def write_config_h(self, dummy):
         pass
@@ -490,9 +489,9 @@ class LinuxPartialConfiguration(LinuxConfiguration):
     def call_makefile(self, target, extra_variables="", extra_env="", failok=False):
         # do not use the architecture set from framework, but the possibly
         # overriden one from the configuration. (i.e., handle subarch changes gracefully)
-        return call_linux_makefile(target, extra_variables=extra_variables,
-                                   arch=self.arch, subarch=self.subarch,
-                                   failok=failok)
+        return kbuild.call_linux_makefile(target, extra_variables=extra_variables,
+                                          arch=self.arch, subarch=self.subarch,
+                                          failok=failok)
 
 
 class LinuxStdConfiguration(LinuxConfiguration):

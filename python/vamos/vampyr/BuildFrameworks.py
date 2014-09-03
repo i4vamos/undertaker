@@ -1,12 +1,12 @@
-#
-#   BuildFrameworks - utility classes for working in source trees
-#
+
+"""BuildFrameworks - utility classes for working in source trees"""
+
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Christoph Egger <siccegge@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Valentin Rothberg <valentinrothberg@googlemail.com>
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
-# Copyright (C) 2012 Stefan Hengelein <stefan.hengelein@informatik.stud.uni-erlangen.de>
+# Copyright (C) 2012-2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,21 +22,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import vamos
-
-from vamos.vampyr.Configuration \
-    import BareConfiguration, \
-    LinuxConfiguration, LinuxStdConfiguration, LinuxPartialConfiguration, \
-    BusyboxConfiguration, BusyboxStdConfiguration, BusyboxPartialConfiguration, \
-    CorebootConfiguration, CorebootStdConfiguration, CorebootPartialConfiguration
-from vamos.vampyr.utils import find_configurations, \
-    get_conditional_blocks, get_block_to_linum_map
-from vamos.golem.kbuild import apply_configuration, file_in_current_configuration, \
-    guess_subarch_from_arch, \
-    call_linux_makefile, find_autoconf, get_linux_version, NotALinuxTree, \
-    call_makefile_generic, NotABusyboxTree, get_busybox_version, \
-    NotACorebootTree, get_coreboot_version, coreboot_get_config_for
-from vamos.tools import execute
-from vamos.model import parse_model, get_model_for_arch
+import vamos.vampyr.Configuration as Configuration
+import vamos.vampyr.utils as utils
+import vamos.golem.kbuild as kbuild
+import vamos.tools as tools
+import vamos.model as Model
 
 import os.path
 import logging
@@ -99,7 +89,7 @@ class BuildFramework:
         return list()
 
     def find_autoconf(self):
-        return find_autoconf()
+        return kbuild.find_autoconf()
 
     def calculate_configurations(self, filename):
         """Calculate configurations for the given file
@@ -127,7 +117,7 @@ class BuildFramework:
                 cmd += " " + self.options['args']['undertaker']
 
         cmd += " '%s'" % filename.replace("'", "\\'")
-        (output, statuscode) = execute(cmd, failok=True)
+        (output, statuscode) = tools.execute(cmd, failok=True)
         if statuscode != 0 or any([l.startswith("E:") for l in output]):
             logging.error("Running undertaker failed: %s", cmd)
             print "--"
@@ -147,6 +137,7 @@ class BuildFramework:
         raise NotImplementedError
 
     def analyze_configuration_coverage(self, filename):
+        #pylint: disable=R0912
         """
         Analyzes the given file 'filename' for its configuration coverage.
 
@@ -182,9 +173,9 @@ class BuildFramework:
             'lines': {},
             'blocks': {},
             'blocks_total':
-                set(get_conditional_blocks(filename, all_cpp_blocks=True)),
+                set(utils.get_conditional_blocks(filename, all_cpp_blocks=True)),
             'configuration_blocks':
-                set(get_conditional_blocks(filename, all_cpp_blocks=False)),
+                set(utils.get_conditional_blocks(filename, all_cpp_blocks=False)),
             }
 
         covered_blocks = set()
@@ -193,7 +184,7 @@ class BuildFramework:
             config_h = self.options['configfile']
             logging.info("Analyzing Configuration %s", config_h)
             covered_blocks = return_dict['blocks'][config_h] = \
-                set(get_conditional_blocks(filename, config_h, all_cpp_blocks=True))
+                set(utils.get_conditional_blocks(filename, config_h, all_cpp_blocks=True))
         else:
             if self.options.has_key('configurations'):
                 if not isinstance(self.options["configurations"], set):
@@ -206,9 +197,8 @@ class BuildFramework:
                     cfgfile = config_obj.kconfig
                     return_dict['all_configs'].append(cfgfile)
                     config_obj.switch_to()
-                    if file_in_current_configuration(filename,
-                                                     config_obj.arch,
-                                                     config_obj.subarch) != "n":
+                    if kbuild.file_in_current_configuration(filename, config_obj.arch,
+                                                           config_obj.subarch) != "n":
                         logging.info("Configuration '%s' is actually compiled", cfgfile)
                         configs.append(config_obj)
                     else:
@@ -217,7 +207,7 @@ class BuildFramework:
             else:
                 configs = self.calculate_configurations(filename)
                 logging.info("%s: found %d configurations", filename, len(configs))
-                return_dict['all_configs'] = find_configurations(filename)
+                return_dict['all_configs'] = utils.find_configurations(filename)
 
             return_dict['all_config_count'] = len(return_dict['all_configs'])
             return_dict['expandable_configs'] = len(configs)
@@ -228,7 +218,7 @@ class BuildFramework:
                     autoconf_h=config.get_config_h()
                     old_len = len(covered_blocks)
                     return_dict['blocks'][config.kconfig] = \
-                        set(get_conditional_blocks(filename, autoconf_h,
+                        set(utils.get_conditional_blocks(filename, autoconf_h,
                                                    all_cpp_blocks=True))
                     covered_blocks |= return_dict['blocks'][config.kconfig]
 
@@ -241,7 +231,7 @@ class BuildFramework:
         return_dict['blocks_covered']   = covered_blocks
         return_dict['blocks_uncovered'] = return_dict['blocks_total'] - covered_blocks
 
-        linum_map = get_block_to_linum_map(filename, all_cpp_blocks=True)
+        linum_map = utils.get_block_to_linum_map(filename, all_cpp_blocks=True)
         if len(linum_map) == 0:
             raise EmptyLinumMapException("linum_map contains no elements")
         return_dict['linum_map'] = linum_map
@@ -272,7 +262,7 @@ class BareBuildFramework(BuildFramework):
         return "bare"
 
     def make_configuration(self, basename, nth):
-        return BareConfiguration(self, basename, nth)
+        return Configuration.BareConfiguration(self, basename, nth)
 
     def make_partial_configuration(self, filename):
         raise RuntimeError("BareBuildFramework does not create partial configurations")
@@ -283,7 +273,7 @@ class BareBuildFramework(BuildFramework):
 
     def verify_configurations(self, filename):
         configs = list()
-        for cfgfile in find_configurations(filename):
+        for cfgfile in utils.find_configurations(filename):
             # here, we rely on the fact that find_configurations returns filenames such as
             # 'kernel/sched.c.config42' (i.e., filenames end on the number)
             assert '.config' in cfgfile
@@ -305,7 +295,7 @@ class KbuildBuildFramework(BuildFramework):
         self.always_on_items = set()
         self.always_off_items = set()
         if self.options.has_key("model") and self.options['model']:
-            m = parse_model(self.options['model'])
+            m = Model.parse_model(self.options['model'])
             self.always_on_items = m.always_on_items
             self.always_off_items = m.always_off_items
 
@@ -325,7 +315,7 @@ class KbuildBuildFramework(BuildFramework):
         raise NotImplementedError
 
     def file_in_current_configuration(self, filename):
-        return file_in_current_configuration(filename, arch=self.options['arch'])
+        return kbuild.file_in_current_configuration(filename, arch=self.options['arch'])
 
     def apply_configuration(self):
         """
@@ -338,7 +328,7 @@ class KbuildBuildFramework(BuildFramework):
         deletes various autoconf.h files
         returns a list of deleted files
         """
-        (files, _) = execute("find include -name autoconf.h -print -delete",
+        (files, _) = tools.execute("find include -name autoconf.h -print -delete",
                              failok=False)
         return files
 
@@ -346,7 +336,7 @@ class KbuildBuildFramework(BuildFramework):
         logging.info("Testing which configurations are actually being compiled for '%s'",
                      filename)
         configs = list()
-        for cfgfile in find_configurations(filename):
+        for cfgfile in utils.find_configurations(filename):
             # here, we rely on the fact that find_configurations returns filenames such as
             # 'kernel/sched.c.config42' (i.e., filenames end on the number)
             assert '.config' in cfgfile
@@ -421,7 +411,7 @@ class KbuildBuildFramework(BuildFramework):
 
         if self.file_in_current_configuration(filename) != 'n':
             return_dict['blocks_allyesconfig'] = set(["B00"]) | \
-                set(get_conditional_blocks(filename, autoconf_h, all_cpp_blocks=True))
+                set(utils.get_conditional_blocks(filename, autoconf_h, all_cpp_blocks=True))
         else:
             return_dict['blocks_allyesconfig'] = set()
 
@@ -454,7 +444,7 @@ class KbuildBuildFramework(BuildFramework):
             del_cmds.append("/^%s=/d" % item)
         if len(del_cmds) > 0:
             sed_commands = ";".join(del_cmds)
-            execute("sed '%s' .config > allno.config" % sed_commands)
+            tools.execute("sed '%s' .config > allno.config" % sed_commands)
             self.call_makefile("allnoconfig")
 
         del_cmds = list()
@@ -463,7 +453,7 @@ class KbuildBuildFramework(BuildFramework):
             del_cmds.append("/^%s=/d" % item)
         if len(del_cmds) > 0:
             sed_commands = ";".join(del_cmds)
-            execute("sed '%s' .config > allyes.config" % sed_commands)
+            tools.execute("sed '%s' .config > allyes.config" % sed_commands)
             self.call_makefile("allyesconfig")
         else:
             self.call_makefile("silentoldconfig")
@@ -482,35 +472,36 @@ class LinuxBuildFramework(KbuildBuildFramework):
         if not options.has_key('arch'):
             self.options['arch'] = vamos.default_architecture
         if not options.has_key('subarch'):
-            self.options['subarch'] = guess_subarch_from_arch(self.options['arch'])
-        self.options['model'] = get_model_for_arch(self.options['arch'])
+            self.options['subarch'] = kbuild.guess_subarch_from_arch(self.options['arch'])
+        self.options['model'] = Model.get_model_for_arch(self.options['arch'])
         KbuildBuildFramework.__init__(self, self.options)
         logging.info("Instantiating LinuxBuildFramework (%s/%s)",
                      self.options['arch'], self.options['subarch'])
 
     def make_configuration(self, basename, nth):
-        return LinuxConfiguration(self, basename, nth)
+        return Configuration.LinuxConfiguration(self, basename, nth)
 
     def make_partial_configuration(self, filename):
-        return LinuxPartialConfiguration(self, filename)
+        return Configuration.LinuxPartialConfiguration(self, filename)
 
     def apply_configuration(self):
         """
         Ensures that a newly set configuration is active.
         """
         try:
-            apply_configuration(arch=self.options['arch'],
+            kbuild.apply_configuration(arch=self.options['arch'],
                                 subarch=self.options['subarch'])
         except RuntimeError as e:
             logging.error("Expanding configuration failed: %s", e.message)
 
     def make_std_configuration(self, basename):
-        return LinuxStdConfiguration(self, basename)
+        return Configuration.LinuxStdConfiguration(self, basename)
 
     def call_makefile(self, target, extra_env="", extra_variables="", failok=False):
-        return call_linux_makefile(target, extra_env=extra_env, extra_variables=extra_variables,
-                                   arch=self.options['arch'], subarch=self.options['subarch'],
-                                   failok=failok)
+        return kbuild.call_linux_makefile(target, extra_env=extra_env, failok=failok,
+                                          extra_variables=extra_variables,
+                                          arch=self.options['arch'],
+                                          subarch=self.options['subarch'])
 
 
 class BusyboxBuildFramework(KbuildBuildFramework):
@@ -531,17 +522,17 @@ class BusyboxBuildFramework(KbuildBuildFramework):
             self.options['expansion_strategy'] = 'allyesconfig'
         self.options['arch'] = 'busybox'
         self.options['subarch'] = 'busybox'
-        self.options['model'] = get_model_for_arch('busybox')
+        self.options['model'] = Model.get_model_for_arch('busybox')
         KbuildBuildFramework.__init__(self, self.options)
 
     def make_configuration(self, basename, nth):
-        return BusyboxConfiguration(self, basename, nth)
+        return Configuration.BusyboxConfiguration(self, basename, nth)
 
     def make_partial_configuration(self, filename):
-        return BusyboxPartialConfiguration(self, filename)
+        return Configuration.BusyboxPartialConfiguration(self, filename)
 
     def make_std_configuration(self, basename):
-        return BusyboxStdConfiguration(self, basename)
+        return Configuration.BusyboxStdConfiguration(self, basename)
 
     def apply_configuration(self):
         """
@@ -562,9 +553,8 @@ class BusyboxBuildFramework(KbuildBuildFramework):
         self.apply_black_white_lists(ignoreset)
 
     def call_makefile(self, target, extra_env="", extra_variables="", failok=False):
-        return call_makefile_generic(target, extra_env=extra_env,
-                                     extra_variables=extra_variables,
-                                     failok=failok)
+        return kbuild.call_makefile_generic(target, extra_env=extra_env,
+                                            extra_variables=extra_variables, failok=failok)
 
 
 class CorebootBuildFramework(KbuildBuildFramework):
@@ -577,7 +567,7 @@ class CorebootBuildFramework(KbuildBuildFramework):
             self.options=dict()
         self.options['arch'] = 'coreboot'
 
-        self.options['model'] = get_model_for_arch('coreboot')
+        self.options['model'] = Model.get_model_for_arch('coreboot')
         if not self.options['model']:
             raise RuntimeError('No model existing! Please run \
                     undertaker-kconfigdump first')
@@ -593,13 +583,13 @@ class CorebootBuildFramework(KbuildBuildFramework):
         KbuildBuildFramework.__init__(self, options)
 
     def make_configuration(self, basename, nth):
-        return CorebootConfiguration(self, basename, nth)
+        return Configuration.CorebootConfiguration(self, basename, nth)
 
     def make_partial_configuration(self, filename):
-        return CorebootPartialConfiguration(self, filename)
+        return Configuration.CorebootPartialConfiguration(self, filename)
 
     def make_std_configuration(self, basename):
-        return CorebootStdConfiguration(self, basename)
+        return Configuration.CorebootStdConfiguration(self, basename)
 
     def apply_configuration(self):
         """
@@ -607,7 +597,7 @@ class CorebootBuildFramework(KbuildBuildFramework):
 
         """
         logging.debug("Applying config for %s" ,self.options["subarch"])
-        coreboot_get_config_for(self.options['subarch'])
+        kbuild.coreboot_get_config_for(self.options['subarch'])
 
         ignoreset = ("CONFIG_CHOICE_",)
 
@@ -618,7 +608,7 @@ class CorebootBuildFramework(KbuildBuildFramework):
         deletes various autoconf.h files
         returns a list of deleted files
         """
-        (files, _) = execute("find build -name config.h -print -delete",
+        (files, _) = tools.execute("find build -name config.h -print -delete",
                              failok=False)
         return files
 
@@ -629,8 +619,8 @@ class CorebootBuildFramework(KbuildBuildFramework):
             return ""
 
     def call_makefile(self, target, extra_env="", extra_variables="", failok=False):
-        return call_makefile_generic(target, extra_env=extra_env,
-                                     extra_variables=extra_variables, failok=failok)
+        return kbuild.call_makefile_generic(target, extra_env=extra_env,
+                                            extra_variables=extra_variables, failok=failok)
 
 
 def select_framework(identifier, options):
@@ -644,21 +634,21 @@ def select_framework(identifier, options):
         identifier='bare'
         try:
             logging.info("Detected Linux version %s, selecting kbuild framework",
-                         get_linux_version())
+                         kbuild.get_linux_version())
             identifier='linux'
-        except NotALinuxTree:
+        except kbuild.NotALinuxTree:
             pass
         try:
             logging.info("Detected Busybox version %s; selecting busybox framework",
-                         get_busybox_version())
+                         kbuild.get_busybox_version())
             identifier='busybox'
-        except NotABusyboxTree:
+        except kbuild.NotABusyboxTree:
             pass
         try:
             logging.info("Detected Coreboot version %s; selecting Coreboot framework",
-                         get_coreboot_version())
+                         kbuild.get_coreboot_version())
             identifier='coreboot'
-        except NotACorebootTree:
+        except kbuild.NotACorebootTree:
             pass
 
     if not options.has_key('arch') and os.environ.has_key('ARCH'):
@@ -667,7 +657,7 @@ def select_framework(identifier, options):
         if os.environ.has_key('SUBARCH'):
             options['subarch'] = os.environ['SUBARCH']
         else:
-            options['subarch'] = guess_subarch_from_arch(options['arch'])
+            options['subarch'] = kbuild.guess_subarch_from_arch(options['arch'])
 
     if options.has_key('arch') and (identifier == 'linux' or identifier == 'kbuild'):
         if options['arch'] == "x86_64":

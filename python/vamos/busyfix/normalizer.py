@@ -1,9 +1,9 @@
-#!/usr/bin/env python
-#
-# busyfix - normalize the '#if ENABLE', 'IF' and 'IF_NOT' statements
-#
+
+"""busyfix - normalize the '#if ENABLE', 'IF' and 'IF_NOT' statements"""
+
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
 # Copyright (C) 2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,7 @@
 import re
 import logging
 
-# global variable for usage in normalize_IF only
-# count open brackets
+# global variable for usage in normalize_IF only count open brackets
 open_brackets = 0
 
 def normalize_ENABLE_inline(line):
@@ -97,7 +96,7 @@ def normalize_IF(line):
     for example:
     'long IF_NOT_LONG_ENOUGH(long int) beta = 0;'
     is replaced by
-    'long 
+    'long
     #if !defined CONFIG_LONG_ENOUGH
     long int
     #endif
@@ -235,11 +234,7 @@ def substitute_line_continuation(infile):
     return retour
 
 def normalize_file(infile):
-    """
-    normalizes each line in infile.
-
-    returns an array of lines
-    """
+    """ normalizes each line in infile. returns an array of lines """
     # pylint: disable=W0702
 
     global open_brackets

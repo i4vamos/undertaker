@@ -1,8 +1,9 @@
-#
-#   golem - analyzes feature dependencies in Linux makefiles
-#
+
+"""golem - analyzes feature dependencies in Linux makefiles"""
+
 # Copyright (C) 2011-2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,9 +22,7 @@
 import logging
 
 class FileSet:
-    """
-    A FileSet is a list of files and directories, compiled by a given selection.
-    """
+    """ A FileSet is a list of files and directories, compiled by a given selection. """
 
     def __init__(self, atoms, selection):
         self.selection = selection
@@ -35,9 +34,9 @@ class FileSet:
             self.var_impl = set()
             self.pov = set()
             return
+
     def compare_to_base(self, other):
-        """
-        Compare the filesets to a other selection.
+        """ Compare the filesets to a other selection.
 
         @return ((f_added, f_deleted), (d_added, d_deleted))
         """
@@ -48,6 +47,7 @@ class FileSet:
         pov_deleted = other.pov - self.pov
 
         return ((var_impl_added, var_impl_deleted), (pov_added, pov_deleted))
+
 
 class FileSetCache(dict):
     def __init__(self, atoms):
@@ -62,5 +62,3 @@ class FileSetCache(dict):
             # logging.info("HIT " + str(sys.getsizeof(self)) + " " + str(len(self)))
             self[selection][1] += 1
         return self[selection][0]
-
-

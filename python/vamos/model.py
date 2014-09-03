@@ -1,8 +1,9 @@
-#
-#   vamos - common auxiliary functionality
-#
+
+"""vamos - common auxiliary model related functionality"""
+
 # Copyright (C) 2011-2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from vamos.rsf2model.RsfReader import RsfReader
 
 import logging
 import re
-import os.path
+import os
 
 
 def get_model_for_arch(arch):
@@ -30,7 +30,6 @@ def get_model_for_arch(arch):
     Returns an cnf or rsf model for the given architecture
     Return 'None' if no model is found.
     """
-
     for p in ("models/%s.cnf", "models/%s.model"):
         if os.path.exists(p % arch):
             return p % arch
@@ -193,11 +192,10 @@ class CnfModel(dict):
             self.parse(fd)
 
     def parse(self, fd):
+        sym_regexp = re.compile(r"^c sym (.+) (\d)$")
+        meta_regexp = re.compile(r"^c meta_value ([^\s]+)\s+(.+)$")
+
         for line in fd.readlines():
-
-            sym_regexp = re.compile(r"^c sym (.+) (\d)$")
-            meta_regexp = re.compile(r"^c meta_value ([^\s]+)\s+(.+)$")
-
             m = sym_regexp.match(line)
             if m:
                 sym = 'CONFIG_' + m.group(1)
@@ -216,8 +214,6 @@ class CnfModel(dict):
                     self.always_on_items.add(m.group(2))
                 if m.group(1) == 'ALWAYS_OFF':
                     self.always_off_items.add(m.group(2))
-                continue
-
 
     def get_type(self, symbol):
         """

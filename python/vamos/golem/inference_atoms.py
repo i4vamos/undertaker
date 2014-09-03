@@ -1,7 +1,8 @@
-#
-#   vamos - fiasco interfacing
-#
+
+"""vamos - fiasco interfacing"""
+
 # Copyright (C) 2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +18,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from vamos.golem.kbuild import determine_buildsystem_variables_in_directory, \
-    files_for_selected_features, apply_configuration, guess_source_for_target, call_linux_makefile
+import vamos.golem.kbuild as kbuild
+import vamos.tools as tools
+import vamos.model as Model
 
-from vamos.tools import execute, CommandFailed
-from vamos.golem.kbuild import find_scripts_basedir
-from vamos.model import get_model_for_arch, parse_model
 from tempfile import NamedTemporaryFile
 
 import glob
@@ -31,7 +30,9 @@ import os
 import re
 import sys
 
+
 class InferenceAtoms:
+    """ Baseclass for project related information to create inferences """
     def __init__(self):
         pass
     def OP_list(self, selection):
@@ -64,6 +65,7 @@ class InferenceAtoms:
         return True
 
 class FiascoInferenceAtoms(InferenceAtoms):
+    """ Project specific information to create inferences for Fiasco """
     BSP_dict = {"arm": ["imx", "integrator", "kirkwood", "omap3", "pxa", "realview", "s3c", "sa1100",
                              "tegra2"],
                      "ppc32": ["mpc52xx", "qemu"]}
@@ -93,7 +95,7 @@ class FiascoInferenceAtoms(InferenceAtoms):
         if features.get("CONFIG_MP", None) != None:
             features["MPCORE_PHYS_BASE"] = "23"
 
-        scriptsdir = find_scripts_basedir()
+        scriptsdir = kbuild.find_scripts_basedir()
         assert(os.path.exists(os.path.join(scriptsdir, 'Makefile.list_fiasco')))
 
         fd = NamedTemporaryFile()
@@ -107,22 +109,17 @@ class FiascoInferenceAtoms(InferenceAtoms):
             { 'basedir' : scriptsdir,
               'tempfile': fd.name}
 
-        try:
-            (stdout, ret) = execute(make)
-            assert ret == 0
-            stdout = dict([tuple((x + " ").split(" ", 1)) for x in stdout])
-            if not stdout.has_key("MAKEFILE_LIST"):
-                raise CommandFailed("Makefile.list_fiasco", -1, stdout)
-            if not stdout.has_key("PREPROCESS_PARTS"):
-                raise CommandFailed("Makefile.list_fiasco", -1, stdout)
+        (stdout, ret) = tools.execute(make)
+        assert ret == 0
+        stdout = {tuple((x + " ").split(" ", 1)) for x in stdout}
+        if not stdout.has_key("MAKEFILE_LIST"):
+            raise tools.CommandFailed("Makefile.list_fiasco", -1, stdout)
+        if not stdout.has_key("PREPROCESS_PARTS"):
+            raise tools.CommandFailed("Makefile.list_fiasco", -1, stdout)
 
-            var_impl = set([x for x in stdout["PREPROCESS_PARTS"].split()
-                            if len(x) > 0])
-            var_points = set([x for x in stdout["MAKEFILE_LIST"].split()
-                              if len(x) > 0 and x != fd.name])
-            return (var_impl, var_points)
-        except:
-            raise
+        var_impl = {x for x in stdout["PREPROCESS_PARTS"].split() if len(x) > 0}
+        var_points = {x for x in stdout["MAKEFILE_LIST"].split() if len(x) > 0 and x != fd.name}
+        return (var_impl, var_points)
 
     def OP_features_in_pov(self, point_of_variability):
         ret = set()
@@ -182,6 +179,7 @@ class FiascoInferenceAtoms(InferenceAtoms):
 
 
 class LinuxInferenceAtoms(InferenceAtoms):
+    """ Project specific information to create inferences for Linux """
     def __init__(self, arch, subarch, directory_prefix = ""):
         InferenceAtoms.__init__(self)
         self.arch = arch
@@ -189,27 +187,27 @@ class LinuxInferenceAtoms(InferenceAtoms):
         self.directory_prefix = directory_prefix
 
         if arch:
-            modelfile = get_model_for_arch(arch)
+            modelfile = Model.get_model_for_arch(arch)
         else:
             modelfile = None
 
         if modelfile:
             logging.info("loading model %s", modelfile)
-            self.model = parse_model(modelfile)
+            self.model = Model.parse_model(modelfile)
         else:
             sys.exit("No model for '%s' found, please generate models using undertaker-kconfigdump" \
                     % arch)
 
-        call_linux_makefile('allnoconfig', arch=self.arch, subarch=self.subarch)
-        apply_configuration(arch=self.arch, subarch=self.subarch)
+        kbuild.call_linux_makefile('allnoconfig', arch=self.arch, subarch=self.subarch)
+        kbuild.apply_configuration(arch=self.arch, subarch=self.subarch)
 
     def OP_list(self, selection):
         features = selection.to_dict()
-        (files, dirs) = files_for_selected_features(features, self.arch, self.subarch)
+        (files, dirs) = kbuild.files_for_selected_features(features, self.arch, self.subarch)
         return (files, dirs)
 
     def OP_features_in_pov(self, point_of_variability):
-        variables = determine_buildsystem_variables_in_directory(point_of_variability)
+        variables = kbuild.determine_buildsystem_variables_in_directory(point_of_variability)
         return [[x] for x in variables]
 
     def OP_default_value_of_variability_intention(self, var_int):
@@ -227,7 +225,7 @@ class LinuxInferenceAtoms(InferenceAtoms):
         return True
 
     def format_var_impl(self, var_impl):
-        sourcefile = guess_source_for_target(var_impl, self.arch)
+        sourcefile = kbuild.guess_source_for_target(var_impl, self.arch)
         if sourcefile:
             var_impl = re.sub('[-+:,/]', '_', sourcefile)
         else:
@@ -242,22 +240,24 @@ class LinuxInferenceAtoms(InferenceAtoms):
 
 
 class BusyboxInferenceAtoms(LinuxInferenceAtoms):
+    """ Project specific  information to create inferences for Busybox """
     def __init__(self, directory_prefix = ""):
         LinuxInferenceAtoms.__init__(self, "busybox", None)
         self.directory_prefix = directory_prefix
-        execute("make gen_build_files", failok=False)
+        tools.execute("make gen_build_files", failok=False)
 
     def OP_domain_of_variability_intention(self, var_int):
         return set(["n", "y"])
 
 class CorebootInferenceAtoms(LinuxInferenceAtoms):
+    """ Project specific information to create inferences for Coreboot """
     def __init__(self, path):
         LinuxInferenceAtoms.__init__(self, "coreboot", None)
         self.directory_prefix = path
 
     def OP_list(self, selection):
         features = selection.to_dict()
-        (files, dirs) = files_for_selected_features(features, 'coreboot')
+        (files, dirs) = kbuild.files_for_selected_features(features, 'coreboot')
         if len(selection) == 0:
             dirs.add("Makefile.inc")
         return files, dirs

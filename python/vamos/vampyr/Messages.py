@@ -1,9 +1,10 @@
-#
-#   utility classes for working in source trees
-#
+
+"""utility classes for working in source trees"""
+
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Christoph Egger <siccegge@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +23,8 @@ import re
 import logging
 import os.path
 
+
 class MessageContainer(set):
-    # pylint: disable=R0924
     def add_message(self, configuration, message):
         for msg in self:
             if msg == message:

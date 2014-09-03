@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-#
-#   vampyr - extracts presence implications from kconfig dumps
-#
+
+"""vampyr - extracts presence implications from kconfig dumps"""
+
 # Copyright (C) 2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +19,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from vamos.tools import execute, CommandFailed
+import vamos.tools as tools
 
 import glob
 import logging
 import os
 import re
+
 
 class ExpansionError(RuntimeError):
     """ Base class of all sort of Expansion errors """
@@ -72,7 +74,7 @@ def get_conditional_blocks(filename, autoconf_h=None, all_cpp_blocks=False,
         cmd = '%s | cpp -include %s' % (normalizer, autoconf_h)
     else:
         cmd = normalizer
-    (stdout, rc) = execute(cmd, echo=True, failok=True)
+    (stdout, rc) = tools.execute(cmd, echo=True, failok=True)
 
     blocks = [x for x in stdout if len(x) != 0 and x.startswith("B")]
     # With never versions of zizler line numbers for each block are
@@ -84,7 +86,7 @@ def get_conditional_blocks(filename, autoconf_h=None, all_cpp_blocks=False,
     if rc != 0:
         logging.warning("'%s' signals exitcode: %d", cmd, rc)
         if rc == 127:
-            raise CommandFailed(cmd, 127, stdout)
+            raise tools.CommandFailed(cmd, 127, stdout)
     return blocks
 
 
@@ -128,7 +130,7 @@ def get_loc_coverage(filename, autoconf_h=None):
     if autoconf_h and os.path.exists(autoconf_h):
         cmd += ' | cpp -include %s' % autoconf_h
 
-    (lines, _) = execute(cmd, echo=True, failok=True)
+    (lines, _) = tools.execute(cmd, echo=True, failok=True)
     # we ignore the exitcode here as we are not interested in failing
     # for #error directives and similar.
     return len(lines)

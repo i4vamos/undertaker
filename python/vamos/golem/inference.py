@@ -1,8 +1,9 @@
-#
-#   golem - analyzes feature dependencies in Linux makefiles
-#
+
+"""golem - analyzes feature dependencies in Linux makefiles"""
+
 # Copyright (C) 2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from vamos.selection import Selection
+from vamos.tools import get_online_processors
+from vamos.golem.FileSet import FileSetCache
+from vamos.golem.inference_atoms import *
+
 import logging
 import os
 import copy
@@ -26,18 +32,9 @@ import threading
 import thread
 import time
 
-from vamos.selection import Selection
-from vamos.tools import get_online_processors
-from vamos.golem.FileSet import FileSetCache
-from vamos.golem.inference_atoms import *
-
 
 def objects_in_dir(directory):
-    """
-    Returns object files and subdirectories in a specific directory
-
-    @return tuple(set(object_files), set(subdirectories))
-    """
+    """ Returns a tuple of object files and subdirectories in a specific directory """
 
     ret = (set(), set())
 

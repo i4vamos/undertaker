@@ -1,7 +1,8 @@
-#
-#   rsf2model - extracts presence implications from kconfig dumps
-#
+
+"""rsf2model - extracts presence implications from kconfig dumps"""
+
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +18,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import shlex
 from vamos.rsf2model.BoolRewriter import BoolRewriter
 from vamos.rsf2model.helper import BoolParserException
 from vamos.rsf2model import tools
+
+import shlex
+
 
 class RsfReader:
     def __init__(self, fd):
@@ -273,4 +276,3 @@ class ChoiceMeta(Option):
     def dependency(self, eval_to_module = True):
         return "((%s && !%s_MODULE) || (!%s && %s_MODULE))" % \
                tuple([self.choice.name] * 4)
-

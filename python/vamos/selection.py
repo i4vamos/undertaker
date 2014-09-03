@@ -1,8 +1,9 @@
-#
-#   vamos - common auxiliary functionality
-#
+
+"""vamos - common auxiliary functionality"""
+
 # Copyright (C) 2011-2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@
 
 import copy
 
+
 def unique(seq):
     # order preserving
     noDupes = []
@@ -27,9 +29,7 @@ def unique(seq):
     return noDupes
 
 class Selection:
-    # pylint: disable=R0924
-    """A selection is a selection of symbols (derived from kconfig
-    features). """
+    """A selection is a selection of symbols (derived from kconfig features). """
 
     def __init__(self, other_selection = None):
         """A selection can be empty, or can be copied from another

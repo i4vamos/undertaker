@@ -1,4 +1,8 @@
+
+"""vamos - representation of a Configuration"""
+
 # Copyright (C) 2012 Valentin Rothberg <valentinrothberg@googlemail.com>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+
 class Config(dict):
     def __init__(self, path = None):
         dict.__init__(self)
@@ -20,9 +25,7 @@ class Config(dict):
             self.readConfigFile(path)
 
     def readConfigFile(self, path):
-        """
-        Parse the file in path and add all features contained to the config.
-        """
+        """ Parse the file in path and add all features contained to the config. """
         with open(path, 'r') as stream:
             for line in stream.readlines():
                 if line.startswith("CONFIG_"):
@@ -30,28 +33,21 @@ class Config(dict):
                     split = line.split("=")
                     key = split[0].strip()
                     value = split[1].strip()
-                    self.update({key:value})
+                    self[key] = value
 
     def valueOf(self, key):
-        """
-        Return value of key. If key is not present in the config, None is
-        returned.
-        """
+        """ Return value of key. If key is not present in the config, None is returned. """
         if key in self.keys():
             return self[key]
         else:
             return None
 
     def addFeature(self, key, value):
-        """
-        Add feature as key and value to the config.
-        """
-        self.update({key:value})
+        """ Add feature as key and value to the config. """
+        self[key] = value
 
     def contains(self, key):
-        """
-        Return true if config contains key.
-        """
+        """ Return true if config contains key. """
         return key in self.keys()
 
     def conflict(self, other):
@@ -65,9 +61,7 @@ class Config(dict):
                     return True
 
     def getConflicts(self, other):
-        """
-        Return a list of conflicting features in both configs.
-        """
+        """ Return a list of conflicting features in both configs. """
         res = []
         for key in self.keys():
             if other.contains(key):

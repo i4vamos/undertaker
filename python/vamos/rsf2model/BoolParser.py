@@ -1,7 +1,8 @@
-#
-#   rsf2model - extracts presence implications from kconfig dumps
-#
+
+"""rsf2model - extracts presence implications from kconfig dumps"""
+
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from vamos.rsf2model.helper import BoolParserException
+
 import ast
 import re
-from vamos.rsf2model.helper import BoolParserException
+
 
 class BoolParser (ast.NodeTransformer):
     AND = "and"

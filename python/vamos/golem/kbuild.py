@@ -1,11 +1,11 @@
-#
-#   golem - analyzes feature dependencies in Linux makefiles
-#
+
+"""golem - analyzes feature dependencies in Linux makefiles"""
+
 # Copyright (C) 2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Andreas Ruprecht <rupran@einserver.de>
-# Copyright (C) 2012 Stefan Hengelein <stefan.hengelein@informatik.stud.uni-erlangen.de>
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
+# Copyright (C) 2012-2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

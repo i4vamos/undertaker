@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-#
-#   vampyr - analyzes feature dependencies in Linux source files
-#
+
+"""vampyr - analyzes feature dependencies in Linux source files"""
+
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Christoph Egger <siccegge@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Valentin Rothberg <valentinrothberg@googlemail.com>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,26 +24,21 @@
 import os
 import sys
 
+sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib', 'python%d.%d' % \
+               (sys.version_info[0], sys.version_info[1]), 'site-packages')] + sys.path
+
+import vamos.tools as tools
+import vamos.vampyr.BuildFrameworks as BuildFrameworks
+import vamos.golem.kbuild as kbuild
+import vamos.vampyr.utils as utils
+from vamos.model import get_model_for_arch
+from vamos.vampyr.Messages import MessageContainer
+
 import glob
 import logging
 import pprint
 import tempfile
-
-from os.path import join, dirname
-
 from optparse import OptionParser
-
-sys.path = [join(dirname(sys.path[0]), 'lib', 'python%d.%d' % \
-                     (sys.version_info[0], sys.version_info[1]), 'site-packages')] \
-                     + sys.path
-
-from vamos.tools import setup_logging, calculate_worklist, check_tool, execute, \
-    get_online_processors
-from vamos.model import get_model_for_arch
-from vamos.vampyr.BuildFrameworks import select_framework, EmptyLinumMapException
-from vamos.vampyr.Configuration import ExpansionError
-from vamos.vampyr.Messages import MessageContainer
-from vamos.golem.kbuild import guess_arch_from_filename
 
 
 def do_checks(options, filename, configs, tool):
@@ -144,7 +140,7 @@ def do_dead_analysis(wl_dict, options):
             # failok=True, if applied on a problematic file (e.g.,
             # kernel/time.c), undertaker will signal an error. In this
             # case, we want to proceed nevertheless!
-            execute("undertaker -j dead -m %s -t %d -b %s" \
+            tools.execute("undertaker -j dead -m %s -t %d -b %s" \
                         % (current_model, options['threads'], tmpfile.name),
                     failok=True)
 
@@ -178,7 +174,7 @@ def analyze_variability(source_files, options):
             # NB: In that case we have to explicitly unset the architecture
             #     in the buildframework each time we analyze a new file!
             logging.info("Guessing architecture for %s", f)
-            arch, _ = guess_arch_from_filename(f)
+            arch, _ = kbuild.guess_arch_from_filename(f)
             reset_arch = True
         else:
             arch = options['arch']
@@ -203,7 +199,7 @@ def analyze_variability(source_files, options):
             bf.options['arch'], bf.options['subarch'] = None, None
         try:
             results = bf.analyze_configuration_coverage(f)
-        except EmptyLinumMapException:
+        except BuildFrameworks.EmptyLinumMapException:
             logging.error("Analysis of %s failed, skipping.", f)
             continue
         # add dead/undead statistics
@@ -266,18 +262,58 @@ def expand_partial_configurations(framework, source_files):
                 config.expand(verify=True)
                 success.add(config)
                 logging.info("OK:   " + config.filename())
-            except ExpansionError:
+            except utils.ExpansionError:
                 fail.add(config)
                 logging.info("FAIL: " + config.filename())
 
     return (success, fail)
 
 
-def main():
-    # this method has too many branches and statements
-    # pylint: disable=R0912
-    # pylint: disable=R0915
-    parser = OptionParser(usage="%prog [options] <filename>")
+def check_tool(tool):
+    """ check if the specified tools are available in the default search path """
+    if tool == 'gcc':
+        if not tools.check_tool('gcc --version'):
+            sys.exit("gcc not found!")
+    elif tool == 'sparse':
+        if not tools.check_tool('sparse'):
+            sys.exit("sparse not found!")
+    elif tool == 'spatch':
+        if not (tools.check_tool('vampyr-spatch-wrapper --help') and
+                tools.check_tool("spatch")):
+            sys.exit("spatch not found!")
+    elif tool == 'clang':
+        if not tools.check_tool('clang --version'):
+            sys.exit("clang not found!")
+    else:
+        sys.exit("Unsupported tool '%s'" % tool)
+
+
+def add_default_options(call, tool, options):
+    """ add default options if not set by user """
+    if (call == 'gcc' and 'gcc' not in options['args']):
+        options['args']['gcc'] = "-Wno-unused"
+
+    if (call == 'clang' and 'clang' not in options['args']):
+        options['args']['clang'] = ""
+
+    if (call == 'sparse' and 'sparse' not in options['args']):
+        options['args']['sparse'] = "-Wsparse-all"
+
+    if (call == 'spatch' and 'spatch' not in options['args']):
+        # For debugging -very_quiet should be removed but no usefull output in that case
+        options['args']['spatch'] = "-very_quiet -no_show_diff -D report -ignore-unknown-options"
+
+    # always forbid gcc to wrap lines of its output
+    if (tool == 'gcc' and "-fmessage-length=0" not in options['args']['gcc']):
+        options['args']['gcc'] += " -fmessage-length=0"
+
+
+def parse_options():
+    """The user interface of this module."""
+    parser = OptionParser(usage="%prog [options] <filename>\n\n"
+                 "This tool need to run in a linux tree.\n"
+                 "Vampyr is a configurability aware driver for static analysis in a source tree.\n"
+                 "Either the variability can be analyzed or sourcefiles can be compile tested.")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
     parser.add_option("-O", '--args', dest='args', action='append', type="string",
@@ -297,7 +333,7 @@ def main():
                       help="select build framework (one of 'bare', 'kbuild')")
     parser.add_option("-m", '--model', dest='model', action='store', type="string",
                       default=None,
-                      help="Use the given model. Only useful with the bare-build framework")
+                      help="Use the given model. Only used with the bare-build framework")
     parser.add_option('-A', '--algorithm', dest='coverage_strategy', action='store', default='min',
                       help='Coverage calculation algorithm, default "min"')
     parser.add_option('-a', '--analyze', dest='do_analyze', action='store_true', default=False,
@@ -332,23 +368,20 @@ def main():
     parser.add_option("-B", "--blacklist", dest='blacklist', action='store', default=None,
                       help="Use this blacklist when calculating configurations")
     (opts, args) = parser.parse_args()
-
-    setup_logging(opts.verbose)
+    tools.setup_logging(opts.verbose)
 
     if len(args) < 1:
-        print "Vampyr - VAMOS Variability aware static analyzer driver\n"
         parser.print_help()
         sys.exit("Please specify parameters!")
 
     if opts.do_analyze is True and len(opts.call) > 0:
-        print "Vampyr - VAMOS Variability aware static analyzer driver\n"
         parser.print_help()
         sys.exit("Cannot use -a and -C {gcc, sparse, spatch} at the same time!")
 
     options = { 'args': {},
                 'keep_configurations': opts.keep_configurations,
                 'cross_prefix': opts.cross_prefix,
-                'threads': get_online_processors() if opts.threads == 0 else opts.threads,
+                'threads': tools.get_online_processors() if opts.threads == 0 else opts.threads,
                 'exclude_others': opts.exclude_others,
                 'model': opts.model,
                 'coverage_strategy': opts.coverage_strategy,
@@ -374,7 +407,16 @@ def main():
         (key, value) = arg.split(",", 1)
         options['args'][key] = value
 
-    options['framework'] = select_framework(opts.framework, options)
+    return (opts, args, options)
+
+
+def main():
+    """Main function of this module."""
+    # this method has too many branches (18/12)
+    # pylint: disable=R0912
+    (opts, args, options) = parse_options()
+
+    options['framework'] = BuildFrameworks.select_framework(opts.framework, options)
 
     if opts.stdconfig and options['framework'].identifier() == 'kbuild':
         if not opts.stdconfig in ('allyesconfig', 'allnoconfig', 'allmodconfig', 'alldefconfig'):
@@ -382,11 +424,11 @@ def main():
         logging.info("Setting default configuration %s", opts.stdconfig)
         options['stdconfig'] = opts.stdconfig
         if opts.configfile:
-            sys.exit("Trying to set a standard config together with a configuration file, aborting.")
+            sys.exit("Trying to set a standard config together with a config file, aborting.")
 
     if opts.configurations:
         if os.path.exists(opts.configurations):
-            options['configurations'] = calculate_worklist([opts.configurations], True)
+            options['configurations'] = tools.calculate_worklist([opts.configurations], True)
             logging.info("Restricting analysis to batch file %s (%d configurations)",
                          opts.configurations, len(options['configurations']))
         else:
@@ -400,13 +442,13 @@ def main():
             sys.exit("Configfile %s does not exist, aborting." % opts.configfile)
 
     if opts.do_analyze:
-        source_files = calculate_worklist(args, opts.batch_mode)
+        source_files = tools.calculate_worklist(args, opts.batch_mode)
         analyze_variability(source_files, options)
         sys.exit(0)
 
     if opts.do_expansion:
         bf = options['framework']
-        worklist = calculate_worklist(args, batch_mode=opts.batch_mode)
+        worklist = tools.calculate_worklist(args, batch_mode=opts.batch_mode)
         success, fail = expand_partial_configurations(bf, worklist)
         print "Total OK: %d, Total FAIL: %d" % (len(success), len(fail))
         sys.exit(0)
@@ -429,49 +471,19 @@ def main():
             tool = call
             options['call'].append(tool)
 
-        # check if the specified tools are available in the default search path
-        if tool == 'gcc':
-            if not check_tool('gcc --version'):
-                sys.exit("gcc not found!")
-        elif tool == 'sparse':
-            if not check_tool('sparse'):
-                sys.exit("sparse not found!")
-        elif tool == 'spatch':
-            if not (check_tool('vampyr-spatch-wrapper --help') and
-                                     check_tool("spatch")):
-                sys.exit("spatch not found!")
-        elif tool == 'clang':
-            if not check_tool('clang --version'):
-                sys.exit("clang not found!")
-        else:
-            sys.exit("Unsupported tool '%s'" % tool)
+        # check if tool exists in path
+        check_tool(tool)
+        # if needed, add default options
+        add_default_options(call, tool, options)
 
-        # add default options if not set by user
-        if (call == 'gcc' and 'gcc' not in options['args']):
-            options['args']['gcc'] = "-Wno-unused"
-
-        if (call == 'clang' and 'clang' not in options['args']):
-            options['args']['clang'] = ""
-
-        if (call == 'sparse' and 'sparse' not in options['args']):
-            options['args']['sparse'] = "-Wsparse-all"
-
-        if (call == 'spatch' and 'spatch' not in options['args']):
-            # For debugging -very_quiet should be removed but no usefull output in that case
-            options['args']['spatch'] = "-very_quiet -no_show_diff -D report -ignore-unknown-options"
-
-        # always forbid gcc to wrap lines of its output
-        if (tool == 'gcc' and "-fmessage-length=0" not in options['args']['gcc']):
-            options['args']['gcc'] += " -fmessage-length=0"
-
-    spatches, _ = execute("find %s -name '*.cocci'" % opts.testsdir)
+    spatches, _ = tools.execute("find %s -name '*.cocci'" % opts.testsdir)
     options['test'] = sorted(spatches)
 
     for tool in ("fakecc", "make --version"):
-        if not check_tool(tool):
+        if not tools.check_tool(tool):
             sys.exit("Tool '%s' not found!" % tool)
 
-    for fn in calculate_worklist(args, batch_mode=opts.batch_mode):
+    for fn in tools.calculate_worklist(args, batch_mode=opts.batch_mode):
         handle_file(options, fn)
 
 

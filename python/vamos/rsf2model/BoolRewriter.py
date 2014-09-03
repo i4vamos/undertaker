@@ -1,8 +1,9 @@
-#
-#   rsf2model - extracts presence implications from kconfig dumps
-#
+
+"""rsf2model - extracts presence implications from kconfig dumps"""
+
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
+# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +22,7 @@
 from vamos.rsf2model import tools
 from vamos.rsf2model.BoolParser import BoolParser
 from vamos.rsf2model.helper import tree_change, BoolRewriterException
+
 
 class BoolRewriter(tools.UnicodeMixin):
     ELEMENT = "in"
@@ -60,6 +62,7 @@ class BoolRewriter(tools.UnicodeMixin):
         return self.expr
 
     def __rewrite_tristate(self, tree):
+        #pylint: disable=R0912
         def tristate_not(symbol):
             if symbol in self.rsf.options() and self.rsf.options()[symbol].tristate():
                 if self.eval_to_module:
@@ -67,6 +70,7 @@ class BoolRewriter(tools.UnicodeMixin):
                 else:
                     return [BoolParser.EQUAL,  symbol, "n"]
             return [BoolParser.NOT, symbol]
+
         def tristate(symbol):
             if symbol in self.rsf.options() and self.rsf.options()[symbol].tristate():
                 if self.eval_to_module:

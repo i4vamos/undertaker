@@ -17,22 +17,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import os
-import re
 import sys
-import logging
-import whatthepatch
-from optparse import OptionParser
 
 sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib', 'python%d.%d' % \
-        (sys.version_info[0], sys.version_info[1]), 'site-packages')] + sys.path
+               (sys.version_info[0], sys.version_info[1]), 'site-packages')] + sys.path
 
 import vamos.tools as tools
 import vamos.golem.kbuild as kbuild
 import vamos.defect_analysis as defect_analysis
 from vamos.block import Block
 from vamos.model import RsfModel
+
+import re
+import logging
+import whatthepatch
+from optparse import OptionParser
 
 
 # regex expressions
@@ -54,10 +54,10 @@ REGEX_FILTER_FEATURES = re.compile(r"[A-Za-z0-9]$")
 
 def parse_options():
     """The user interface of this module."""
-    parser = OptionParser(usage="undertaker-check-patch file [options]\n" +
-            "This tool needs to run in a Linux tree. Specify a patch file\n" +
-            "to check if any defects are introduced, fixed, changed, or if\n" +
-            "they remained present (unchanged).")
+    parser = OptionParser(usage="undertaker-check-patch file [options]\n\n"
+                 "This tool needs to run in a Linux tree. Specify a patch file\n"
+                 "to check if any defects are introduced, fixed, changed, or if\n"
+                 "they remained present (unchanged).")
 
     parser.add_option('-a', '--arch', dest='arch', action='store', default="",
             help="Generate models for only this architecture.")
@@ -96,6 +96,8 @@ def parse_options():
 
 def main():
     """Main function of this module."""
+    #pylint: disable=R0912
+    #pylint: disable=R0915
     (opts, args) = parse_options()
     try:
         logging.info("Detected Linux version " + kbuild.get_linux_version())
