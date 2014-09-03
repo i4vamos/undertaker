@@ -29,6 +29,7 @@ import glob
 import logging
 import os
 import re
+import sys
 
 class InferenceAtoms:
     def __init__(self):
@@ -196,9 +197,8 @@ class LinuxInferenceAtoms(InferenceAtoms):
             logging.info("loading model %s", modelfile)
             self.model = parse_model(modelfile)
         else:
-            logging.error("%s not found, please generate models using undertaker-kconfigdump",
-                          modelfile)
-            self.model = parse_model('/dev/null')
+            sys.exit("No model for '%s' found, please generate models using undertaker-kconfigdump" \
+                    % arch)
 
         call_linux_makefile('allnoconfig', arch=self.arch, subarch=self.subarch)
         apply_configuration(arch=self.arch, subarch=self.subarch)
