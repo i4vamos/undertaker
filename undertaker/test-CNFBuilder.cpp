@@ -29,173 +29,173 @@
 using namespace kconfig;
 
 START_TEST(buildCNFVarUsedMultipleTimes) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "x && !x");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "x && !x");
 
-    fail_if(cnf->checkSatisfiable());
+    fail_if(cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFOr) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "x || y");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "x || y");
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",false);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",false);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFAnd) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "x && y");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "x && y");
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",true);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",true);
+    fail_if(cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFImplies) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "x -> y");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "x -> y");
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",false);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",false);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFEqual) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "x <-> y");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "x <-> y");
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",false);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",false);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",true);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",true);
+    fail_if(cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFNot) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "x <-> !y");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "x <-> !y");
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",false);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",false);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",true);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",true);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFMultiNot0) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "!!!x");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "!!!x");
 
-    cnf->pushAssumption("x",true);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    fail_if(!cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFMultiNot1) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "x <-> !!!y");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "x <-> !!!y");
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",false);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",false);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",true);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",true);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFConst) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "(x || 0) && (y && 1)");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "(x || 0) && (y && 1)");
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",true);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",true);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",true);
-    cnf->pushAssumption("y",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("x",true);
+    cnf.pushAssumption("y",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("x",false);
-    cnf->pushAssumption("y",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("x",false);
+    cnf.pushAssumption("y",false);
+    fail_if(cnf.checkSatisfiable());
 } END_TEST;
 
 START_TEST(buildCNFComplex0) {
-    auto cnf = new PicosatCNF();
-    CNFBuilder builder(cnf, "a -> (b || !c && d)");
+    PicosatCNF cnf;
+    CNFBuilder builder(&cnf, "a -> (b || !c && d)");
 
     /*
       A B C D  |  A -> (B v (~C & D))
@@ -218,29 +218,29 @@ START_TEST(buildCNFComplex0) {
       0 0 0 0  |    *1
     */
 
-    cnf->pushAssumption("a",true);
-    cnf->pushAssumption("b",true);
-    cnf->pushAssumption("c",true);
-    cnf->pushAssumption("d",true);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("a",true);
+    cnf.pushAssumption("b",true);
+    cnf.pushAssumption("c",true);
+    cnf.pushAssumption("d",true);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("a",true);
-    cnf->pushAssumption("b",true);
-    cnf->pushAssumption("c",true);
-    cnf->pushAssumption("d",false);
-    fail_if(!cnf->checkSatisfiable());
+    cnf.pushAssumption("a",true);
+    cnf.pushAssumption("b",true);
+    cnf.pushAssumption("c",true);
+    cnf.pushAssumption("d",false);
+    fail_if(!cnf.checkSatisfiable());
 
-    cnf->pushAssumption("a",true);
-    cnf->pushAssumption("b",false);
-    cnf->pushAssumption("c",true);
-    cnf->pushAssumption("d",true);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("a",true);
+    cnf.pushAssumption("b",false);
+    cnf.pushAssumption("c",true);
+    cnf.pushAssumption("d",true);
+    fail_if(cnf.checkSatisfiable());
 
-    cnf->pushAssumption("a",true);
-    cnf->pushAssumption("b",false);
-    cnf->pushAssumption("c",false);
-    cnf->pushAssumption("d",false);
-    fail_if(cnf->checkSatisfiable());
+    cnf.pushAssumption("a",true);
+    cnf.pushAssumption("b",false);
+    cnf.pushAssumption("c",false);
+    cnf.pushAssumption("d",false);
+    fail_if(cnf.checkSatisfiable());
 } END_TEST;
 
 void build_and_evaluate_strategy(const char *expression,
