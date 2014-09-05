@@ -34,9 +34,8 @@ struct StringJoiner;
 
 
 class ConfigurationModel {
-    virtual int doIntersect(const std::set<std::string> exp,
-                            const std::function<bool(std::string)> &c,
-                            std::set<std::string> &missing, std::string &intersected) const = 0;
+    virtual void doIntersectPreprocess(std::set<std::string> &start_items,
+                                       StringJoiner &sj) const = 0;
 
     virtual void addMetaValue(const std::string &key, const std::string &feature) const = 0;
 
@@ -96,10 +95,6 @@ public:
 
 protected:
     ConfigurationModel() = default;
-
-    int addMetaSymbolsAndFindMissings(StringJoiner &sj, const std::set<std::string> &it,
-                                      const std::function<bool(std::string)> &c,
-                                      std::set<std::string> &missing) const;
 
     std::string _name;
     boost::regex _inConfigurationSpace_regexp;

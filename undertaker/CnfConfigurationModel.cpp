@@ -55,20 +55,9 @@ CnfConfigurationModel::CnfConfigurationModel(const std::string &filename) {
 
 CnfConfigurationModel::~CnfConfigurationModel() { delete _cnf; }
 
-int CnfConfigurationModel::doIntersect(const std::set<std::string> start_items,
-                                       const std::function<bool(std::string)> &c,
-                                       std::set<std::string> &missing,
-                                       std::string &intersected) const {
-    StringJoiner sj;
-    // add all items from start_items into 'sj' if they are in the model && in ALWAYS_{ON,OFF}
-    // and if they are not in the model, check if they could be missing
-    int valid_items = addMetaSymbolsAndFindMissings(sj, start_items, c, missing);
-
+void CnfConfigurationModel::doIntersectPreprocess(std::set<std::string> &,
+                                                  StringJoiner &sj) const {
     sj.push_back("._." + _name + "._.");
-    intersected = sj.join("\n&& ");
-    Logging::debug("Out of ", start_items.size(), " items ", missing.size(),
-                   " have been put in the MissingSet using ", _name);
-    return valid_items;
 }
 
 bool CnfConfigurationModel::isBoolean(const std::string &item) const {

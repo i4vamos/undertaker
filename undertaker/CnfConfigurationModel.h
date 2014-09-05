@@ -32,10 +32,8 @@ namespace kconfig {
 class CnfConfigurationModel: public ConfigurationModel {
     kconfig::PicosatCNF *_cnf;
 
-    virtual int doIntersect(const std::set<std::string> exp,
-                            const std::function<bool(std::string)> &c,
-                            std::set<std::string> &missing,
-                            std::string &intersected)              const final override;
+    virtual void doIntersectPreprocess(std::set<std::string> &start_items,
+                                       StringJoiner &sj) const final override;
 
     virtual void addMetaValue(const std::string &key, const std::string &val) const final override;
 
@@ -43,7 +41,7 @@ public:
     //! Loads the configuration model from file
     //! \param filename filepath to the model file. (NB: The basename is taken as architecture name.)
     CnfConfigurationModel(const std::string &filename);
-    const kconfig::PicosatCNF *getCNF(void) { return _cnf; }
+    const kconfig::PicosatCNF *getCNF(void) const { return _cnf; }
 
     //! destructor
     virtual ~CnfConfigurationModel();

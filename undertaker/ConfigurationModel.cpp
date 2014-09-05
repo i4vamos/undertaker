@@ -22,6 +22,7 @@
 #include "ConfigurationModel.h"
 #include "StringJoiner.h"
 #include "Tools.h"
+#include "Logging.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -40,18 +41,17 @@ int ConfigurationModel::doIntersect(const std::string exp,
                                     const std::function<bool(std::string)> &c,
                                     std::set<std::string> &missing,
                                     std::string &intersected) const {
-    const std::set<std::string> start_items = undertaker::itemsOfString(exp);
-    return doIntersect(start_items, c, missing, intersected);
-}
+    std::set<std::string> start_items = undertaker::itemsOfString(exp);
 
-int ConfigurationModel::addMetaSymbolsAndFindMissings(StringJoiner &sj,
-                                                      const std::set<std::string> &it,
-                                                      const std::function<bool(std::string)> &c,
-                                                      std::set<std::string> &missing) const {
+    StringJoiner sj;
+    doIntersectPreprocess(start_items, sj);  // preprocess depending on model type
+
+    // add all items from start_items into 'sj' if they are in the model && in ALWAYS_{ON,OFF}
+    // and if they are not in the model, check if they could be missing
     int valid_items = 0;
     const StringList *always_on = getWhitelist();
     const StringList *always_off = getBlacklist();
-    for (const std::string &str : it) {
+    for (const std::string &str : start_items) {
         if (containsSymbol(str)) {
             valid_items++;
             if (always_on) {
@@ -76,6 +76,9 @@ int ConfigurationModel::addMetaSymbolsAndFindMissings(StringJoiner &sj,
                 missing.insert(str);
         }
     }
+    intersected = sj.join("\n&& ");
+    Logging::debug("Out of ", start_items.size(), " items ", missing.size(),
+                   " have been put in the MissingSet");
     return valid_items;
 }
 

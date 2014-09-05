@@ -652,7 +652,8 @@ void process_file_interesting(const std::string &check_item) {
         std::exit(EXIT_FAILURE);
     }
     /* Find all items that are related to the given item */
-    std::set<std::string> interesting = main_model->findSetOfInterestingItems({check_item});
+    std::set<std::string> interesting{check_item};
+    main_model->extendWithInterestingItems(interesting);
 
     /* remove the given item again */
     interesting.erase(check_item);

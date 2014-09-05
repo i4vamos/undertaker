@@ -34,10 +34,8 @@ class RsfConfigurationModel : public ConfigurationModel {
     RsfReader *_model;
     ItemRsfReader *_rsf = nullptr;
 
-    virtual int doIntersect(const std::set<std::string> exp,
-                            const std::function<bool(std::string)> &c,
-                            std::set<std::string> &missing,
-                            std::string &intersected)              const final override;
+    virtual void doIntersectPreprocess(std::set<std::string> &start_items,
+                                       StringJoiner &sj) const final override;
 
     virtual void addMetaValue(const std::string &key, const std::string &val) const final override;
 
@@ -45,7 +43,7 @@ public:
     //! Loads the configuration model from file
     //! \param filename filepath to the model file. (NB: The basename is taken as architecture name.)
     RsfConfigurationModel(const std::string &filename);
-    std::set<std::string> findSetOfInterestingItems(const std::set<std::string> &) const;
+    void extendWithInterestingItems(std::set<std::string> &) const;
 
     //! destructor
     virtual ~RsfConfigurationModel();

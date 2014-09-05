@@ -67,67 +67,48 @@ RsfConfigurationModel::~RsfConfigurationModel() {
     delete _rsf;
 }
 
-std::set<std::string>
-RsfConfigurationModel::findSetOfInterestingItems(const std::set<std::string> &initialItems) const {
-    std::set<std::string> result;
+void RsfConfigurationModel::extendWithInterestingItems(std::set<std::string> &workingSet) const {
     std::stack<std::string> workingStack;
     /* Initialize the working stack with the given elements */
-    for (const std::string &str : initialItems) {
+    for (const std::string &str : workingSet)
         workingStack.push(str);
-        result.insert(str);
-    }
     while (!workingStack.empty()) {
         const std::string *item = _model->getValue(workingStack.top());
         workingStack.pop();
         if (item != nullptr && *item != "") {
             for (const std::string &str : undertaker::itemsOfString(*item)) {
                 /* Item already seen? continue */
-                if (result.count(str) == 0) {
+                if (workingSet.count(str) == 0) {
                     workingStack.push(str);
-                    result.insert(str);
+                    workingSet.insert(str);
                 }
             }
         }
     }
-    return result;
 }
 
-int RsfConfigurationModel::doIntersect(const std::set<std::string> start_items,
-                                       const std::function<bool(std::string)> &c,
-                                       std::set<std::string> &missing,
-                                       std::string &intersected) const {
-    StringJoiner sj;
-
-    std::set<std::string> interesting = findSetOfInterestingItems(start_items);
+void RsfConfigurationModel::doIntersectPreprocess(std::set<std::string> &item_set,
+                                                  StringJoiner &sj) const {
+    extendWithInterestingItems(item_set);
     const StringList *always_on = getWhitelist();
     const StringList *always_off = getBlacklist();
 
     // ALWAYS_ON and ALWAYS_OFF items and their transitive dependencies always need to appear in
     // the slice.
-    if (always_on) {
+    if (always_on)
         for (const std::string &str : *always_on)
-            interesting.insert(str);
-    }
-    // For all symbols in 'interesting', retrieve the formula from the model and push it into sj.
-    for (const std::string &str : interesting) {
+            item_set.insert(str);
+    // For all symbols in 'item_set', retrieve the formula from the model and push it into sj.
+    for (const std::string &str : item_set) {
         const std::string *item = _model->getValue(str);
-        if(item != nullptr && *item != "")
+        if (item != nullptr && *item != "")
             sj.push_back("(" + str + " -> (" + *item + "))");
     }
-    if (always_off) {
-        // There is no point in adding the formulae of always_off items into sj, since we push the
-        // negated always_off symbol into sj, false -> {true,false}
+    // There is no point in adding the formulae of always_off items into sj, since we push the
+    // negated always_off symbol into sj, false -> {true,false}
+    if (always_off)
         for (const std::string &str : *always_off)
-            interesting.insert(str);
-    }
-    // add all items from interesting into 'sj' if they are in the model && in ALWAYS_{ON,OFF}
-    // and if they are not in the model, check if they could be missing
-    int valid_items = addMetaSymbolsAndFindMissings(sj, interesting, c, missing);
-
-    intersected = sj.join("\n&& ");
-    Logging::debug("Out of ", start_items.size(), " items ", missing.size(),
-                   " have been put in the MissingSet");
-    return valid_items;
+            item_set.insert(str);
 }
 
 bool RsfConfigurationModel::isBoolean(const std::string &item) const {
