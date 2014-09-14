@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-#
-#   golem - analyze feature dependencies in Linux makefiles
-#
+
+"""golem - analyze feature dependencies in Linux makefiles"""
+
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
-# Copyright (C) 2012 Valentin Rothberg <valentinrothberg@googlemail.com>
+# Copyright (C) 2012-2014 Valentin Rothberg <valentinrothberg@googlemail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,33 +75,34 @@ def do_inference(args, arch, subarch):
         except NotACorebootTree:
             pass
 
-
     if not atoms:
         raise RuntimeError("No primitive operations found (not in a supported source tree?)")
 
-
     inferencer = Inferencer(atoms)
     inferencer.calculate()
+
 
 def find_variables_in_directories(arch, args):
     modelfile = get_model_for_arch(arch)
     if not modelfile:
         sys.exit("%s not found, generate models using undertaker-kconfigdump" % modelfile)
     logging.info("loading model %s", modelfile)
-    if len(args) is 0:
+
+    if not args:
         args.append(".")
-    for d in args:
-        if not os.path.isdir(d):
-            logging.warning("Skipping %s, not a directory", d)
+
+    for arg in args:
+        if not os.path.isdir(arg):
+            logging.warning("Skipping %s, not a directory", arg)
             continue
-        variables = determine_buildsystem_variables_in_directory(d, arch)
-        logging.info("Detected %d Kconfig variables in subdir %s", len(variables), d)
+        variables = determine_buildsystem_variables_in_directory(arg, arch)
+        logging.info("Detected %d Kconfig variables in subdir %s", len(variables), arg)
         model = parse_model(modelfile)
-        s = [x for x in variables if x in model]
-        s += [x + "_MODULE" for x in s if (x+"_MODULE") in model]
-        logging.debug("found %d items in check_subdir result: %s", len(s), s)
-        for v in sorted(variables):
-            print v
+        model_vars = [x for x in variables if x in model]
+        model_vars += [x + "_MODULE" for x in model_vars if (x+"_MODULE") in model]
+        logging.debug("found %d items in check_subdir result: %s", len(model_vars), model_vars)
+        for var in sorted(variables):
+            print var
 
 
 def main():
@@ -143,27 +144,27 @@ def main():
 
     setup_logging(opts.verbose)
 
-    (arch, subarch) = (None, None)
+    arch = None
+    subarch = None
 
-    if not arch:
-        try:
-            logging.info("detected Linux version %s", get_linux_version())
+    try:
+        logging.info("detected Linux version %s", get_linux_version())
 
-            if os.environ.has_key('ARCH'):
-                arch = os.environ['ARCH']
+        if os.environ.has_key('ARCH'):
+            arch = os.environ['ARCH']
 
-            if os.environ.has_key('SUBARCH'):
-                subarch = os.environ['SUBARCH']
+        if os.environ.has_key('SUBARCH'):
+            subarch = os.environ['SUBARCH']
 
-            if not arch:
-                arch = vamos.default_architecture
-                subarch = guess_subarch_from_arch(arch)
-                logging.warning("Environment variable $ARCH not set, defaulting to '%s/%s'",
-                                arch, subarch)
-            if not subarch:
-                subarch = guess_subarch_from_arch(arch)
-        except NotALinuxTree:
-            pass
+        if not arch:
+            arch = vamos.default_architecture
+            subarch = guess_subarch_from_arch(arch)
+            logging.warning("Environment variable $ARCH not set, defaulting to '%s/%s'",
+                            arch, subarch)
+        if not subarch:
+            subarch = guess_subarch_from_arch(arch)
+    except NotALinuxTree:
+        pass
 
     if not arch:
         try:
@@ -183,22 +184,25 @@ def main():
 
     if not arch:
         sys.exit("No supported software project found")
+
     if opts.inference:
         try:
             do_inference(args, arch=arch, subarch=subarch)
-        except RuntimeError as e:
-            sys.exit("Calculating inferences failed: %s" % e)
+        except RuntimeError as error:
+            sys.exit("Calculating inferences failed: %s" % error)
         sys.exit(0)
+
     if opts.do_opt:
         variables = determine_buildsystem_variables(arch)
         logging.info("Detected %d Kconfig variables in Makefiles", len(variables))
-        for v in sorted(variables):
-            print 'CONFIG_' + v
+        for var in sorted(variables):
+            print 'CONFIG_' + var
         sys.exit(0)
 
     if opts.do_directory:
         find_variables_in_directories(arch, args)
         sys.exit(0)
+
     if opts.partialconfig:
         if not os.path.exists(opts.partialconfig):
             sys.exit("Partial config %s does not exist" % opts.partialconfig)
@@ -220,13 +224,13 @@ def main():
         else:
             try:
                 config_exp.expand(verify=True)
-            except ExpansionError as e:
-                logging.warning(str(e))
+            except ExpansionError as error:
+                logging.warning(str(error))
 
     if opts.do_list:
-        how = opts.verbose > 0
+        is_verbose = opts.verbose > 0
         try:
-            files = files_for_current_configuration(arch=arch, subarch=subarch, how=how)
+            files = files_for_current_configuration(arch=arch, subarch=subarch, how=is_verbose)
             logging.info("Detected %d files with current configuration", len(files))
             for f in sorted(files):
                 print f
@@ -244,6 +248,7 @@ def main():
     elif not opts.partialconfig:
         parser.print_help()
         sys.exit("No option given")
+
 
 if __name__ == "__main__":
     main()
