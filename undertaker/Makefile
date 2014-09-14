@@ -13,7 +13,7 @@ CC = g++
 
 LDFLAGS =
 BOOST_LIBS = -lboost_system -lboost_regex -lboost_filesystem -lboost_thread
-LDLIBS = $(BOOST_LIBS) -lPuma
+LDLIBS = $(BOOST_LIBS) -lpthread -lPuma
 
 # LDCOV = -coverage
 ifdef LDCOV
@@ -108,7 +108,7 @@ clean: clean-check
 	rm -rf $(PROGS) $(TESTPROGS)
 
 test-%: test-%.cpp libparser.a ../picosat/libpicosat.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt -lpthread $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt $(LDFLAGS) $(LDLIBS)
 
 
 run-libcheck: $(TESTPROGS)
