@@ -135,7 +135,7 @@ int rm_pattern(const char *pattern) {
     return nr;
 }
 
-bool process_blockconf_helper(StringJoiner &sj, std::map<std::string, bool> &filesolvable,
+bool process_blockconf_helper(UniqueStringJoiner &sj, std::map<std::string, bool> &filesolvable,
                               const std::string &locationname) {
     // used by process_blockconf and process_mergedblockconf
 
@@ -236,7 +236,7 @@ void process_mergeblockconf(const std::string &filename) {
     ConditionalBlock::setBlocknameWithFilename(true);
 
     std::string line;
-    StringJoiner sj;
+    UniqueStringJoiner sj;
     std::map<std::string, bool> filesolvable;
     while (std::getline(workfile, line))
         process_blockconf_helper(sj, filesolvable, line);
@@ -258,7 +258,7 @@ void process_mergeblockconf(const std::string &filename) {
 }
 
 void process_blockconf(const std::string &locationname) {
-    StringJoiner sj;
+    UniqueStringJoiner sj;
     std::map<std::string, bool> filesolvable;
     if(!process_blockconf_helper(sj, filesolvable, locationname) && sj.size() == 0)
         std::exit(EXIT_FAILURE);
