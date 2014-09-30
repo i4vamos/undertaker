@@ -36,7 +36,7 @@ static struct menu *current_menu, *current_entry;
 #define YYERROR_VERBOSE
 #endif
 %}
-%expect 30
+%expect 32
 
 %union
 {
@@ -114,6 +114,7 @@ stmt_list:
 	| stmt_list common_stmt
 	| stmt_list choice_stmt
 	| stmt_list menu_stmt
+	| stmt_list mainmenu_stmt
 	| stmt_list end			{ zconf_error("unexpected end statement"); }
 	| stmt_list T_WORD error T_EOL	{ zconf_error("unknown statement \"%s\"", $2); }
 	| stmt_list option_name error T_EOL
