@@ -23,10 +23,14 @@ import re
 import sys
 import logging
 import whatthepatch
+from optparse import OptionParser
+
+sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib', 'python%d.%d' % \
+        (sys.version_info[0], sys.version_info[1]), 'site-packages')] + sys.path
+
 import vamos.tools as tools
 import vamos.golem.kbuild as kbuild
 import vamos.defect_analysis as defect_analysis
-from optparse import OptionParser
 from vamos.block import Block
 from vamos.model import RsfModel
 
