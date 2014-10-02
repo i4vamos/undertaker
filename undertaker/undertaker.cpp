@@ -72,54 +72,64 @@ static bool do_mus_analysis = false;
 void usage(std::ostream &out, const char *error) {
     if (error)
         out << error << std::endl << std::endl;
-    out << "`undertaker' analyzes conditional C code with #ifdefs.\n";
+    out << "`undertaker' analyzes C code with #ifdef/#if-expressions.\n";
     out << version << "\n\n";
-    out << "Usage: undertaker [OPTIONS] <file..>\n";
-    out << "\nOptions:\n";
-    out << "  -V  print version information\n";
-    out << "  -v  increase the log level (more verbose)\n";
-    out << "  -q  decrease the log level (less verbose)\n";
-    out << "  -m  specify the model(s) (directory or file)\n";
-    out << "  -M  specify the main model\n";
-    out << "  -i  specify a ignorelist\n";
-    out << "  -W  specify a whitelist\n";
-    out << "  -B  specify a blacklist\n";
-    out << "  -b  specify a worklist (batch mode)\n";
-    out << "  -t  specify count of parallel processes\n";
-    out << "  -I  add an include path for #include directives\n";
-    out << "  -s  skip non-configuration based defect reports\n";
-    out << "  -u  report a 'minimal unsatisfiable subset' of the defect-formula\n";
-    out << "  -j  specify the jobs which should be done\n";
-    out << "      - dead: dead/undead file analysis (default)\n";
-    out << "      - coverage: coverage file analysis\n";
-    out << "      - cpppc: CPP Preconditions for whole file\n";
-    out << "      - cpppc_decision: CPP Preconditions for whole file with decision mode preprocessing\n";
-    out << "      - cppsym: statistics over CPP symbols mentioned in source files\n";
-    out << "      - blockrange: List all blocks with corresponding ranges (format: <file>:<blockID>:<start>:<end>\n";
-    out << "      - blockpc: Block precondition (format: <file>:<line>:<column>)\n";
-    out << "      - symbolpc: Symbol precondition (format <symbol>)\n";
-    out << "      - checkexpr: Find a configuration that satisfies expression\n";
-    out << "      - interesting: Find related items (negated items are not in the model)\n";
-    out << "      - blockconf: Find configuration enabling specified block (format: <file>:<line>)\n";
-    out << "      - mergeblockconf: Find configuration enabling specified blocks in the given file\n";
-    out << "\nCoverage Options:\n";
-    out << "  -O: specify the output mode of generated configurations\n";
-    out << "      - kconfig: generated partial kconfig configuration (default)\n";
-    out << "      - stdout: print on stdout the found configurations\n";
-    out << "      - cpp: print on stdout cpp -D command line arguments\n";
-    out << "      - exec:cmd: pipe file for every configuration to cmd\n";
-    out << "      - model:    print all options which are in the configuration space\n";
-    out << "      - all:      dump every assigned symbol (both items and code blocks)\n";
-    out << "      - combined: create files for both configuration and pre-commended sources\n";
-    out << "  -C: specify coverage algorithm\n";
-    out << "      simple           - relative simple and fast algorithm (default)\n";
-    out << "      min              - slow but generates less configuration sets\n";
-    out << "      simple_decision  - simple and decision coverage instead statement coverage\n";
-    out << "      min_decision     - min and decision coverage instead statement coverage\n";
-    out << "\nSpecifying Files:\n";
-    out << "  You can specify one or many files (the format is according to the\n";
-    out << "  job (-j) which should be done. If you specify - as file, undertaker\n";
-    out << "  will load models and whitelist and read files from stdin (interactive).\n";
+    out << "Usage: undertaker [OPTIONS] <file..>\n"
+    "\nOptions:\n"
+    "  -V  print version information\n"
+    "  -v  increase the log level (more verbose)\n"
+    "  -q  decrease the log level (less verbose)\n"
+    "  -i  specify a ignorelist\n"
+    "  -W  specify a whitelist\n"
+    "  -B  specify a blacklist\n"
+    "  -m  specify the model(s) (directory or file)\n"
+    "  -M  specify the main model architecture (default: x86)\n"
+    "  -j  specify the job that should be done\n"
+    "      dead      - dead/undead file analysis (default)\n"
+    "      coverage  - coverage file analysis\n"
+    "      cpppc     - CPP Preconditions for the whole file\n"
+    "      cppsym    - statistics over CPP symbols mentioned in source files\n"
+    "                  (output-format: <symbol>, <#references>, <#rewrites>, <present in\n"
+    "                  main-model>, <symbol-type if present else if symbol starts with CONFIG_>)\n"
+    "      blockpc   - Block precondition   (Format: <file>:<line>:<column>)\n"
+    "      symbolpc  - Symbol precondition  (Format: <symbol>)\n"
+    "      checkexpr - Find a configuration that satisfies a given expression\n"
+    "                  (Format: 'CONFIG_A && !CONFIG_B')\n"
+    "      cpppc_decision - CPP Preconditions for the whole file "
+                            "(with decision mode preprocessing)\n"
+    "      interesting    - Find related items (negated items are not in the model)  "
+                            "(Format: <symbol>)\n"
+    "      blockconf      - Find configuration enabling a specified block  "
+                            "(Format: <file>:<line>)\n"
+    "      mergeblockconf - Find a configuration that enables a number of blocks "
+                            "specified in a file.\n"
+    "                       (format in the file: see blockconf format)\n"
+    "      blockrange     - List all blocks with the corresponding line ranges \n"
+    "                       (output-format: <file>:<blockID>:<start>:<end>)\n"
+    "  -b  batch mode: analyze all files in a given worklist-file\n"
+    "  -t  specify a number of parallel processes (default: 1)\n"
+    "  -I  add an include path for #include directives\n"
+    "  -s  skip non-configuration based defect reports\n"
+    "  -u  calculate a 'minimal unsatisfiable subset' of the defect-formula\n"
+    "\nCoverage Options:\n"
+    "  -O: specify the output mode of generated configurations\n"
+    "      kconfig   - generated partial kconfig configuration (default)\n"
+    "      stdout    - print all found configurations on stdout\n"
+    "      cpp       - print all configuration symbols as '-DCONFIG_A' command line arguments\n"
+    "      model     - dump to a $file.config file whether symbols are defined in the main-model\n"
+    "                  (format within the file: 'CONFIG_A=1' if symbol is defined)\n"
+    "      all       - dump every assigned symbol (both items and code blocks)\n"
+    "      combined  - create files for both configuration and pre-commended sources\n"
+    "  -C: specify coverage algorithm\n"
+    "      simple           - relative simple and fast algorithm (default)\n"
+    "      min              - slow but generates less configuration sets\n"
+    "      simple_decision  - simple and decision coverage instead statement coverage\n"
+    "      min_decision     - min and decision coverage instead statement coverage\n"
+    "\nSpecifying Files:\n"
+    "  You can specify one or more 'file' arguments.\n"
+    "  Some jobs require a different input format for 'file' arguments (i.e. blockconf).\n"
+    "  The correct format is explained in description of the job (see -j).\n\n";
+// XXX currently undocumented -O exec:cmd, -O commented, interactive mode
 }
 
 int rm_pattern(const char *pattern) {
@@ -644,7 +654,7 @@ void process_file_interesting(const std::string &check_item) {
         = dynamic_cast<RsfConfigurationModel *>(ModelContainer::lookupMainModel());
 
     if (!main_model) {
-        Logging::error("for finding interessting items a (rsf based) model must be loaded");
+        Logging::error("for finding interesting items a (rsf based) model must be loaded");
         std::exit(EXIT_FAILURE);
     }
     /* Find all items that are related to the given item */
@@ -1051,13 +1061,10 @@ int main(int argc, char **argv) {
                 }
                 if (new_mode == "load") {
                     model_container.loadModels(line);
-                    continue;
                 } else if (new_mode == "main-model") {
                     ConfigurationModel *db = model_container.loadModels(line);
-                    if (db) {
+                    if (db)
                         model_container.setMainModel(db->getName());
-                    }
-                    continue;
                 } else { /* Change working mode */
                     process_file_cb_t new_function = parse_job_argument(new_mode);
                     if (!new_function) {
