@@ -1,17 +1,17 @@
-= The VAMOS Project =
+= The CADOS / VAMOS Project =
 
-Topic of the project is variability of system software evoked by the
-non-functional properties of operating-system functions, which emerges
-from (a) different implementations of the same system function to make
-an appearance of certain non-functional properties and (b) the using
-level of those implementations in order to compensate for effects of
-these properties.
+Topic of the project is variability of system software evoked by the non-functional properties of
+operating-system functions, which emerges from (a) different implementations of the same system
+function to make an appearance of certain non-functional properties and (b) the using level of those
+implementations in order to compensate for effects of these properties.
 
-With this project, the undertaker, we provide tools to examine and
-evaluate CPP based source files. See
-http://www4.informatik.uni-erlangen.de/Research/VAMOS/publications.shtml
-for a list of publications.
+With this project, the undertaker, we provide tools to examine and evaluate CPP based source files.
+See [http://www4.informatik.uni-erlangen.de/Research/VAMOS/publications.shtml VAMOS] or
+[http://www4.informatik.uni-erlangen.de/Research/CADOS/publications.shtml CADOS] for a list of
+publications.
 
+Please send bugreports and feature requests to: '''cados-dev(at)lists.informatik.uni-erlangen.de'''.
+If you find our tools useful, we would be happy to learn about your experiences with them.
 
 For a up-to-date version of this document see
 
@@ -19,29 +19,38 @@ http://vamos.informatik.uni-erlangen.de/trac/undertaker/wiki
 
 = undertaker =
 
-The undertaker is an implementation of our preprocessor and
-configuration analysis approaches. It can check the structure of your
-preprocessor directives against different configuration models to find
+The undertaker is an implementation of our preprocessor and configuration analysis approaches. It can
+check the structure of your preprocessor directives against different configuration models to find
 blocks than can't be selected or deselected.
 
-= Requirements =
-* g++ (4.8.1 or above)
-* libboost-wave (1.40 or above)
-* libboost-regex (1.40 or above)
-* libboost-filesystem (1.40 or above)
-* libboost-thread (1.40 or above)
-* libboost (1.40 or above)
-* [http://check.sourceforge.net check] (0.9.6 or above) - testing suite for C
-* PUMA (from the http://aspectc.org project, Ubuntu / Debian users may install via apt-get libpuma-dev)
-* [http://pstreams.sourceforge.net/ pstreams] (package libpstreams-dev)
+Furthermore, the tool provides the functionality to tailor a given Linux kernel to specific use cases
+(UndertakerTailor).
+
+A new tool, called undertaker-checkpatch (released with v1.6), is able to analyze patch files. This
+tool will tell you if your patch introduces new defects, fixes old ones or if a defect remains
+unchanged. Furthermore it provides functionality to help analyze the causes of the defects.
+
+= Requirements for v1.6 =
+ * g++ (4.8.1 or above) with a matching libstdc++ version
+ * libboost-wave (1.53 or above)
+ * libboost-regex (1.53 or above)
+ * libboost-filesystem (1.53 or above)
+ * libboost-thread (1.53 or above)
+ * libboost (1.53 or above)
+ * PUMA (from the http://aspectc.org project, Ubuntu / Debian users may install via apt-get libpuma-dev)
+ * [http://pstreams.sourceforge.net/ pstreams] (package libpstreams-dev)
+
+= Additional Requirements for undertaker-developers =
+ * [http://check.sourceforge.net check] (0.9.6 or above) - testing suite for C
+ * pylint
+ * python-unittest2
+ * spatch / sparse / clang
 
 = Building =
-To install the dependencies in Debian or Ubuntu, you
-paste this in your shell.
+To install the dependencies in Debian or Ubuntu, you paste this in your shell.
 
 ,----
-| apt-get install libboost-dev flex bison libpstreams-dev libboost-filesystem-dev libboost-regex-dev \
-| libboost-thread-dev libboost-wave-dev libpuma-dev check python-unittest2 clang sparse pylint
+| apt-get install libboost1.55-dev libboost-filesystem1.55-dev libboost-regex1.55-dev libboost-thread1.55-dev libboost-wave1.55-dev libpuma-dev libpstreams-dev check python-unittest2 clang sparse pylint
 `----
 
 Compiling and installation
