@@ -540,7 +540,7 @@ void process_file_cppsym(const std::string &filename) {
     }
 }
 
-void process_file_blockrange(const std::string &filename) {
+void process_file_blockrange_helper(const std::string &filename) {
     CppFile cpp(filename);
 
     if (!cpp.good()) {
@@ -554,6 +554,15 @@ void process_file_blockrange(const std::string &filename) {
     for (const auto &block : cpp) {  // ConditionalBlock *
         std::cout << filename << ":" << block->getName() << ":";
         std::cout << block->lineStart() << ":" << block->lineEnd() << std::endl;
+    }
+}
+
+void process_file_blockrange(const std::string &filename) {
+    boost::thread t(process_file_blockrange_helper, filename);
+
+    if (!t.timed_join(boost::posix_time::seconds(10))) {
+        Logging::error("timeout passed while processing ", filename);
+        std::exit(EXIT_FAILURE);
     }
 }
 
