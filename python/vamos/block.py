@@ -57,8 +57,11 @@ class Block(object):
         """Parse C source file and return a dictionary of
         blocks {block id:  block}."""
         blocks = {}
-        (output, _) = tools.execute("undertaker -j blockrange %s" % path,
-                failok=False)
+        try:
+            (output, _) = tools.execute("undertaker -j blockrange %s" % path,
+                    failok=False)
+        except tools.CommandFailed:
+            return blocks
         for out in output:
             block = Block(path)
             split = out.split(":")
@@ -66,7 +69,7 @@ class Block(object):
             block.range = (int(split[2]), int(split[3]))
             if block.range[0] != 0:
                 (precond, _) = tools.execute("undertaker -j blockpc %s:%i:1" %
-                        (path, block.range[0]+1), failok=False)
+                        (path, block.range[0]+1))
                 for pre in precond:
                     block.ref_items.update(tools.get_kconfig_items(pre))
             blocks[block.bid] = block
