@@ -212,7 +212,7 @@ def apply_patch(patchfile, flags=""):
 def search_item_tree(item):
     """Return a list of files referencing @item."""
     item += "[^_]"  # avoid substring matches (e.g., for CONFIG_X86*)
-    (files, _) = tools.execute("git grep '%s'" % item)
+    (files, _) = tools.execute("git grep -n '%s'" % item)
     # if there is no reference we get [""]
     if files[0] == "":
         return []
