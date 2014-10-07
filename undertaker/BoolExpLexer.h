@@ -41,7 +41,7 @@
 
 #include <list>
 
-#include "BoolExpParser.h"
+#include "BoolExpParser.hh"
 
 namespace kconfig {
     class BoolExpLexer : public KconfigFlexLexer {

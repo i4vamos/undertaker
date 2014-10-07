@@ -2,7 +2,7 @@
 SUFFIXES += .d
 
 #We don't need to clean up when we're making these targets
-NODEPS:=clean clean-check
+NODEPS:=clean clean-check clean-parsers
 
 CFLAGS = -Wall -Wextra -O2
 CPPFLAGS = -I $(CURDIR)/../scripts/kconfig -I $(CURDIR)/../picosat
@@ -59,23 +59,18 @@ satyr: libsatyr.a zconf.tab.o ../picosat/libpicosat.a
 ../version.h:
 	$(MAKE) -C .. version.h
 
-undertaker.d: ../version.h
+undertaker.d rsf2cnf.d satyr.d: ../version.h
 
-rsf2cnf.d: ../version.h
+BoolExpLexer.d: BoolExpLexer.cpp BoolExpParser.hh
+BoolExpParser.d: BoolExpParser.cpp
 
-satyr.d: ../version.h
+location.hh: position.hh
 
-BoolExpLexer.d:
+%.hh: BoolExpLP/%.hh
+	cp $< $@
 
-BoolExpParser.d:
-
-BoolExpLexer.cpp: BoolExpParser.cpp BoolExpLexer.l
-	flex -o $@ BoolExpLexer.l
-
-BoolExpParser.cpp: BoolExpParser.y
-	bison -o $@ --defines=BoolExpParser.h $<
-
-stack.hh location.hh postion.hh: BoolExpParser.cpp
+%.cpp: BoolExpLP/%.cpp_shipped
+	cp $< $@
 
 bool.o: bool.cpp bool.h BoolExpParser.o
 
@@ -100,12 +95,14 @@ endif
 %.d: %.cpp
 	 @$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM -MG $< > $@
 
-clean: clean-check
+clean: clean-check clean-parsers
 	rm -rf *.o *.a *.gcda *.gcno *.d
-	rm -rf location.hh stack.hh position.hh
-	rm -rf BoolExpParser.cpp BoolExpParser.h BoolExpLexer.cpp
 	rm -rf coverage-wl.cnf
 	rm -rf $(PROGS) $(TESTPROGS)
+
+clean-parsers:
+	rm -rf location.hh stack.hh position.hh BoolExpParser.hh
+	rm -rf BoolExpParser.cpp BoolExpLexer.cpp
 
 test-%: test-%.cpp libparser.a ../picosat/libpicosat.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt $(LDFLAGS) $(LDLIBS)
@@ -181,5 +178,13 @@ run-lcov:
 	lcov -e coverage-html/undertaker.info.in "$(CURDIR)*" --output-file coverage-html/undertaker.info
 	genhtml -o coverage-html coverage-html/undertaker.info
 
+
+ifdef REGENERATE_PARSERS
+
+regenerate_parsers: clean-parsers
+	$(MAKE) -C BoolExpLP
+
+endif
+
 FORCE:
-.PHONY: all clean clean-check FORCE run-% docs validation run-lcov run-coveragecheck
+.PHONY: all clean clean-% FORCE run-% docs validation run-lcov run-coveragecheck

@@ -147,6 +147,14 @@ dist: clean
 undertaker-lcov:
 	$(MAKE) -C undertaker run-lcov
 
+
+ifdef REGENERATE_PARSERS
+
+regenerate_parsers:
+	$(MAKE) -C undertaker regenerate_parsers
+
+endif
+
 FORCE:
 .PHONY: FORCE check undertaker-lcov conf
 .NOTPARALLEL:
