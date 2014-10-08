@@ -85,7 +85,7 @@ zconf.tab.o:
 	ln -sf ../scripts/kconfig/$@ $@
 
 #Don't create dependencies when we're cleaning, for instance
-ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
+ifeq (0, $(words $(filter $(MAKECMDGOALS), $(NODEPS))))
     #Chances are, these files don't exist.  GMake will create them and
     #clean up automatically afterwards
     -include $(DEPFILES)
