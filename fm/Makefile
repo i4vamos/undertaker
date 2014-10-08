@@ -19,23 +19,23 @@ $(CONF):
 %.cnf: %.fm
 	$(SATYR) $< -c $@
 
-%.allyesconfig: %.fm
+%.allyesconfig: %.fm $(CONF) $(SATYR)
 	env KCONFIG_CONFIG=$@ $(CONF) $< --allyesconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
-%.allnoconfig: %.fm
+%.allnoconfig: %.fm $(CONF) $(SATYR)
 	env KCONFIG_CONFIG=$@ $(CONF) $< --allnoconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
-%.allmodconfig: %.fm
+%.allmodconfig: %.fm $(CONF) $(SATYR)
 	env KCONFIG_CONFIG=$@ $(CONF) $< --allmodconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
-%.alldefconfig: %.fm
+%.alldefconfig: %.fm $(CONF) $(SATYR)
 	env KCONFIG_CONFIG=$@ $(CONF) $< --alldefconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
-check: $(SATYR) $(CONF) $(ALLCONFIGS)
+check: $(ALLCONFIGS)
 
 clean:
 	rm -rf $(CNFs) $(ALLCONFIGS) *.*.old
