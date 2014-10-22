@@ -83,8 +83,8 @@ namespace kconfig {
             left = el;
         }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 50; }
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 50; }
     };
 
 /************************************************************************/
@@ -98,8 +98,8 @@ namespace kconfig {
             left = el;
         }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 30; }
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 30; }
     };
 
 /************************************************************************/
@@ -114,9 +114,9 @@ namespace kconfig {
             this->name = name;
         }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 60; }
-        virtual bool equals(const BoolExp *other) const final override;
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 60; }
+        bool equals(const BoolExp *other) const final override;
     };
 
 /************************************************************************/
@@ -130,8 +130,8 @@ namespace kconfig {
             left = el;
         }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 20; }
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 20; }
     };
 
 /************************************************************************/
@@ -145,8 +145,8 @@ namespace kconfig {
             left = el;
         }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 10; }
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 10; }
     };
 
 /************************************************************************/
@@ -161,9 +161,9 @@ namespace kconfig {
             this->param = param;
         }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 90; }
-        virtual bool equals(const BoolExp *other) const final override;
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 90; }
+        bool equals(const BoolExp *other) const final override;
     };
 
 /************************************************************************/
@@ -172,10 +172,10 @@ namespace kconfig {
 
     class BoolExpNot : public BoolExp {
     public:
-        BoolExpNot(BoolExp *e) { right = e; }
+        explicit BoolExpNot(BoolExp *e) { right = e; }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 70; }
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 70; }
     };
 
 /************************************************************************/
@@ -183,14 +183,14 @@ namespace kconfig {
 /************************************************************************/
 
     class BoolExpConst : public BoolExp {
-        BoolExpConst(bool val) { value = val; }
+        explicit BoolExpConst(bool val) { value = val; }
 
     public:
         bool value;
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 90; }
-        virtual bool equals(const BoolExp *other) const final override;
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 90; }
+        bool equals(const BoolExp *other) const final override;
 
         static BoolExpConst *getInstance(bool val);
     };
@@ -204,7 +204,7 @@ namespace kconfig {
         TristateRelation rel;
         struct symbol *sym;
 
-        BoolExpVar(std::string name, bool addPrefix = true) {
+        explicit BoolExpVar(std::string name, bool addPrefix = true) {
             this->rel = rel_helper;
             this->name = addPrefix ? "CONFIG_" + name : name;
         }
@@ -217,9 +217,9 @@ namespace kconfig {
             this->name = "CONFIG_" + name + TristateRelationNames[rel];
         }
 
-        virtual void accept(BoolVisitor *visitor) final override;
-        virtual int getEvaluationPriority(void) const final override { return 90; }
-        virtual bool equals(const BoolExp *other) const final override;
+        void accept(BoolVisitor *visitor) final override;
+        int getEvaluationPriority(void) const final override { return 90; }
+        bool equals(const BoolExp *other) const final override;
     };
 
 /************************************************************************/
@@ -231,5 +231,5 @@ namespace kconfig {
     BoolExp &operator&&(BoolExp &l, BoolExp &r);
     BoolExp &operator||(BoolExp &l, BoolExp &r);
     BoolExp &operator!(BoolExp & l);
-}
+} // namespace kconfig
 #endif

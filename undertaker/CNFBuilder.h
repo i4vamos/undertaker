@@ -42,8 +42,9 @@ namespace kconfig {
         bool useKconfigWhitelist = false;
 
     public:
-        CNFBuilder(PicosatCNF *cnf, std::string sat = "", bool useKconfigWhitelist=false,
-                ConstantPolicy constPolicy=ConstantPolicy::BOUND);
+        explicit CNFBuilder(PicosatCNF *cnf, std::string sat = "",
+                            bool useKconfigWhitelist = false,
+                            ConstantPolicy constPolicy = ConstantPolicy::BOUND);
 
         //! Add clauses from the parsed boolean expression e
         /**
@@ -67,16 +68,16 @@ namespace kconfig {
         int addVar(std::string s);
 
     protected:
-        virtual void visit(BoolExp *e)      final override;
-        virtual void visit(BoolExpAnd *e)   final override;
-        virtual void visit(BoolExpOr *e)    final override;
-        virtual void visit(BoolExpNot *e)   final override;
-        virtual void visit(BoolExpConst *e) final override;
-        virtual void visit(BoolExpVar *e)   final override;
-        virtual void visit(BoolExpImpl *e)  final override;
-        virtual void visit(BoolExpEq *e)    final override;
-        virtual void visit(BoolExpCall *e)  final override;
-        virtual void visit(BoolExpAny *e)   final override;
+        void visit(BoolExp *e)      final override;
+        void visit(BoolExpAnd *e)   final override;
+        void visit(BoolExpOr *e)    final override;
+        void visit(BoolExpNot *e)   final override;
+        void visit(BoolExpConst *e) final override;
+        void visit(BoolExpVar *e)   final override;
+        void visit(BoolExpImpl *e)  final override;
+        void visit(BoolExpEq *e)    final override;
+        void visit(BoolExpCall *e)  final override;
+        void visit(BoolExpAny *e)   final override;
     };
-}
+} // namespace kconfig
 #endif

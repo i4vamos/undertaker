@@ -142,7 +142,7 @@ namespace kconfig {
     void BoolExpLexer::set_debug(bool b) {
         yy_flex_debug = b;
     }
-}
+} // namespace kconfig
 
 /* dummydecl */
 #ifdef yylex

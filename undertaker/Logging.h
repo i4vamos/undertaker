@@ -41,7 +41,7 @@ namespace Logging {
     namespace {
         int getLogLevel() { return logger.logLevel; }
         void setLogLevel(int l) { logger.logLevel = l; }
-    }
+    } // namespace
 
     // TODO gcc 4.8.1 currently has a bug and evaluates the parameters backwards...this
     // implementation is faster but prints in reverse order..
@@ -84,6 +84,6 @@ namespace Logging {
         if (logger.logLevel <= LOG_ERROR)
             std::cerr << buildStringFromArgs("E: ", std::forward<Ts>(args)...);
     }
-}  // namspace Logging
+} // namespace Logging
 
 #endif /* _LOGGING_H_ */

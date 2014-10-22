@@ -26,21 +26,20 @@
 
 namespace kconfig {
     class PicosatCNF;
-}
+} // namespace kconfig
 
 
 class CnfConfigurationModel: public ConfigurationModel {
     kconfig::PicosatCNF *_cnf;
 
-    virtual void doIntersectPreprocess(std::set<std::string> &,
-                                       StringJoiner &) const final override {}
+    void doIntersectPreprocess(std::set<std::string> &, StringJoiner &) const final override {}
 
-    virtual void addMetaValue(const std::string &key, const std::string &val) const final override;
+    void addMetaValue(const std::string &key, const std::string &val) const final override;
 
 public:
     //! Loads the configuration model from file
     //! \param filename filepath to the model file. (NB: The basename is taken as architecture name.)
-    CnfConfigurationModel(const std::string &filename);
+    explicit CnfConfigurationModel(const std::string &filename);
     const kconfig::PicosatCNF *getCNF(void) const { return _cnf; }
 
     //! destructor
@@ -48,18 +47,18 @@ public:
     //@{
     //! checks the type of a given symbol.
     //! @return false if not found
-    virtual bool isBoolean(const std::string &)                    const final override;
-    virtual bool isTristate(const std::string &)                   const final override;
+    bool isBoolean(const std::string &)                    const final override;
+    bool isTristate(const std::string &)                   const final override;
     //@}
 
     //! returns the version identifier for the current model
-    virtual const std::string getModelVersionIdentifier() const final override { return "cnf"; }
+    const std::string getModelVersionIdentifier() const final override { return "cnf"; }
 
     //! returns the type of the given symbol
     //! Normalizes the given item so that passing with and without CONFIG_ prefix works.
-    virtual std::string getType(const std::string &feature_name)   const final override;
+    std::string getType(const std::string &feature_name)   const final override;
 
-    virtual bool containsSymbol(const std::string &symbol)         const final override;
-    virtual const StringList *getMetaValue(const std::string &key) const final override;
+    bool containsSymbol(const std::string &symbol)         const final override;
+    const StringList *getMetaValue(const std::string &key) const final override;
 };
 #endif

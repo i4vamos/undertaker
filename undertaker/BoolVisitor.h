@@ -59,5 +59,5 @@ namespace kconfig {
         virtual void visit(BoolExpCall *e) = 0;
         virtual void visit(BoolExpAny *e) = 0;
     };
-}
+} // namespace kconfig
 #endif

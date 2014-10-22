@@ -40,40 +40,40 @@ namespace kconfig {
         }
 
     protected:
-        virtual void visit(BoolExp *)       final override {
+        void visit(BoolExp *)       final override {
             this->result = new std::string("__something_went_horribly_wrong__");
         }
 
-        virtual void visit(BoolExpAnd *e)   final override {
+        void visit(BoolExpAnd *e)   final override {
             makestr(" && ", e);
         }
 
-        virtual void visit(BoolExpOr *e)    final override {
+        void visit(BoolExpOr *e)    final override {
             makestr(" || ", e);
         }
 
-        virtual void visit(BoolExpNot *e)   final override {
+        void visit(BoolExpNot *e)   final override {
             makestr("!", e);
         }
 
-        virtual void visit(BoolExpConst *e) final override {
+        void visit(BoolExpConst *e) final override {
             const char *v = e->value ? "1" : "0";
             this->result = new std::string(v);
         }
 
-        virtual void visit(BoolExpVar *e)   final override {
+        void visit(BoolExpVar *e)   final override {
             this->result = new std::string(e->getName());
         }
 
-        virtual void visit(BoolExpImpl *e)  final override {
+        void visit(BoolExpImpl *e)  final override {
             makestr(" -> ", e);
         }
 
-        virtual void visit(BoolExpEq *e)    final override {
+        void visit(BoolExpEq *e)    final override {
             makestr(" <-> ", e);
         }
 
-        virtual void visit(BoolExpCall *e)  final override {
+        void visit(BoolExpCall *e)  final override {
             bool first = true;
             std::string paramstring("");
             for (const auto &ptr : *e->param) {  // BoolExp *
@@ -84,7 +84,7 @@ namespace kconfig {
             this->result = new std::string{ e->getName() + " (" + paramstring + ")" };
         }
 
-        virtual void visit(BoolExpAny *e)   final override {
+        void visit(BoolExpAny *e)   final override {
             makestr({ " " + e->getName() + " " }, e);
         }
 
@@ -111,6 +111,5 @@ namespace kconfig {
             this->result = s;
         }
     };
-}
-
+} // namespace kconfig
 #endif

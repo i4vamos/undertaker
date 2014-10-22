@@ -41,5 +41,5 @@ namespace kconfig {
 
     void nameSymbol(struct symbol *sym);
     struct symbol *getModulesSym(void);
-}
+} // namespace kconfig
 #endif

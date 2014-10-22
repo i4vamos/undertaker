@@ -45,7 +45,7 @@
 class PumaConditionalBlockBuilder;
 namespace Puma {
     class PreTree;
-}
+} // namespace Puma
 
 
 /************************************************************************/
@@ -77,16 +77,16 @@ public:
     virtual ~PumaConditionalBlock() { delete[] _expressionStr_cache; }
 
     //! location related accessors
-    virtual unsigned int lineStart()     const final override {
+    unsigned int lineStart()     const final override {
         return getParent() ? _start->location().line() : 0;
     };
-    virtual unsigned int colStart()      const final override {
+    unsigned int colStart()      const final override {
         return getParent() ? _start->location().column() : 0;
     };
-    virtual unsigned int lineEnd()       const final override {
+    unsigned int lineEnd()       const final override {
         return getParent() ? _end  ->location().line() : 0;
     };
-    virtual unsigned int colEnd()        const final override {
+    unsigned int colEnd()        const final override {
         return getParent() ? _end  ->location().column() : 0;
     };
     /// @}
@@ -98,14 +98,14 @@ public:
     }
 
     //! \return original untouched expression
-    virtual const char * ExpressionStr() const final override;
-    virtual bool isIfBlock()             const final override { return _isIfBlock; }
-    virtual bool isIfndefine()           const final override;
-    virtual bool isElseIfBlock()         const final override;
-    virtual bool isElseBlock()           const final override;
-    virtual bool isDummyBlock()          const final override { return _isDummyBlock; }
-    virtual void setDummyBlock()               final override { _isDummyBlock = true; }
-    virtual const std::string getName()  const final override;
+    const char * ExpressionStr() const final override;
+    bool isIfBlock()             const final override { return _isIfBlock; }
+    bool isIfndefine()           const final override;
+    bool isElseIfBlock()         const final override;
+    bool isElseBlock()           const final override;
+    bool isDummyBlock()          const final override { return _isDummyBlock; }
+    void setDummyBlock()               final override { _isDummyBlock = true; }
+    const std::string getName()  const final override;
     PumaConditionalBlockBuilder &getBuilder() const { return _builder; }
 
     friend class PumaConditionalBlockBuilder;
@@ -118,7 +118,7 @@ public:
 
 class PumaConditionalBlockBuilder : public Puma::PreVisitor {
     unsigned long _nodeNum;
-    virtual void iterateNodes (Puma::PreTree *) final override;
+    void iterateNodes (Puma::PreTree *) final override;
     // Stack of open conditional blocks. Pushed to when entering #ifdef
     // (and similar) blocks, popped from when leaving them.
     std::stack<PumaConditionalBlock *> _condBlockStack;
@@ -152,19 +152,17 @@ public:
 
     ConditionalBlock *topBlock() { return _top; }
 
-    virtual void visitPreProgram_Pre (Puma::PreProgram *)                 final override;
-    virtual void visitPreProgram_Post (Puma::PreProgram *)                final override;
-    virtual void visitPreIfDirective_Pre (Puma::PreIfDirective *)         final override;
-    virtual void visitPreIfdefDirective_Pre (Puma::PreIfdefDirective *)   final override;
-    virtual void visitPreIfndefDirective_Pre (Puma::PreIfndefDirective *) final override;
-    virtual void visitPreElifDirective_Pre (Puma::PreElifDirective *)     final override;
-    virtual void visitPreElseDirective_Pre (Puma::PreElseDirective *)     final override;
-    virtual void visitPreEndifDirective_Pre (Puma::PreEndifDirective *)   final override;
-    virtual void visitPreDefineConstantDirective_Pre (Puma::PreDefineConstantDirective *)
-                                                                          final override;
-    virtual void visitPreDefineFunctionDirective_Pre (Puma::PreDefineFunctionDirective *)
-                                                                          final override;
-    virtual void visitPreUndefDirective_Pre (Puma::PreUndefDirective *)   final override;
+    void visitPreProgram_Pre (Puma::PreProgram *)                                final override;
+    void visitPreProgram_Post (Puma::PreProgram *)                               final override;
+    void visitPreIfDirective_Pre (Puma::PreIfDirective *)                        final override;
+    void visitPreIfdefDirective_Pre (Puma::PreIfdefDirective *)                  final override;
+    void visitPreIfndefDirective_Pre (Puma::PreIfndefDirective *)                final override;
+    void visitPreElifDirective_Pre (Puma::PreElifDirective *)                    final override;
+    void visitPreElseDirective_Pre (Puma::PreElseDirective *)                    final override;
+    void visitPreEndifDirective_Pre (Puma::PreEndifDirective *)                  final override;
+    void visitPreDefineConstantDirective_Pre(Puma::PreDefineConstantDirective *) final override;
+    void visitPreDefineFunctionDirective_Pre(Puma::PreDefineFunctionDirective *) final override;
+    void visitPreUndefDirective_Pre (Puma::PreUndefDirective *)                  final override;
 
     unsigned long * getNodeNum() { return &_nodeNum; }
     static void addIncludePath(const char *);

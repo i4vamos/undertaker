@@ -45,7 +45,7 @@ public:
 
 protected:
     /* c'tor */
-    CoverageAnalyzer(const CppFile *file) : file(file) {};
+    explicit CoverageAnalyzer(const CppFile *file) : file(file){};
 
     std::string baseFileExpression(const ConfigurationModel *model);
 
@@ -59,8 +59,8 @@ protected:
 
 class SimpleCoverageAnalyzer : public CoverageAnalyzer {
 public:
-    SimpleCoverageAnalyzer(CppFile *f) : CoverageAnalyzer(f) {};
-    virtual std::list<SatChecker::AssignmentMap> blockCoverage(ConfigurationModel *) final override;
+    explicit SimpleCoverageAnalyzer(CppFile *f) : CoverageAnalyzer(f){};
+    std::list<SatChecker::AssignmentMap> blockCoverage(ConfigurationModel *) final override;
 };
 
 /************************************************************************/
@@ -69,8 +69,8 @@ public:
 
 class MinimizeCoverageAnalyzer : public CoverageAnalyzer {
 public:
-    MinimizeCoverageAnalyzer(CppFile *f) : CoverageAnalyzer(f) {};
-    virtual std::list<SatChecker::AssignmentMap> blockCoverage(ConfigurationModel *) final override;
+    explicit MinimizeCoverageAnalyzer(CppFile *f) : CoverageAnalyzer(f){};
+    std::list<SatChecker::AssignmentMap> blockCoverage(ConfigurationModel *) final override;
 };
 
 #endif /* _COVERAGEANALYZER_H_ */

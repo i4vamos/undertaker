@@ -36,20 +36,20 @@ namespace kconfig {
         void addClause(BoolExp *clause);
         void pushSymbolInfo(struct symbol *sym);
     public:
-        SymbolTranslator(PicosatCNF *cnf) : cnfbuilder(cnf) {}
+        explicit SymbolTranslator(PicosatCNF *cnf) : cnfbuilder(cnf) {}
 
         std::set<struct symbol *> *symbolSet = nullptr;
 
         int featuresWithStringDependencies() { return _featuresWithStringDep; }
         int totalStringComparisons() { return _totalStringComp; }
     protected:
-        virtual void visit_bool_symbol (struct symbol *sym)     final override;
-        virtual void visit_tristate_symbol (struct symbol *sym) final override;
-        virtual void visit_int_symbol (struct symbol *sym)      final override;
-        virtual void visit_hex_symbol (struct symbol *sym)      final override;
-        virtual void visit_string_symbol (struct symbol *sym)   final override;
-        virtual void visit_symbol (struct symbol *sym)          final override;
-        virtual void visit_choice_symbol (struct symbol *sym)   final override;
+        void visit_bool_symbol (struct symbol *sym)     final override;
+        void visit_tristate_symbol (struct symbol *sym) final override;
+        void visit_int_symbol (struct symbol *sym)      final override;
+        void visit_hex_symbol (struct symbol *sym)      final override;
+        void visit_string_symbol (struct symbol *sym)   final override;
+        void visit_symbol (struct symbol *sym)          final override;
+        void visit_choice_symbol (struct symbol *sym)   final override;
     };
-}
+} // namespace kconfig
 #endif

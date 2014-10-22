@@ -38,7 +38,7 @@ namespace kconfig {
         PicosatCNF *_model;
     public:
         //! loads the given models
-        KconfigAssumptionMap(PicosatCNF *model) : _model(model) { };
+        explicit KconfigAssumptionMap(PicosatCNF *model) : _model(model) { };
 
         /**
          * \brief load a partial configuration
@@ -47,5 +47,5 @@ namespace kconfig {
          */
         size_type readAssumptionsFromFile(std::istream &i);
     };
-}
+} // namespace kconfig
 #endif

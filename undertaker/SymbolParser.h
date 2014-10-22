@@ -53,5 +53,5 @@ namespace kconfig {
             visit_symbol(sym);
         };
     };
-}
+} // namespace kconfig
 #endif

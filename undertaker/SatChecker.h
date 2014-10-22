@@ -46,7 +46,8 @@ class CppFile;
 class SatChecker {
     enum class state {no, yes, module};
 public:
-    SatChecker(const ConfigurationModel * = nullptr, Picosat::SATMode mode = Picosat::SAT_MAX);
+    explicit SatChecker(const ConfigurationModel * = nullptr,
+                        Picosat::SATMode mode = Picosat::SAT_MAX);
 
     virtual ~SatChecker() {};
 
@@ -200,7 +201,8 @@ protected:
 
 class BaseExpressionSatChecker : public SatChecker {
 public:
-    BaseExpressionSatChecker(std::string base_expression, const ConfigurationModel * = nullptr);
+    explicit BaseExpressionSatChecker(std::string base_expression,
+                                      const ConfigurationModel * = nullptr);
     virtual ~BaseExpressionSatChecker() {}
     bool operator()(const std::set<std::string> &assumeSymbols);
 };

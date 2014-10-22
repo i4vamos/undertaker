@@ -26,7 +26,7 @@
 
 namespace kconfig {
     struct InvalidNodeException : public std::logic_error {
-        InvalidNodeException(std::string s) : logic_error(s) {}
+        explicit InvalidNodeException(std::string s) : logic_error(s) {}
     };
-}
+} // namespace kconfig
 #endif

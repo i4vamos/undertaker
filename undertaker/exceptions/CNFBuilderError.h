@@ -26,6 +26,6 @@
 
 
 struct CNFBuilderError : public std::runtime_error {
-    CNFBuilderError(std::string s) : runtime_error(s) {}
+    explicit CNFBuilderError(std::string s) : runtime_error(s) {}
 };
 #endif

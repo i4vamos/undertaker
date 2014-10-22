@@ -38,7 +38,7 @@ using StringList = std::deque<std::string>;
  */
 class RsfReader : public std::map<std::string, std::string> {
 public:
-    RsfReader(const std::string &filename, const std::string metaflag = "UNDERTAKER_SET");
+    explicit RsfReader(const std::string &filename, const std::string metaflag = "UNDERTAKER_SET");
     virtual ~RsfReader() = default;
 
     const std::string *getValue(const std::string &key) const;
@@ -65,7 +65,7 @@ private:
  */
 class ItemRsfReader : public std::map<std::string, std::string> {
 public:
-    ItemRsfReader(const std::string &filename);
+    explicit ItemRsfReader(const std::string &filename);
     ItemRsfReader() = default;
     const std::string *getValue(const std::string &key) const;
 };

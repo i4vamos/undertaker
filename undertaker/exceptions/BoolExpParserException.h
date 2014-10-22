@@ -24,6 +24,6 @@
 #include <stdexcept>
 
 struct BoolExpParserException : public std::runtime_error {
-    BoolExpParserException(std::string s) : runtime_error(s) {}
+    explicit BoolExpParserException(std::string s) : runtime_error(s) {}
 };
 #endif

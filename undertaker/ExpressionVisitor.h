@@ -45,7 +45,7 @@ namespace kconfig {
         }
         virtual rt visit_others(struct expr *e) = 0;
     };
-}
+} // namespace kconfig
 
 using namespace kconfig;
 

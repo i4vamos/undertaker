@@ -26,9 +26,7 @@
 
 
 namespace undertaker {
-
     //! returns all (configuration) items of the given string
     std::set<std::string> itemsOfString(const std::string &);
-}
-
+} // namespace undertaker
 #endif

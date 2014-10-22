@@ -39,7 +39,7 @@ namespace Picosat {
         SAT_DEFAULT = 2,
         SAT_RANDOM  = 3,
     };
-};
+} // namespace Picosat
 
 
 namespace kconfig {
@@ -72,7 +72,7 @@ namespace kconfig {
         int clausecount = 0;
         inline void setCNFVar_fast(const std::string &var, int CNFVar);
     public:
-        PicosatCNF(Picosat::SATMode = Picosat::SAT_MIN);
+        explicit PicosatCNF(Picosat::SATMode = Picosat::SAT_MIN);
         PicosatCNF(const PicosatCNF &, Picosat::SATMode);
         ~PicosatCNF();
         void readFromFile(const std::string &filename);
@@ -118,5 +118,5 @@ namespace kconfig {
         const std::deque<std::string> *getMetaValue(const std::string &key) const;
         void addMetaValue(const std::string &key, const std::string &value);
     };
-}
+} // namespace kconfig
 #endif

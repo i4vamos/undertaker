@@ -27,7 +27,7 @@
 
 namespace kconfig {
     struct UnsupportedFeatureException : public std::logic_error {
-        UnsupportedFeatureException(std::string s) : logic_error(s) {}
+        explicit UnsupportedFeatureException(std::string s) : logic_error(s) {}
     };
-}
+} // namespace kconfig
 #endif

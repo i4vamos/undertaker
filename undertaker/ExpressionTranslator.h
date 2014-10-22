@@ -40,19 +40,19 @@ namespace kconfig {
         int _processedValComp = 0;
         std::set<struct symbol *> *symbolSet = nullptr;
     public:
-        ExpressionTranslator(std::set<struct symbol *> *s = nullptr) : symbolSet(s) {}
+        explicit ExpressionTranslator(std::set<struct symbol *> *s = nullptr) : symbolSet(s) {}
 
         int getValueComparisonCounter() { return _processedValComp; }
     protected:
-        virtual TristateRepr visit_symbol(struct symbol *)                     final override;
-        virtual TristateRepr visit_and(expr *, TristateRepr, TristateRepr)     final override;
-        virtual TristateRepr visit_or(expr *, TristateRepr, TristateRepr)      final override;
-        virtual TristateRepr visit_not(expr *, TristateRepr)                   final override;
-        virtual TristateRepr visit_equal(expr *, TristateRepr, TristateRepr)   final override;
-        virtual TristateRepr visit_unequal(expr *, TristateRepr, TristateRepr) final override;
-        virtual TristateRepr visit_list(expr *e)                               final override;
-        virtual TristateRepr visit_range(expr *, TristateRepr, TristateRepr)   final override;
-        virtual TristateRepr visit_others(expr *)                              final override;
+        TristateRepr visit_symbol(struct symbol *)                     final override;
+        TristateRepr visit_and(expr *, TristateRepr, TristateRepr)     final override;
+        TristateRepr visit_or(expr *, TristateRepr, TristateRepr)      final override;
+        TristateRepr visit_not(expr *, TristateRepr)                   final override;
+        TristateRepr visit_equal(expr *, TristateRepr, TristateRepr)   final override;
+        TristateRepr visit_unequal(expr *, TristateRepr, TristateRepr) final override;
+        TristateRepr visit_list(expr *e)                               final override;
+        TristateRepr visit_range(expr *, TristateRepr, TristateRepr)   final override;
+        TristateRepr visit_others(expr *)                              final override;
     };
-}
+} // namespace kconfig
 #endif

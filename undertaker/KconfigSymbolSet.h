@@ -32,27 +32,27 @@ namespace kconfig {
         KconfigSymbolSet(void) {}
 
     protected:
-        virtual void visit_bool_symbol(struct symbol *sym)     final override {
+        void visit_bool_symbol(struct symbol *sym)     final override {
             this->insert(sym);
         }
-        virtual void visit_tristate_symbol(struct symbol *sym) final override {
+        void visit_tristate_symbol(struct symbol *sym) final override {
             this->insert(sym);
         }
-        virtual void visit_int_symbol(struct symbol *sym)      final override {
+        void visit_int_symbol(struct symbol *sym)      final override {
             this->insert(sym);
         }
-        virtual void visit_hex_symbol(struct symbol *sym)      final override {
+        void visit_hex_symbol(struct symbol *sym)      final override {
             this->insert(sym);
         }
-        virtual void visit_string_symbol(struct symbol *sym)   final override {
+        void visit_string_symbol(struct symbol *sym)   final override {
             this->insert(sym);
         }
-        virtual void visit_symbol(struct symbol *)             final override {
+        void visit_symbol(struct symbol *)             final override {
             //do nothing
         }
-        virtual void visit_choice_symbol(struct symbol *sym)   final override {
+        void visit_choice_symbol(struct symbol *sym)   final override {
             this->insert(sym);
         }
     };
-}
+} // namespace kconfig
 #endif

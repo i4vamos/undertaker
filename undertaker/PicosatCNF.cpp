@@ -32,7 +32,7 @@ namespace Picosat {
     extern "C" {
         #include "picosat.h"
     }
-}
+} // namespace Picosat
 
 using namespace kconfig;
 

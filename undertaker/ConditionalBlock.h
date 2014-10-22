@@ -54,7 +54,7 @@ class CppFile : public CondBlockList {
 
 public:
     //! \param filename file with cpp expressions to parse
-    CppFile(const std::string &filename);
+    explicit CppFile(const std::string &filename);
     ~CppFile();
 
     //! Check if the file was correctly parsed

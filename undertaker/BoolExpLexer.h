@@ -46,7 +46,7 @@
 namespace kconfig {
     class BoolExpLexer : public KconfigFlexLexer {
     public:
-        BoolExpLexer(std::istream* arg_yyin = nullptr, std::ostream* arg_yyout = nullptr);
+        explicit BoolExpLexer(std::istream *arg_yyin = nullptr, std::ostream *arg_yyout = nullptr);
 
         virtual ~BoolExpLexer();
 
@@ -56,5 +56,5 @@ namespace kconfig {
 
         void set_debug(bool b);
     };
-}
+} // namespace kconfig
 #endif

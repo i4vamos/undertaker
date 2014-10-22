@@ -34,17 +34,16 @@ namespace kconfig {
         void trash(BoolExp *e) { e->accept(this); }
 
     protected:
-        virtual void visit(BoolExp *)      final override {}
-        virtual void visit(BoolExpAnd *)   final override {}
-        virtual void visit(BoolExpOr *)    final override {}
-        virtual void visit(BoolExpNot *)   final override {}
-        virtual void visit(BoolExpConst *) final override {}
-        virtual void visit(BoolExpVar *)   final override {}
-        virtual void visit(BoolExpImpl *)  final override {}
-        virtual void visit(BoolExpEq *)    final override {}
-        virtual void visit(BoolExpCall *)  final override {}
-        virtual void visit(BoolExpAny *)   final override {}
+        void visit(BoolExp *)      final override {}
+        void visit(BoolExpAnd *)   final override {}
+        void visit(BoolExpOr *)    final override {}
+        void visit(BoolExpNot *)   final override {}
+        void visit(BoolExpConst *) final override {}
+        void visit(BoolExpVar *)   final override {}
+        void visit(BoolExpImpl *)  final override {}
+        void visit(BoolExpEq *)    final override {}
+        void visit(BoolExpCall *)  final override {}
+        void visit(BoolExpAny *)   final override {}
     };
-};
-
+} // namespace kconfig
 #endif

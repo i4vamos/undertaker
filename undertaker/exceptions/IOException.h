@@ -26,7 +26,7 @@
 
 namespace kconfig {
     struct IOException : public std::runtime_error {
-        IOException(std::string s) : runtime_error(s) {}
+        explicit IOException(std::string s) : runtime_error(s) {}
     };
-}
+} // namespace kconfig
 #endif

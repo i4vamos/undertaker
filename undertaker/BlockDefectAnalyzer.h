@@ -47,7 +47,7 @@ class BlockDefect;
 namespace BlockDefectAnalyzer {
     const BlockDefect *analyzeBlock(ConditionalBlock *, ConfigurationModel *);
     std::string getBlockPrecondition(ConditionalBlock *, const ConfigurationModel *);
-}
+} // namespace BlockDefectAnalyzer
 
 class BlockDefect {
 public:
@@ -103,7 +103,7 @@ public:
     bool writeReportToFile(bool skip_no_kconfig) const;
 
 protected:
-    BlockDefect(ConditionalBlock *cb) : _cb(cb) {}
+    explicit BlockDefect(ConditionalBlock *cb) : _cb(cb) {}
     DEFECTTYPE _defectType = DEFECTTYPE::None;
     bool _isGlobal = false;
 
@@ -123,9 +123,9 @@ class DeadBlockDefect : public BlockDefect {
     std::string _musFormula;
 public:
     //! c'tor for a Dead Block Defect
-    DeadBlockDefect(ConditionalBlock *);
-    virtual bool isDefect(const ConfigurationModel *, bool = false) final override;
-    virtual void reportMUS(ConfigurationModel *) const final override;
+    explicit DeadBlockDefect(ConditionalBlock *);
+    bool isDefect(const ConfigurationModel *, bool = false) final override;
+    void reportMUS(ConfigurationModel *) const final override;
 };
 
 /************************************************************************/
@@ -136,9 +136,9 @@ public:
 class UndeadBlockDefect : public BlockDefect {
 public:
     //! c'tor for a Undead Block Defect
-    UndeadBlockDefect(ConditionalBlock *);
-    virtual bool isDefect(const ConfigurationModel *, bool = false) final override;
-    virtual void reportMUS(ConfigurationModel *) const final override {}
+    explicit UndeadBlockDefect(ConditionalBlock *);
+    bool isDefect(const ConfigurationModel *, bool = false) final override;
+    void reportMUS(ConfigurationModel *) const final override {}
 };
 
 #endif

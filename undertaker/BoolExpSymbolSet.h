@@ -35,20 +35,20 @@ namespace kconfig {
         bool ignoreFunctionSymbols;
 
     public:
-        BoolExpSymbolSet(BoolExp *e, bool ignoreFunctionSymbols = true);
+        explicit BoolExpSymbolSet(BoolExp *e, bool ignoreFunctionSymbols = true);
         std::set<std::string> getSymbolSet(void);
 
     protected:
-        virtual void visit(BoolExp *)      final override {}
-        virtual void visit(BoolExpAnd *)   final override {}
-        virtual void visit(BoolExpOr *)    final override {}
-        virtual void visit(BoolExpNot *)   final override {}
-        virtual void visit(BoolExpConst *) final override {}
-        virtual void visit(BoolExpVar *e)  final override;
-        virtual void visit(BoolExpImpl *)  final override {}
-        virtual void visit(BoolExpEq *)    final override {}
-        virtual void visit(BoolExpCall *e) final override;
-        virtual void visit(BoolExpAny *)   final override {}
+        void visit(BoolExp *)      final override {}
+        void visit(BoolExpAnd *)   final override {}
+        void visit(BoolExpOr *)    final override {}
+        void visit(BoolExpNot *)   final override {}
+        void visit(BoolExpConst *) final override {}
+        void visit(BoolExpVar *e)  final override;
+        void visit(BoolExpImpl *)  final override {}
+        void visit(BoolExpEq *)    final override {}
+        void visit(BoolExpCall *e) final override;
+        void visit(BoolExpAny *)   final override {}
     };
-}
+} // namespace kconfig
 #endif
