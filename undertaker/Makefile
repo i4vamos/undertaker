@@ -61,16 +61,16 @@ satyr: libsatyr.a zconf.tab.o ../picosat/libpicosat.a
 
 undertaker.d rsf2cnf.d satyr.d: ../version.h
 
-BoolExpLexer.d: BoolExpLexer.cpp BoolExpParser.hh
+BoolExpLexer.d: BoolExpLexer.cpp BoolExpParser.hh location.hh
 BoolExpParser.d: BoolExpParser.cpp
 
 location.hh: position.hh
 
 %.hh: BoolExpLP/%.hh
-	cp $< $@
+	cat $< > $@
 
 %.cpp: BoolExpLP/%.cpp_shipped
-	cp $< $@
+	cat $< > $@
 
 bool.o: bool.cpp bool.h BoolExpParser.o
 
@@ -80,9 +80,11 @@ libparser.a: $(DEPFILES) $(PARSEROBJ)
 libsatyr.a: $(DEPFILES) $(SATYROBJ)
 	ar r $@ $(SATYROBJ)
 
-zconf.tab.o:
-	$(MAKE) -C $(CURDIR)/.. scripts/kconfig/dumpconf
+zconf.tab.o: ../scripts/kconfig/zconf.tab.o
 	ln -sf ../scripts/kconfig/$@ $@
+
+../scripts/kconfig/zconf.tab.o:
+	$(MAKE) -C .. scripts/kconfig/conf
 
 #Don't create dependencies when we're cleaning, for instance
 ifeq (0, $(words $(filter $(MAKECMDGOALS), $(NODEPS))))

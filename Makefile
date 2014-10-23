@@ -1,5 +1,5 @@
-PROGS = scripts/kconfig/dumpconf scripts/kconfig/conf undertaker/undertaker undertaker/predator undertaker/rsf2cnf \
-	undertaker/satyr python/rsf2model tailor/undertaker-traceutil ziz/zizler picosat/picomus
+PROGS = scripts/kconfig/dumpconf undertaker/undertaker undertaker/predator undertaker/rsf2cnf \
+	undertaker/satyr python/rsf2model tailor/undertaker-traceutil ziz/zizler
 MANPAGES = doc/undertaker.1.gz doc/undertaker-linux-tree.1.gz doc/undertaker-kconfigdump.1.gz \
 	doc/undertaker-kconfigpp.1.gz
 
@@ -23,7 +23,10 @@ all: picosat/libpicosat.a $(PROGS)
 version.h: generate-version.sh
 	./$<
 
-scripts/kconfig/dumpconf scripts/kconfig/conf: FORCE
+scripts/kconfig/conf: FORCE
+	$(MAKE) -f Makefile.kbuild $(@F)
+
+scripts/kconfig/dumpconf: scripts/kconfig/conf FORCE
 	$(MAKE) -f Makefile.kbuild $(@F)
 
 picosat/libpicosat.a:
@@ -157,4 +160,3 @@ endif
 
 FORCE:
 .PHONY: FORCE check undertaker-lcov conf
-.NOTPARALLEL:
