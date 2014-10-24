@@ -2,7 +2,7 @@
 SUFFIXES += .d
 
 #We don't need to clean up when we're making these targets
-NODEPS:=clean clean-check clean-parsers
+NODEPS:=clean clean-check clean-parsers clean-regenerate
 
 CFLAGS = -Wall -Wextra -O2
 CPPFLAGS = -I $(CURDIR)/../scripts/kconfig -I $(CURDIR)/../picosat
@@ -46,6 +46,8 @@ TESTPROGS = test-SatChecker test-ConditionalBlock test-ConfigurationModel \
 
 DEPFILES:=$(patsubst %.o,%.d,$(PARSEROBJ) $(SATYROBJ)) undertaker.d satyr.d
 
+PARSERDIR = BoolExpLP
+
 all: $(PROGS) $(TESTPROGS)
 
 undertaker: libparser.a ../picosat/libpicosat.a
@@ -66,10 +68,10 @@ BoolExpParser.d: BoolExpParser.cpp
 
 location.hh: position.hh
 
-%.hh: BoolExpLP/%.hh
+%.hh: $(PARSERDIR)/%.hh
 	cat $< > $@
 
-%.cpp: BoolExpLP/%.cpp_shipped
+%.cpp: $(PARSERDIR)/%.cpp_shipped
 	cat $< > $@
 
 bool.o: bool.cpp bool.h BoolExpParser.o
@@ -188,8 +190,19 @@ run-lcov:
 # other targets
 ifdef REGENERATE_PARSERS
 
-regenerate_parsers: clean-parsers
-	$(MAKE) -C BoolExpLP
+.PRECIOUS: $(PARSERDIR)/BoolExpParser.hh $(PARSERDIR)/BoolExpParser.cpp_shipped
+
+regenerate_parsers: clean-parsers clean-regenerate
+	$(MAKE) $(PARSERDIR)/BoolExpLexer.cpp_shipped
+
+clean-regenerate:
+	rm -rf $(PARSERDIR)/*_shipped $(PARSERDIR)/*.hh
+
+$(PARSERDIR)/%.cpp_shipped: $(PARSERDIR)/%.l $(PARSERDIR)/BoolExpParser.cpp_shipped
+	flex -o $@ $<
+
+$(PARSERDIR)/%.cpp_shipped: $(PARSERDIR)/%.y
+	bison -o $@ --defines=$(PARSERDIR)/BoolExpParser.hh $<
 
 endif
 

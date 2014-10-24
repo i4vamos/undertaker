@@ -31,18 +31,18 @@
 // version 2.2 of Bison.
 
 /**
- ** \file stack.hh
+ ** \file BoolExpLP/stack.hh
  ** Define the kconfig::stack class.
  */
 
-#ifndef YY_KCONFIG_STACK_HH_INCLUDED
-# define YY_KCONFIG_STACK_HH_INCLUDED
+#ifndef YY_KCONFIG_BOOLEXPLP_STACK_HH_INCLUDED
+# define YY_KCONFIG_BOOLEXPLP_STACK_HH_INCLUDED
 
 # include <vector>
 
 
 namespace kconfig {
-#line 46 "stack.hh" // stack.hh:133
+#line 46 "BoolExpLP/stack.hh" // stack.hh:133
   template <class T, class S = std::vector<T> >
   class stack
   {
@@ -153,6 +153,6 @@ namespace kconfig {
 
 
 } // kconfig
-#line 157 "stack.hh" // stack.hh:133
+#line 157 "BoolExpLP/stack.hh" // stack.hh:133
 
-#endif // !YY_KCONFIG_STACK_HH_INCLUDED
+#endif // !YY_KCONFIG_BOOLEXPLP_STACK_HH_INCLUDED

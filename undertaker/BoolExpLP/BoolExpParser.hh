@@ -31,14 +31,14 @@
 // version 2.2 of Bison.
 
 /**
- ** \file BoolExpParser.hh
+ ** \file BoolExpLP/BoolExpParser.hh
  ** Define the kconfig::parser class.
  */
 
 // C++ LALR(1) parser skeleton written by Akim Demaille.
 
-#ifndef YY_KCONFIG_BOOLEXPPARSER_HH_INCLUDED
-# define YY_KCONFIG_BOOLEXPPARSER_HH_INCLUDED
+#ifndef YY_KCONFIG_BOOLEXPLP_BOOLEXPPARSER_HH_INCLUDED
+# define YY_KCONFIG_BOOLEXPLP_BOOLEXPPARSER_HH_INCLUDED
 
 
 # include <vector>
@@ -109,7 +109,7 @@
 
 
 namespace kconfig {
-#line 113 "BoolExpParser.hh" // lalr1.cc:372
+#line 113 "BoolExpLP/BoolExpParser.hh" // lalr1.cc:372
 
 
 
@@ -123,13 +123,13 @@ namespace kconfig {
     /// Symbol semantic values.
     union semantic_type
     {
-    #line 50 "BoolExpParser.y" // lalr1.cc:372
+    #line 50 "BoolExpLP/BoolExpParser.y" // lalr1.cc:372
 
     std::string*      stringVal;
     class BoolExp*    boolNode;
     class std::list<BoolExp *>* paramList;
 
-#line 133 "BoolExpParser.hh" // lalr1.cc:372
+#line 133 "BoolExpLP/BoolExpParser.hh" // lalr1.cc:372
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -466,9 +466,9 @@ namespace kconfig {
 
 
 } // kconfig
-#line 470 "BoolExpParser.hh" // lalr1.cc:372
+#line 470 "BoolExpLP/BoolExpParser.hh" // lalr1.cc:372
 
 
 
 
-#endif // !YY_KCONFIG_BOOLEXPPARSER_HH_INCLUDED
+#endif // !YY_KCONFIG_BOOLEXPLP_BOOLEXPPARSER_HH_INCLUDED

@@ -34,7 +34,7 @@
 #define yylex   kconfiglex
 
 // First part of user declarations.
-#line 21 "BoolExpParser.y" // lalr1.cc:399
+#line 21 "BoolExpLP/BoolExpParser.y" // lalr1.cc:399
 
 
 #include <stdio.h>
@@ -45,7 +45,7 @@
 #include "exceptions/BoolExpParserException.h"
 
 
-#line 49 "BoolExpParser.cpp_shipped" // lalr1.cc:399
+#line 49 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:399
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -58,14 +58,14 @@
 #include "BoolExpParser.hh"
 
 // User implementation prologue.
-#line 74 "BoolExpParser.y" // lalr1.cc:407
+#line 74 "BoolExpLP/BoolExpParser.y" // lalr1.cc:407
 
 #include "BoolExpLexer.h"
 
 #undef yylex
 #define yylex this->lexer->lex
 
-#line 69 "BoolExpParser.cpp_shipped" // lalr1.cc:407
+#line 69 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:407
 
 
 #ifndef YY_
@@ -151,7 +151,7 @@
 
 
 namespace kconfig {
-#line 155 "BoolExpParser.cpp_shipped" // lalr1.cc:474
+#line 155 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:474
 
   /* Return YYSTR after stripping away unnecessary quotes and
      backslashes, so that it's suitable for yyerror.  The heuristic is
@@ -369,79 +369,79 @@ namespace kconfig {
     {
             case 3: // "string"
 
-#line 70 "BoolExpParser.y" // lalr1.cc:599
+#line 70 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.stringVal); }
-#line 375 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 375 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 16: // Const
 
-#line 71 "BoolExpParser.y" // lalr1.cc:599
+#line 71 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 382 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 382 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 17: // Atom
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 389 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 389 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 18: // ParamList
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.paramList); }
-#line 396 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 396 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 19: // Literal
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 403 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 403 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 20: // CExpr
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 410 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 410 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 21: // AndExpr
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 417 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 417 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 22: // OrExpr
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 424 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 424 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 23: // ImplExpr
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 431 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 431 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 24: // EqExpr
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 438 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 438 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
       case 25: // Expr
 
-#line 72 "BoolExpParser.y" // lalr1.cc:599
+#line 72 "BoolExpLP/BoolExpParser.y" // lalr1.cc:599
         { delete (yysym.value.boolNode); }
-#line 445 "BoolExpParser.cpp_shipped" // lalr1.cc:599
+#line 445 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:599
         break;
 
 
@@ -681,145 +681,145 @@ namespace kconfig {
           switch (yyn)
             {
   case 2:
-#line 83 "BoolExpParser.y" // lalr1.cc:847
+#line 83 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = B_CONST(true);}
-#line 687 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 687 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 3:
-#line 84 "BoolExpParser.y" // lalr1.cc:847
+#line 84 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = B_CONST(false);}
-#line 693 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 693 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 4:
-#line 87 "BoolExpParser.y" // lalr1.cc:847
+#line 87 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 699 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 699 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 5:
-#line 88 "BoolExpParser.y" // lalr1.cc:847
+#line 88 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = new BoolExpCall(*(yystack_[3].value.stringVal), (yystack_[1].value.paramList)); delete (yystack_[3].value.stringVal);}
-#line 705 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 705 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 6:
-#line 89 "BoolExpParser.y" // lalr1.cc:847
+#line 89 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = new BoolExpVar(*(yystack_[0].value.stringVal), false); delete (yystack_[0].value.stringVal);}
-#line 711 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 711 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 7:
-#line 90 "BoolExpParser.y" // lalr1.cc:847
+#line 90 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[1].value.boolNode);}
-#line 717 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 717 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 8:
-#line 93 "BoolExpParser.y" // lalr1.cc:847
+#line 93 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     { (yylhs.value.paramList) = new std::list<BoolExp *>();}
-#line 723 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 723 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 9:
-#line 94 "BoolExpParser.y" // lalr1.cc:847
+#line 94 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     { (yylhs.value.paramList) = new std::list<BoolExp *>(); (yylhs.value.paramList)->push_back((yystack_[0].value.boolNode));}
-#line 729 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 729 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 10:
-#line 95 "BoolExpParser.y" // lalr1.cc:847
+#line 95 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     { (yylhs.value.paramList) = (yystack_[2].value.paramList); (yystack_[2].value.paramList)->push_back((yystack_[0].value.boolNode));}
-#line 735 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 735 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 11:
-#line 98 "BoolExpParser.y" // lalr1.cc:847
+#line 98 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 741 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 741 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 12:
-#line 99 "BoolExpParser.y" // lalr1.cc:847
+#line 99 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = new BoolExpNot((yystack_[0].value.boolNode));}
-#line 747 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 747 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 13:
-#line 102 "BoolExpParser.y" // lalr1.cc:847
+#line 102 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 753 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 753 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 14:
-#line 103 "BoolExpParser.y" // lalr1.cc:847
+#line 103 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = new BoolExpAny(*(yystack_[1].value.stringVal), (yystack_[2].value.boolNode), (yystack_[0].value.boolNode)); delete (yystack_[1].value.stringVal);}
-#line 759 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 759 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 15:
-#line 106 "BoolExpParser.y" // lalr1.cc:847
+#line 106 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 765 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 765 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 16:
-#line 107 "BoolExpParser.y" // lalr1.cc:847
+#line 107 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = new BoolExpAnd((yystack_[2].value.boolNode), (yystack_[0].value.boolNode));}
-#line 771 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 771 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 17:
-#line 110 "BoolExpParser.y" // lalr1.cc:847
+#line 110 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 777 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 777 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 18:
-#line 111 "BoolExpParser.y" // lalr1.cc:847
+#line 111 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     { (yylhs.value.boolNode) = new BoolExpOr((yystack_[2].value.boolNode), (yystack_[0].value.boolNode));}
-#line 783 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 783 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 19:
-#line 114 "BoolExpParser.y" // lalr1.cc:847
+#line 114 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 789 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 789 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 20:
-#line 115 "BoolExpParser.y" // lalr1.cc:847
+#line 115 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     { (yylhs.value.boolNode) = new BoolExpImpl((yystack_[2].value.boolNode), (yystack_[0].value.boolNode));}
-#line 795 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 795 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 21:
-#line 118 "BoolExpParser.y" // lalr1.cc:847
+#line 118 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 801 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 801 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 22:
-#line 119 "BoolExpParser.y" // lalr1.cc:847
+#line 119 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     { (yylhs.value.boolNode) = new BoolExpEq((yystack_[2].value.boolNode), (yystack_[0].value.boolNode));}
-#line 807 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 807 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 23:
-#line 122 "BoolExpParser.y" // lalr1.cc:847
+#line 122 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     {(yylhs.value.boolNode) = (yystack_[0].value.boolNode);}
-#line 813 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 813 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
   case 24:
-#line 125 "BoolExpParser.y" // lalr1.cc:847
+#line 125 "BoolExpLP/BoolExpParser.y" // lalr1.cc:847
     { *(this->result) = (yystack_[1].value.boolNode);}
-#line 819 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 819 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
     break;
 
 
-#line 823 "BoolExpParser.cpp_shipped" // lalr1.cc:847
+#line 823 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:847
             default:
               break;
             }
@@ -1255,8 +1255,8 @@ namespace kconfig {
 
 
 } // kconfig
-#line 1259 "BoolExpParser.cpp_shipped" // lalr1.cc:1155
-#line 127 "BoolExpParser.y" // lalr1.cc:1156
+#line 1259 "BoolExpLP/BoolExpParser.cpp_shipped" // lalr1.cc:1155
+#line 127 "BoolExpLP/BoolExpParser.y" // lalr1.cc:1156
 
 void kconfig::BoolExpParser::error(const BoolExpParser::location_type&, const std::string& msg){
     throw new BoolExpParserException(msg);

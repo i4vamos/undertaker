@@ -31,12 +31,12 @@
 // version 2.2 of Bison.
 
 /**
- ** \file position.hh
+ ** \file BoolExpLP/position.hh
  ** Define the kconfig::position class.
  */
 
-#ifndef YY_KCONFIG_POSITION_HH_INCLUDED
-# define YY_KCONFIG_POSITION_HH_INCLUDED
+#ifndef YY_KCONFIG_BOOLEXPLP_POSITION_HH_INCLUDED
+# define YY_KCONFIG_BOOLEXPLP_POSITION_HH_INCLUDED
 
 # include <algorithm> // std::max
 # include <iostream>
@@ -52,7 +52,7 @@
 
 
 namespace kconfig {
-#line 56 "position.hh" // location.cc:291
+#line 56 "BoolExpLP/position.hh" // location.cc:291
   /// Abstract a position.
   class position
   {
@@ -176,5 +176,5 @@ namespace kconfig {
 
 
 } // kconfig
-#line 180 "position.hh" // location.cc:291
-#endif // !YY_KCONFIG_POSITION_HH_INCLUDED
+#line 180 "BoolExpLP/position.hh" // location.cc:291
+#endif // !YY_KCONFIG_BOOLEXPLP_POSITION_HH_INCLUDED

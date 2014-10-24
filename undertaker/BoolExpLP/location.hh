@@ -31,18 +31,18 @@
 // version 2.2 of Bison.
 
 /**
- ** \file location.hh
+ ** \file BoolExpLP/location.hh
  ** Define the kconfig::location class.
  */
 
-#ifndef YY_KCONFIG_LOCATION_HH_INCLUDED
-# define YY_KCONFIG_LOCATION_HH_INCLUDED
+#ifndef YY_KCONFIG_BOOLEXPLP_LOCATION_HH_INCLUDED
+# define YY_KCONFIG_BOOLEXPLP_LOCATION_HH_INCLUDED
 
 # include "position.hh"
 
 
 namespace kconfig {
-#line 46 "location.hh" // location.cc:291
+#line 46 "BoolExpLP/location.hh" // location.cc:291
   /// Abstract a location.
   class location
   {
@@ -183,5 +183,5 @@ namespace kconfig {
 
 
 } // kconfig
-#line 187 "location.hh" // location.cc:291
-#endif // !YY_KCONFIG_LOCATION_HH_INCLUDED
+#line 187 "BoolExpLP/location.hh" // location.cc:291
+#endif // !YY_KCONFIG_BOOLEXPLP_LOCATION_HH_INCLUDED

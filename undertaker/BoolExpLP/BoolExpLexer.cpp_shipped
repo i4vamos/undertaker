@@ -1,6 +1,6 @@
-#line 2 "BoolExpLexer.cpp_shipped"
+#line 2 "BoolExpLP/BoolExpLexer.cpp_shipped"
 
-#line 4 "BoolExpLexer.cpp_shipped"
+#line 4 "BoolExpLP/BoolExpLexer.cpp_shipped"
 
 #define  YY_INT_ALIGNED short int
 
@@ -528,7 +528,7 @@ static yyconst flex_int16_t yy_rule_linenum[31] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "BoolExpLexer.l"
+#line 1 "BoolExpLP/BoolExpLexer.l"
 /*
  *   boolean framework for undertaker and satyr
  *
@@ -548,7 +548,7 @@ static yyconst flex_int16_t yy_rule_linenum[31] =
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-#line 24 "BoolExpLexer.l"
+#line 24 "BoolExpLP/BoolExpLexer.l"
 #include <string>
 #include <list>
 
@@ -559,9 +559,9 @@ typedef kconfig::BoolExpParser::token_type token_type;
 
 #define yyterminate() return token::END
 
-#line 49 "BoolExpLexer.l"
+#line 49 "BoolExpLP/BoolExpLexer.l"
 #define YY_USER_ACTION  yylloc->columns(yyleng);
-#line 565 "BoolExpLexer.cpp_shipped"
+#line 565 "BoolExpLP/BoolExpLexer.cpp_shipped"
 
 #define INITIAL 0
 
@@ -723,7 +723,7 @@ YY_DECL
 	register int yy_act;
     
 /* %% [7.0] user's declarations go here */
-#line 52 "BoolExpLexer.l"
+#line 52 "BoolExpLP/BoolExpLexer.l"
 
 
  /* init*/
@@ -731,7 +731,7 @@ YY_DECL
     yylloc->step();
 
 
-#line 735 "BoolExpLexer.cpp_shipped"
+#line 735 "BoolExpLP/BoolExpLexer.cpp_shipped"
 
 	if ( !(yy_init) )
 		{
@@ -842,199 +842,199 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 59 "BoolExpLexer.l"
+#line 59 "BoolExpLP/BoolExpLexer.l"
 return token::TTRUE; /* FIXME int type*/
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 60 "BoolExpLexer.l"
+#line 60 "BoolExpLP/BoolExpLexer.l"
 return token::TFALSE;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 61 "BoolExpLexer.l"
+#line 61 "BoolExpLP/BoolExpLexer.l"
 return token::TTRUE; /* FIXME int type*/
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 62 "BoolExpLexer.l"
+#line 62 "BoolExpLP/BoolExpLexer.l"
 return token::TTRUE; /* FIXME char type; fixme chars/escapeseq */
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 64 "BoolExpLexer.l"
+#line 64 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::STRING;
                          }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 68 "BoolExpLexer.l"
+#line 68 "BoolExpLP/BoolExpLexer.l"
 return token::TOR;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 69 "BoolExpLexer.l"
+#line 69 "BoolExpLP/BoolExpLexer.l"
 return token::TAND;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 70 "BoolExpLexer.l"
+#line 70 "BoolExpLP/BoolExpLexer.l"
 return token::TEQ;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 71 "BoolExpLexer.l"
+#line 71 "BoolExpLP/BoolExpLexer.l"
 return token::TIMPL;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 73 "BoolExpLexer.l"
+#line 73 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 76 "BoolExpLexer.l"
+#line 76 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 79 "BoolExpLexer.l"
+#line 79 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 82 "BoolExpLexer.l"
+#line 82 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 85 "BoolExpLexer.l"
+#line 85 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 88 "BoolExpLexer.l"
+#line 88 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 91 "BoolExpLexer.l"
+#line 91 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 94 "BoolExpLexer.l"
+#line 94 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 97 "BoolExpLexer.l"
+#line 97 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 100 "BoolExpLexer.l"
+#line 100 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 103 "BoolExpLexer.l"
+#line 103 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 106 "BoolExpLexer.l"
+#line 106 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 109 "BoolExpLexer.l"
+#line 109 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 112 "BoolExpLexer.l"
+#line 112 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 115 "BoolExpLexer.l"
+#line 115 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 118 "BoolExpLexer.l"
+#line 118 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 121 "BoolExpLexer.l"
+#line 121 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 124 "BoolExpLexer.l"
+#line 124 "BoolExpLP/BoolExpLexer.l"
 { yylval->stringVal = new std::string(yytext, yyleng);
                           return token::TCOP;
                          }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 129 "BoolExpLexer.l"
+#line 129 "BoolExpLP/BoolExpLexer.l"
 {yylloc->step();}
 	YY_BREAK
 case 29:
 /* rule 29 can match eol */
 YY_RULE_SETUP
-#line 130 "BoolExpLexer.l"
+#line 130 "BoolExpLP/BoolExpLexer.l"
 {yylloc->lines(yyleng); yylloc->step();}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 132 "BoolExpLexer.l"
+#line 132 "BoolExpLP/BoolExpLexer.l"
 {return static_cast<token_type>(*yytext);}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 134 "BoolExpLexer.l"
+#line 134 "BoolExpLP/BoolExpLexer.l"
 ECHO;
 	YY_BREAK
-#line 1038 "BoolExpLexer.cpp_shipped"
+#line 1038 "BoolExpLP/BoolExpLexer.cpp_shipped"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2083,7 +2083,7 @@ void Kconfigfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 134 "BoolExpLexer.l"
+#line 134 "BoolExpLP/BoolExpLexer.l"
 
 
 
@@ -2096,7 +2096,7 @@ namespace kconfig {
     void BoolExpLexer::set_debug(bool b) {
         yy_flex_debug = b;
     }
-}
+} // namespace kconfig
 
 /* dummydecl */
 #ifdef yylex
