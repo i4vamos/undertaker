@@ -97,6 +97,9 @@ endif
 %.d: %.cpp
 	 @$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM -MG $< > $@
 
+test-%: test-%.cpp libparser.a ../picosat/libpicosat.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt $(LDFLAGS) $(LDLIBS)
+
 clean: clean-check clean-parsers
 	rm -rf *.o *.a *.gcda *.gcno *.d
 	rm -rf coverage-wl.cnf
@@ -106,49 +109,10 @@ clean-parsers:
 	rm -rf location.hh stack.hh position.hh BoolExpParser.hh
 	rm -rf BoolExpParser.cpp BoolExpLexer.cpp
 
-test-%: test-%.cpp libparser.a ../picosat/libpicosat.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt $(LDFLAGS) $(LDLIBS)
+###################################################################################################
+# check targets
 
-
-run-libcheck: $(TESTPROGS)
-	@for t in $^; do echo "Executing test $$t"; ./$$t || exit 1; done
-
-run-rsf2cnfcheck: rsf2cnf
-	./rsf2cnf \
-	    -m validation/coverage-wl.model \
-	    -r validation/coverage-wl.rsf \
-	    -W validation/coverage-wl.whitelist \
-	    -B validation/coverage-wl.blacklist > coverage-wl.cnf
-	@if ! diff -q coverage-wl.cnf validation/coverage-wl.cnf-ref; then \
-	    diff -u validation/coverage-wl.cnf-ref coverage-wl.cnf; false; fi
-
-# coverage analysis will create validation/sched.c.config*
-run-coveragecheck: undertaker predator
-	@$(MAKE) -C kconfig-dumps all
-	./undertaker -j coverage -C simple_decision -m kconfig-dumps/models validation/sched.c
-#	we expect between 5 and 30 solutions
-	test `find validation -name 'sched.c.config*' | wc -l` -gt 5
-	test `find validation -name 'sched.c.config*' | wc -l` -lt 30
-	md5sum validation/sched.c.config* | awk '// {print $$1}' | sort | uniq -c \
-		| awk '// { if ($$1 != 1) { print "duplicate solutions found" ; exit 1 } }' \
-		|| md5sum validation/sched.c.config* | sort
-	if grep -q '^CONFIG_IA64=y' validation/sched.c.config*; then echo "IA64 must not be enabled!"; false ; fi
-	if grep -q '^CONFIG_CHOICE' validation/sched.c.config*; then echo "must not contain CONFIG_CHOICE*"; false ; fi
-
-run-satyrcheck: satyr
-	@cd validation-satyr && ./checkall.sh
-
-check: $(PROGS)
-	@$(MAKE) -s clean-check
-	@$(MAKE) run-rsf2cnfcheck
-	@$(MAKE) run-coveragecheck
-	@$(MAKE) -C kconfig-dumps
-	cd def-tests && env PATH=$(CURDIR):$(PATH) ./run-tests
-	cd coverage-tests && env PATH=$(CURDIR):$(PATH) ./run-tests
-	cd validation && env PATH=$(CURDIR):$(PATH) ./test-suite -t $$(getconf _NPROCESSORS_ONLN)
-	@$(MAKE) -s run-libcheck
-	@$(MAKE) -C validation-rsf2cnf check
-	@$(MAKE) -s run-satyrcheck
+CHECK_TARGETS = check-undertaker check-libs check-rsf2cnf check-coverage check-satyr
 
 clean-check:
 	find coverage-tests validation/ \
@@ -163,13 +127,53 @@ clean-check:
 	                 -o -name "*.c.source*" \
 	                 -o -name "*.dead" \
 	                 -o -name "*.undead" \
-	                 \) -exec rm {} \;
-
+	                 \) -delete
 	rm -vf coverage-tests/coverage-cat.c.got
 	@$(MAKE) -C validation-rsf2cnf clean
 
-docs:
-	doxygen
+check-libs: $(TESTPROGS)
+	@for t in $^; do echo "Executing test $$t"; ./$$t || exit 1; done
+
+check-rsf2cnf: rsf2cnf
+	./rsf2cnf \
+	    -m validation/coverage-wl.model \
+	    -r validation/coverage-wl.rsf \
+	    -W validation/coverage-wl.whitelist \
+	    -B validation/coverage-wl.blacklist > coverage-wl.cnf
+	@if ! diff -q coverage-wl.cnf validation/coverage-wl.cnf-ref; then \
+	    diff -u validation/coverage-wl.cnf-ref coverage-wl.cnf; false; fi
+	@$(MAKE) -C validation-rsf2cnf check
+
+# coverage analysis will create validation/sched.c.config*
+check-coverage: undertaker predator
+	./undertaker -j coverage -C simple_decision -m kconfig-dumps/models validation/sched.c
+#	we expect between 5 and 30 solutions
+	test `find validation -name 'sched.c.config*' | wc -l` -gt 5
+	test `find validation -name 'sched.c.config*' | wc -l` -lt 30
+	md5sum validation/sched.c.config* | awk '// {print $$1}' | sort | uniq -c \
+		| awk '// { if ($$1 != 1) { print "duplicate solutions found" ; exit 1 } }' \
+		|| md5sum validation/sched.c.config* | sort
+	if grep -q '^CONFIG_IA64=y' validation/sched.c.config*; then echo "IA64 must not be enabled!"; false ; fi
+	if grep -q '^CONFIG_CHOICE' validation/sched.c.config*; then echo "must not contain CONFIG_CHOICE*"; false ; fi
+	cd coverage-tests && env PATH=$(CURDIR):$(PATH) ./run-tests
+
+check-satyr: satyr
+	@cd validation-satyr && ./checkall.sh
+
+check-undertaker: undertaker
+	cd def-tests && env PATH=$(CURDIR):$(PATH) ./run-tests
+	cd validation && env PATH=$(CURDIR):$(PATH) ./test-suite -t $$(getconf _NPROCESSORS_ONLN)
+
+check: $(PROGS)
+	@$(MAKE) -s clean-check
+	@$(MAKE) -C kconfig-dumps all
+	@$(MAKE) real-check
+
+real-check: $(CHECK_TARGETS)
+
+###################################################################################################
+# gcov is a tool to measure code coverage while running the programs. Here we build our tools with
+# gcov and run make check, thus we measure the code coverage of our tests.
 
 run-lcov:
 	$(MAKE) -B DEBUG="-g -O0 -fprofile-arcs -ftest-coverage" LDCOV="-coverage -lgcov"
@@ -180,7 +184,8 @@ run-lcov:
 	lcov -e coverage-html/undertaker.info.in "$(CURDIR)*" --output-file coverage-html/undertaker.info
 	genhtml -o coverage-html coverage-html/undertaker.info
 
-
+###################################################################################################
+# other targets
 ifdef REGENERATE_PARSERS
 
 regenerate_parsers: clean-parsers
@@ -188,5 +193,10 @@ regenerate_parsers: clean-parsers
 
 endif
 
+docs:
+	doxygen
+
+###################################################################################################
+
 FORCE:
-.PHONY: all clean clean-% FORCE run-% docs validation run-lcov run-coveragecheck
+.PHONY: all clean clean-% FORCE check check-% real-check run-lcov regenerate_parsers docs

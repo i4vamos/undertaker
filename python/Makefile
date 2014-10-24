@@ -8,7 +8,7 @@ all:
 pylint:
 	-pylint --rcfile pylint.rc $(PYTHONFILES)
 
-check: all
+check:
 	$(MAKE) -s clean-check
 	@for test in vamos/*/*_test.py vamos/*_test.py; do \
 	   echo "Running python unittest $$test"; \

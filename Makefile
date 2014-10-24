@@ -51,9 +51,6 @@ undertaker/satyr: FORCE
 ziz/zizler: FORCE
 	$(MAKE) -C ziz zizler
 
-%.1.gz: %.1
-	gzip < $< > $@
-
 conf: scripts/kconfig/conf
 
 clean:
@@ -67,18 +64,36 @@ clean:
 	rm -rf doc/*.gz
 	@python setup.py clean
 
-docs:
-	$(MAKE) -C undertaker docs
-
-check:
-	$(MAKE) -C undertaker $@
-	$(MAKE) -C ziz $@
-	$(MAKE) -C python $@
-	$(MAKE) -C tailor $@
-	$(MAKE) -s -C fm $@
-
 models: picosat/libpicosat.a
 	$(MAKE) -C undertaker/kconfig-dumps/
+
+###################################################################################################
+# check targets
+
+CHECK_TARGETS = check-undertaker check-ziz check-python check-tailor check-fm
+
+check: all
+	$(MAKE) real_check
+
+real_check: $(CHECK_TARGETS)
+
+check-undertaker:
+	$(MAKE) -C undertaker check
+
+check-ziz:
+	$(MAKE) -C ziz check
+
+check-python:
+	$(MAKE) -C python check
+
+check-tailor:
+	$(MAKE) -C tailor check
+
+check-fm:
+	$(MAKE) -s -C fm check
+
+###################################################################################################
+# install and release
 
 install: all $(MANPAGES)
 	@install -d -v $(DESTDIR)$(BINDIR)
@@ -147,9 +162,17 @@ dist: clean
 		--exclude=*.tar.gz \
 		--exclude="*.html"
 
+###################################################################################################
+# other targets
+
 undertaker-lcov:
 	$(MAKE) -C undertaker run-lcov
 
+docs:
+	$(MAKE) -C undertaker docs
+
+%.1.gz: %.1
+	gzip < $< > $@
 
 ifdef REGENERATE_PARSERS
 
@@ -158,5 +181,7 @@ regenerate_parsers:
 
 endif
 
+###################################################################################################
+
 FORCE:
-.PHONY: FORCE check undertaker-lcov conf
+.PHONY: FORCE check undertaker-lcov $(CHECK_TARGETS) docs regenerate_parsers
