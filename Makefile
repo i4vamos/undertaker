@@ -13,12 +13,21 @@ ETCDIR ?= $(PREFIX)/etc
 
 VERSION=$(shell cat VERSION)
 
+ifneq ($(LOCALPUMA),)
+# to handle relative paths, call readlink
+LOCALPUMA := $(shell readlink -e $(LOCALPUMA))
+PUMALIB := $(LOCALPUMA)/lib/linux-release/libPuma.a
+endif
+
 ifneq (,$(DESTDIR))
 SETUP_PY_EXTRA_ARG = --root=$(DESTDIR)
 SETUP_PY_INSTALL_EXTRA_ARG = $(SETUP_PY_EXTRA_ARG)
 endif
 
-all: picosat/libpicosat.a $(PROGS)
+all: picosat/libpicosat.a $(PUMALIB)
+	$(MAKE) all_progs
+
+all_progs: $(PROGS)
 
 version.h: generate-version.sh
 	./$<
@@ -32,6 +41,14 @@ scripts/kconfig/dumpconf: scripts/kconfig/conf FORCE
 picosat/libpicosat.a:
 	cd picosat && ./configure -static -O
 	$(MAKE) -C picosat
+
+ifneq ($(LOCALPUMA),)
+$(PUMALIB):
+	CPPFLAGS="-Wno-unused-local-typedefs -Wno-unused-parameter" $(MAKE) -s -C $(LOCALPUMA) compile
+
+clean-Puma:
+	$(MAKE) -C $(LOCALPUMA) libclean
+endif
 
 undertaker/undertaker: FORCE
 	$(MAKE) -C undertaker undertaker
@@ -54,15 +71,19 @@ ziz/zizler: FORCE
 conf: scripts/kconfig/conf
 
 clean:
-	$(MAKE) -f Makefile.kbuild clean
 	$(MAKE) -C undertaker clean
 	$(MAKE) -C ziz clean
 	$(MAKE) -C python clean
 	$(MAKE) -C tailor clean
 	$(MAKE) -C fm clean
-	test ! -f picosat/makefile || $(MAKE) -C picosat clean
 	rm -rf doc/*.gz
 	@python setup.py clean
+
+distclean: clean
+	$(MAKE) -C undertaker clean-parsers
+	$(MAKE) -f Makefile.kbuild clean
+	test ! -f picosat/makefile || $(MAKE) -C picosat clean
+	test ! -f $(LOCALPUMA)/Makefile || $(MAKE) clean-Puma
 
 models: picosat/libpicosat.a
 	$(MAKE) -C undertaker/kconfig-dumps/

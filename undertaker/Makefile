@@ -5,7 +5,7 @@ SUFFIXES += .d
 NODEPS:=clean clean-check clean-parsers clean-regenerate
 
 CFLAGS = -Wall -Wextra -O2
-CPPFLAGS = -I $(CURDIR)/../scripts/kconfig -I $(CURDIR)/../picosat
+CPPFLAGS = -I../scripts/kconfig -I../picosat
 CXXFLAGS = $(CFLAGS) -std=gnu++11
 
 # use g++ for linking, will automaticly use "-lstdc++ -lm" libraries
@@ -13,7 +13,7 @@ CC = g++
 
 LDFLAGS =
 BOOST_LIBS = -lboost_system -lboost_regex -lboost_filesystem -lboost_thread
-LDLIBS = $(BOOST_LIBS) -lpthread -lPuma
+LDLIBS = $(BOOST_LIBS) -lpthread
 
 # LDCOV = -coverage
 ifdef LDCOV
@@ -35,6 +35,18 @@ endif
 ifdef STATIC
 	LDFLAGS += -static
 endif
+
+###################################################################################################
+# local Puma
+
+ifneq ($(LOCALPUMA),)
+CXXFLAGS += -Wno-unused-local-typedefs -Wno-unused-parameter
+CPPFLAGS += -I$(LOCALPUMA)/include
+PUMALIB = $(LOCALPUMA)/lib/linux-release/libPuma.a
+else
+LDLIBS += -lPuma
+endif
+
 ###################################################################################################
 
 PARSEROBJ = KconfigWhitelist.o Logging.o Tools.o \
@@ -60,10 +72,15 @@ PARSERDIR = BoolExpLP
 
 all: $(PROGS) $(TESTPROGS)
 
-undertaker: libparser.a ../picosat/libpicosat.a
-rsf2cnf: libparser.a ../picosat/libpicosat.a
-predator: predator.o PredatorVisitor.o
-satyr: libsatyr.a zconf.tab.o ../picosat/libpicosat.a
+undertaker: libparser.a ../picosat/libpicosat.a $(PUMALIB)
+rsf2cnf: libparser.a ../picosat/libpicosat.a $(PUMALIB)
+predator: predator.o PredatorVisitor.o $(PUMALIB)
+satyr: libsatyr.a zconf.tab.o ../picosat/libpicosat.a $(PUMALIB)
+
+ifneq ($(LOCALPUMA),)
+$(PUMALIB):
+	$(MAKE) -C $(LOCALPUMA) compile
+endif
 
 ../picosat/libpicosat.a:
 	$(MAKE) -C .. picosat/libpicosat.a
@@ -93,7 +110,7 @@ libsatyr.a: $(DEPFILES) $(SATYROBJ)
 	ar r $@ $(SATYROBJ)
 
 zconf.tab.o: ../scripts/kconfig/zconf.tab.o
-	ln -sf ../scripts/kconfig/$@ $@
+	ln -sf $< $@
 
 ../scripts/kconfig/zconf.tab.o:
 	$(MAKE) -C .. scripts/kconfig/conf
@@ -109,10 +126,10 @@ endif
 %.d: %.cpp
 	 @$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM -MG $< > $@
 
-test-%: test-%.cpp libparser.a ../picosat/libpicosat.a
+test-%: test-%.cpp libparser.a ../picosat/libpicosat.a $(PUMALIB)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt $(LDFLAGS) $(LDLIBS)
 
-clean: clean-check clean-parsers
+clean: clean-check
 	rm -rf *.o *.a *.gcda *.gcno *.d
 	rm -rf coverage-wl.cnf
 	rm -rf $(PROGS) $(TESTPROGS)
