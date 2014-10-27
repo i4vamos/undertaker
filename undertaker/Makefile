@@ -63,7 +63,7 @@ satyr: libsatyr.a zconf.tab.o ../picosat/libpicosat.a
 
 undertaker.d rsf2cnf.d satyr.d: ../version.h
 
-BoolExpLexer.d: BoolExpLexer.cpp BoolExpParser.hh location.hh
+BoolExpLexer.d: BoolExpLexer.cpp BoolExpParser.hh location.hh stack.hh
 BoolExpParser.d: BoolExpParser.cpp
 
 location.hh: position.hh
