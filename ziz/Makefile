@@ -8,6 +8,16 @@ LDLIBS = -lboost_regex -lboost_wave -lboost_system $(LDCOV)
 
 HEADERS = $(wildcard *.h)
 
+###################################################################################################
+# static linking
+# for this option to work, there have to be static versions of the boost libraries on your system!
+# On Ubuntu, that's the default case when you install the boost libraries.
+# ("locate libboost_filesystem.a" might help to ensure they are there)
+ifdef STATIC
+	LDFLAGS += -static -lpthread
+endif
+###################################################################################################
+
 all: zizler
 
 Zizler.o: Zizler.cpp $(HEADERS)
