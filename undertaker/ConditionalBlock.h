@@ -44,7 +44,7 @@ class CppFile : public CondBlockList {
     std::string filename;
     std::string fileVar;  // the inference Variable for this file
     std::string specific_arch;
-    ConditionalBlock *top_block;
+    ConditionalBlock *top_block = nullptr;
     std::map<std::string, CppDefine *> define_map;
     std::unique_ptr<PumaConditionalBlockBuilder> _builder;
 
