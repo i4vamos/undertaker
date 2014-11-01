@@ -1,5 +1,4 @@
-PROGS = scripts/kconfig/dumpconf undertaker/undertaker undertaker/predator undertaker/rsf2cnf \
-	undertaker/satyr python/rsf2model tailor/undertaker-traceutil ziz/zizler
+OTHER_PROGS = scripts/kconfig/dumpconf  python/rsf2model tailor/undertaker-traceutil ziz/zizler
 MANPAGES = doc/undertaker.1.gz doc/undertaker-linux-tree.1.gz doc/undertaker-kconfigdump.1.gz \
 	doc/undertaker-kconfigpp.1.gz
 
@@ -27,7 +26,10 @@ endif
 all: picosat/libpicosat.a $(PUMALIB)
 	$(MAKE) all_progs
 
-all_progs: $(PROGS)
+all_progs: $(OTHER_PROGS) undertaker_progs
+
+undertaker_progs:
+	$(MAKE) -C undertaker/
 
 version.h: generate-version.sh
 	./$<
@@ -205,4 +207,5 @@ endif
 ###################################################################################################
 
 FORCE:
-.PHONY: FORCE check undertaker-lcov $(CHECK_TARGETS) docs regenerate_parsers
+.PHONY: FORCE all all_progs check undertaker-lcov $(CHECK_TARGETS) docs \
+	regenerate_parsers undertaker_progs

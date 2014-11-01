@@ -70,7 +70,7 @@ DEPFILES:=$(patsubst %.o,%.d,$(PARSEROBJ) $(SATYROBJ)) undertaker.d satyr.d
 
 PARSERDIR = BoolExpLP
 
-all: $(PROGS) $(TESTPROGS)
+all: $(PROGS)
 
 undertaker: libparser.a ../picosat/libpicosat.a $(PUMALIB)
 rsf2cnf: libparser.a ../picosat/libpicosat.a $(PUMALIB)
