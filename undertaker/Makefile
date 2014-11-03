@@ -41,7 +41,7 @@ endif
 
 ifneq ($(LOCALPUMA),)
 CXXFLAGS += -Wno-unused-local-typedefs -Wno-unused-parameter
-CPPFLAGS += -I$(LOCALPUMA)/include
+CPPFLAGS += -I$(LOCALPUMA)/include -I$(LOCALPUMA)/extern
 PUMALIB = $(LOCALPUMA)/lib/linux-release/libPuma.a
 else
 LDLIBS += -lPuma
@@ -73,9 +73,9 @@ PARSERDIR = BoolExpLP
 all: $(PROGS)
 
 undertaker: libparser.a ../picosat/libpicosat.a $(PUMALIB)
-rsf2cnf: libparser.a ../picosat/libpicosat.a $(PUMALIB)
+rsf2cnf: libparser.a ../picosat/libpicosat.a
 predator: predator.o PredatorVisitor.o $(PUMALIB)
-satyr: libsatyr.a zconf.tab.o ../picosat/libpicosat.a $(PUMALIB)
+satyr: libsatyr.a zconf.tab.o ../picosat/libpicosat.a
 
 ifneq ($(LOCALPUMA),)
 $(PUMALIB):

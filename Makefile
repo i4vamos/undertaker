@@ -1,4 +1,4 @@
-OTHER_PROGS = scripts/kconfig/dumpconf  python/rsf2model tailor/undertaker-traceutil ziz/zizler
+OTHER_PROGS = scripts/kconfig/dumpconf tailor/undertaker-traceutil ziz/zizler
 MANPAGES = doc/undertaker.1.gz doc/undertaker-linux-tree.1.gz doc/undertaker-kconfigdump.1.gz \
 	doc/undertaker-kconfigpp.1.gz
 
@@ -23,12 +23,12 @@ SETUP_PY_EXTRA_ARG = --root=$(DESTDIR)
 SETUP_PY_INSTALL_EXTRA_ARG = $(SETUP_PY_EXTRA_ARG)
 endif
 
-all: picosat/libpicosat.a $(PUMALIB)
+all: picosat/libpicosat.a checkpuma $(PUMALIB) FORCE
 	$(MAKE) all_progs
 
-all_progs: $(OTHER_PROGS) undertaker_progs
+all_progs: $(OTHER_PROGS) checkpuma undertaker_progs
 
-undertaker_progs:
+undertaker_progs: checkpuma
 	$(MAKE) -C undertaker/
 
 version.h: generate-version.sh
@@ -44,6 +44,31 @@ picosat/libpicosat.a:
 	cd picosat && ./configure -static -O
 	$(MAKE) -C picosat
 
+###################################################################################################
+# Puma targets
+
+localpuma: aspectc/Puma/
+	LOCALPUMA=aspectc/Puma/ $(MAKE)
+
+aspectc/Puma/: ac-woven-1.2.tar.gz
+	tar -xf ac-woven-1.2.tar.gz
+	mv aspectc++/ aspectc/
+
+ac-woven-1.2.tar.gz:
+	wget http://aspectc.org/releases/1.2/ac-woven-1.2.tar.gz
+
+# exitcode 0 = successful compiled, exitcode 1 = error
+PUMAINSTALLED := $(shell echo "int main(){}" | gcc -o /dev/null -x c - -lPuma 2>/dev/null ; echo $$?)
+
+checkpuma:
+ifeq ($(LOCALPUMA),)
+ifeq (0, $(words $(filter $(MAKECMDGOALS), localpuma)))
+ifneq (0, $(PUMAINSTALLED))
+	$(error "No local Puma library found! Please call 'make localpuma' or specify a path to a copy of the pre-woven Puma sources via 'LOCALPUMA=/path/to/aspectc++/Puma/ make'")
+endif
+endif
+endif
+
 ifneq ($(LOCALPUMA),)
 $(PUMALIB):
 	CPPFLAGS="-Wno-unused-local-typedefs -Wno-unused-parameter" $(MAKE) -s -C $(LOCALPUMA) compile
@@ -52,10 +77,12 @@ clean-Puma:
 	$(MAKE) -C $(LOCALPUMA) libclean
 endif
 
-undertaker/undertaker: FORCE
+###################################################################################################
+
+undertaker/undertaker: FORCE checkpuma
 	$(MAKE) -C undertaker undertaker
 
-undertaker/predator: FORCE
+undertaker/predator: FORCE checkpuma
 	$(MAKE) -C undertaker predator
 
 undertaker/rsf2cnf: FORCE
@@ -188,7 +215,7 @@ dist: clean
 ###################################################################################################
 # other targets
 
-undertaker-lcov:
+undertaker-lcov: FORCE checkpuma
 	$(MAKE) -C undertaker run-lcov
 
 docs:
@@ -207,5 +234,5 @@ endif
 ###################################################################################################
 
 FORCE:
-.PHONY: FORCE all all_progs check undertaker-lcov $(CHECK_TARGETS) docs \
-	regenerate_parsers undertaker_progs
+.PHONY: FORCE all all_progs check undertaker-lcov $(CHECK_TARGETS) docs regenerate_parsers \
+	undertaker_progs localpuma clean-puma checkpuma
