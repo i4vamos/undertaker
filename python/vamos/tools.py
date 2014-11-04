@@ -166,6 +166,15 @@ def get_online_processors():
     return threads
 
 
+def get_architecture(rpath):
+    """Return the architecture of the given relative path (Linux tree).
+    If the path does not contain 'arch', return None."""
+    match = re.search(r"arch\/(\w+)\/", rpath)
+    if match:
+        return match.group(1)
+    return None
+
+
 def get_kconfig_items(line):
     """Return a list of all Kconfig items in @line."""
     return re.findall(r"(?:D|\W|\b)+(CONFIG_\w*[A-Z0-9]{1}\w*)", line)

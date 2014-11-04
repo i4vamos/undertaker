@@ -30,6 +30,7 @@ from vamos.block import Block
 from vamos.model import RsfModel
 
 import re
+import glob
 import logging
 import whatthepatch
 from optparse import OptionParser
@@ -157,23 +158,16 @@ def main():
         if defects[srcfile]:
             is_defect = True
 
-    # get an rsf model for further Kconfig analysis
-    rsfmodel = None
-    if ".model" in models:
-        # single file
-        rsfmodel = RsfModel(models)
-    else:
-        # model directory
-        if not models.endswith("/"):
-            models += "/"
-        if opts.arch == "":
-            logging.info("no arch specified, defaulting to 'x86'")
-            opts.arch = "x86"
-        rsfmodel = RsfModel(models + opts.arch + ".model")
+    # load RSF models for later checks
+    rsfmodels = []
+    mainrsf = None
+    if kconfig_change or opts.check:
+        rsfmodels, mainrsf = load_rsfmodels(models, opts.arch)
 
     # check if changes to Kconfig cause defects
-    if check_kconfig_constraints(removals, statements, rsfmodel):
-        is_defect = True
+    if kconfig_change:
+        if check_kconfig_constraints(removals, statements, rsfmodels):
+            is_defect = True
 
     # if no defect is detected, we can stop here
     if not is_defect:
@@ -185,9 +179,9 @@ def main():
         for srcfile in defects:
             for block in defects[srcfile]:
                 if "missing" in block.defect:
-                    defect_analysis.check_missing_defect(block, rsfmodel)
+                    defect_analysis.check_missing_defect(block, mainrsf)
                 elif "kconfig" in block.defect:
-                    defect_analysis.check_kconfig_defect(block, rsfmodel)
+                    defect_analysis.check_kconfig_defect(block, mainrsf)
                 elif "code" in block.defect:
                     defect_analysis.check_code_defect(block)
 
@@ -209,6 +203,45 @@ def apply_patch(patchfile, flags=""):
     return err == 0
 
 
+def load_rsfmodels(models, arch):
+    """Load and return a list of RSF models and a main model in the given
+    models directory. In case an architecture is specified, only this model
+    will be loaded. Otherwise, the main model tries to default to x86."""
+    rsfmodels = []
+    mainrsf = None
+
+    if models.endswith(".model"):
+        # single file
+        mainrsf = RsfModel(models)
+        return [mainrsf], mainrsf
+
+    # model directory
+    if not models.endswith("/"):
+        models += "/"
+
+    # get all models in directory
+    model_files = glob.glob(models + "*.model")
+
+    if arch:
+        # load only the main model
+        for model in model_files:
+            if arch in model:
+                mainrsf = RsfModel(model)
+                return [mainrsf], mainrsf
+
+    # default to x86 if no arch is specified and load all models
+    arch = "x86"
+    for model in model_files:
+        rsfmodels.append(RsfModel(model))
+        if arch in model:
+            mainrsf = rsfmodels[-1]
+
+    # if x86 model is absent, then take the first in the list
+    if not mainrsf:
+        mainrsf = rsfmodels[0]
+    return rsfmodels, mainrsf
+
+
 def search_item_tree(item):
     """Return a list of files referencing @item."""
     item += "[^_]"  # avoid substring matches (e.g., for CONFIG_X86*)
@@ -228,14 +261,27 @@ def get_kconfig_definition(line):
         return None
 
 
-def check_kconfig_constraints(removals, statements, rsfmodel):
-    """Cross-check changes of Kconfig files with the RsfModel and report
+def in_rsfmodels(feature, rsfmodels, arch=""):
+    """Check if the feature is defined in at least one of the RSF models or
+    in the model of the specified architecture."""
+    if arch:
+        for model in rsfmodels:
+            if re.search(r"\/%s\.model$" % arch, model.path):
+                return model.is_defined(feature)
+    for model in rsfmodels:
+        if model.is_defined(feature):
+            return True
+    return False
+
+
+def check_kconfig_constraints(removals, statements, rsfmodels):
+    """Cross-check changes of Kconfig files with the RSF models and report
     referential integrity violations."""
     defect = False
     # removed Kconfig features
     for srcfile in removals:
         for feature in removals[srcfile]:
-            if not rsfmodel.is_defined(feature):
+            if not in_rsfmodels(feature, rsfmodels):
                 references = search_item_tree(feature)
                 if not references:
                     continue
@@ -246,8 +292,9 @@ def check_kconfig_constraints(removals, statements, rsfmodel):
                     print reference
     # added Kconfig statements
     for srcfile in statements:
+        arch = tools.get_architecture(srcfile)
         for feature in statements[srcfile]:
-            if not rsfmodel.is_defined(feature):
+            if not in_rsfmodels(feature, rsfmodels, arch):
                 defect = True
                 print "%s: patch adds undefined reference on %s" % \
                         (srcfile, feature)
