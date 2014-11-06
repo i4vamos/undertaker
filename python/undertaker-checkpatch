@@ -342,7 +342,7 @@ def parse_patch(patchfile):
                     removals[path] = removed
 
             # added statements (if, select, depends on)
-            elif change[0] and not change[1] and \
+            elif not change[0] and change[1] and \
                     REGEX_KCONFIG_STMT.match(change[2]):
                 stmts = statements.get(path, set())
                 for feature in REGEX_FEATURE.findall(change[2]):
