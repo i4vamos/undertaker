@@ -160,6 +160,24 @@ function pwait() {
     done
 }
 
+# Parameter {ARCH}
+function get_kconfig_file() {
+    # special case for user mode linux
+    # Note that upstream commit 5c48b108ecbf6505d929e64d50dace13ac2bdf34 renamed
+    # arch/{um/Kconfig.x86 => x86/um/Kconfig}
+    # get the right file even in historic linux trees.
+    local ARCHSTR=$1
+    local KCONFIG=Kconfig
+    if [ "$ARCHSTR" = "um" ]; then
+        if [ -r arch/x86/um/Kconfig ]; then
+            ARCHSTR=x86/um
+        else
+            KCONFIG=Kconfig.x86
+        fi
+    fi
+    echo "arch/$ARCHSTR/$KCONFIG"
+}
+
 # This function removes stale, zero-sized intermediate files
 # First paramter is the architecture for which to cleanup
 cleanup_empty_intermediates_for_arch() {
@@ -173,32 +191,13 @@ cleanup_empty_intermediates_for_arch() {
 
 function do_convert() {
     ARCH=$1
-
-    # special case for user mode linux
-    # Note that upstream commit 5c48b108ecbf6505d929e64d50dace13ac2bdf34 renamed
-    # arch/{um/Kconfig.x86 => x86/um/Kconfig}
-    # get the right file even in historic linux trees.
     SUBARCH=$ARCH
-    ARCHSTR=$ARCH
-    KCONFIG=Kconfig
-    if [ "$ARCH" = "um" ]; then
-        SUBARCH=x86
-        if [ -r arch/x86/um/Kconfig ]; then
-            ARCHSTR=x86/um
-        else
-            KCONFIG=Kconfig.x86
-        fi
-    fi
-
-    test -f arch/$ARCHSTR/$KCONFIG || {
-       echo "ERROR: Architecture $ARCH not found";
-       return
-    }
+    KCONFIG_FILE="$(get_kconfig_file $ARCH)"
 
     if [ $MODE = "rsf" ]; then
         echo "Calculating RSF model for $ARCH"
         # remove all the comments from dumpconf because they will confuse rsf2model
-        SUBARCH=$SUBARCH ARCH=$ARCH dumpconf arch/$ARCHSTR/$KCONFIG | sort -u \
+        SUBARCH=$SUBARCH ARCH=$ARCH dumpconf $KCONFIG_FILE | sort -u \
             | grep -v '^#' > "$MODELS/$ARCH.rsf"
 
         do_rsf2model_conversion $ARCH
@@ -207,7 +206,7 @@ function do_convert() {
     if [ $MODE = "cnf" ]; then
         # run satyr
         echo "Calculating CNF model for $ARCH"
-        SUBARCH=$SUBARCH SRCARCH=$ARCH ARCH=$ARCH satyr arch/$ARCHSTR/$KCONFIG -c "$MODELS/$ARCH.cnf"
+        SUBARCH=$SUBARCH SRCARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
     fi
 }
 
@@ -393,17 +392,8 @@ elif ! [ -f arch/x86/Kconfig -o -f arch/i386/Kconfig ]; then
 fi
 
 if [ "$CALC_FM" = "yes" ]; then
-    for i in $(all_linux_archs); do
-        ARCHSTR=$i
-        KCONFIG=Kconfig
-        if [ "$i" = "um" ]; then
-            if [ -r arch/x86/um/Kconfig ]; then
-                ARCHSTR=x86/um
-            else
-                KCONFIG=Kconfig.x86
-            fi
-        fi
-        ARCH=$i undertaker-kconfigpp arch/$ARCHSTR/$KCONFIG > $MODELS/$i.fm
+    for ARCH in $(all_linux_archs); do
+        ARCH=$ARCH undertaker-kconfigpp $(get_kconfig_file $ARCH) > $MODELS/$ARCH.fm
     done
     exit 0
 fi
@@ -412,6 +402,17 @@ if [ -z "$1" ]; then
     ARCHS=$(all_linux_archs)
 else
     ARCHS="$@"
+    # input validation, check if the corresponding files exist
+    errors=0
+    for ARCH in $ARCHS; do
+        if [ ! -f $(get_kconfig_file $ARCH) ]; then
+            echo "ERROR: Architecture $ARCH not found"
+            ((++errors))
+        fi
+    done
+    if [ $errors -gt 0 ]; then
+        exit $errors
+    fi
 fi
 
 for ARCH in $ARCHS; do
