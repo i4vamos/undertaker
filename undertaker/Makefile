@@ -206,7 +206,7 @@ real-check: $(CHECK_TARGETS)
 # gcov and run make check, thus we measure the code coverage of our tests.
 
 run-lcov:
-	$(MAKE) -B DEBUG="-g -O0 -fprofile-arcs -ftest-coverage" LDCOV="-coverage -lgcov"
+	$(MAKE) -B DEBUG="-g -O0 -fprofile-arcs -ftest-coverage" LDCOV="-coverage -lgcov" all $(TESTPROGS)
 	rm -rf coverage-html ; mkdir coverage-html
 	lcov --directory $(CURDIR) --zerocounters
 	-$(MAKE) check
