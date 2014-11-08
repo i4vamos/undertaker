@@ -22,8 +22,8 @@
 import re
 import os
 import logging
+import shutil
 from subprocess import *
-from shutil import rmtree
 
 
 class CommandFailed(RuntimeError):
@@ -189,10 +189,10 @@ def generate_models(arch="", cnf=False):
         flags = "-c"
     model_path = os.path.abspath("./models") + "/"
     if os.path.exists(model_path):
-        rmtree(model_path)
+        shutil.rmtree(model_path)
     (out, err) = execute("undertaker-kconfigdump %s %s" % (flags, arch))
     if err != 0:
-        raise RuntimeError("Could not generate model %s" % out)
+        raise RuntimeError("\n".join(out))
     if arch:
         model_path += arch
         if cnf:

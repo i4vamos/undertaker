@@ -126,12 +126,12 @@ def main():
 
     if not opts.models:
         # if no model is specified, we need to generate new ones
-        models = tools.generate_models(arch=opts.arch)
+        models = generate_models(arch=opts.arch)
     elif opts.arch:
         # if arch-specific model is not present, generate it
         if not glob.glob("%s/%s.model" % (models, opts.arch)):
             logging.info("Model for specified architecture is not present")
-            models = tools.generate_models(arch=opts.arch)
+            models = generate_models(arch=opts.arch)
 
     # detect defects before applying the patch
     blocks_a = defect_analysis.batch_analysis(worklist_a, models, "")
@@ -142,7 +142,7 @@ def main():
 
     # for any Kconfig change we need to generate new models
     if kconfig_change:
-        models = tools.generate_models(arch=opts.arch)
+        models = generate_models(arch=opts.arch)
 
     # detect defects after applying the patch
     flags = ""
@@ -206,6 +206,15 @@ def apply_patch(patchfile, flags=""):
     patch = "patch -p1 -i %s " % patchfile
     (_, err) = tools.execute(patch + flags)
     return err == 0
+
+
+def generate_models(arch):
+    """Generate models and return the absolute path to the model directory.
+    In case the model generation fails, then exit with an error message."""
+    try:
+        return tools.generate_models(arch=arch)
+    except (RuntimeError, OSError) as err:
+        sys.exit("Cannot generate models:\n%s" % err)
 
 
 def load_rsfmodels(models, arch):
