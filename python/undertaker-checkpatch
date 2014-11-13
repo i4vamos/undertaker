@@ -226,7 +226,7 @@ def load_rsfmodels(models, arch):
 
     if models.endswith(".model"):
         # single file
-        mainrsf = RsfModel(models)
+        mainrsf = RsfModel(models, readrsf=False)
         return [mainrsf], mainrsf
 
     # model directory
@@ -240,13 +240,13 @@ def load_rsfmodels(models, arch):
         # load only the main model
         for model in model_files:
             if arch in model:
-                mainrsf = RsfModel(model)
+                mainrsf = RsfModel(model, readrsf=False)
                 return [mainrsf], mainrsf
 
     # default to x86 if no arch is specified and load all models
     arch = "x86"
     for model in model_files:
-        rsfmodels.append(RsfModel(model))
+        rsfmodels.append(RsfModel(model, readrsf=False))
         if arch in model:
             mainrsf = rsfmodels[-1]
 

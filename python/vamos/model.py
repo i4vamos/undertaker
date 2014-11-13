@@ -44,7 +44,7 @@ def parse_model(path):
 
 
 class RsfModel(dict):
-    def __init__(self, path, rsf=None):
+    def __init__(self, path, rsf=None, readrsf=True):
         dict.__init__(self)
         self.path = path
         self.always_on_items = set()
@@ -56,7 +56,7 @@ class RsfModel(dict):
         if not rsf and path.endswith(".model"):
             rsf = path[:-len(".model")] + ".rsf"
 
-        if rsf:
+        if readrsf and rsf:
             try:
                 with open(rsf) as f:
                     self.rsf = RsfReader(f)
