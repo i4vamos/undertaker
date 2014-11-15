@@ -29,7 +29,7 @@ def defect_analysis(srcfile, models, flag=""):
     reports = []
     defect_pattern = re.compile(r"[\S]+\.c\.B[0-9]+[\S]+")
     (output, _) = tools.execute("undertaker -v -m %s %s %s" %
-            (models, srcfile, flag), failok=False)
+            (models, srcfile, flag), failok=True)
     for report in output:
         if not report.startswith("I:"):
             continue
