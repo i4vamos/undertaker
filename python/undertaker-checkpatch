@@ -42,6 +42,7 @@ FEATURE = r"\w*[A-Z0-9]{1}\w*"
 CONFIG_DEF = r"^\s*(?:menu){,1}config\s+(" + FEATURE + r")\s*"
 EXPR = r"(?:" + OPERATORS + r"|\s|" + FEATURE + r")+"
 STMT = r"^\s*(?:if|select|depends\s+on)\s+" + EXPR
+SOURCE_FEATURE = r"(?:\W|\b)+[D]{,1}CONFIG_(" + FEATURE + r")"
 
 # regex objects
 REGEX_FILE_KCONFIG = re.compile(r".*Kconfig[\.\w+\-]*$")
@@ -51,6 +52,7 @@ REGEX_KCONFIG_DEF = re.compile(CONFIG_DEF)
 REGEX_KCONFIG_EXPR = re.compile(EXPR)
 REGEX_KCONFIG_STMT = re.compile(STMT)
 REGEX_FILTER_FEATURES = re.compile(r"[A-Za-z0-9]$")
+REGEX_SOURCE_FEATURE = re.compile(SOURCE_FEATURE)
 
 
 def parse_options():
@@ -111,7 +113,7 @@ def main():
     blocks_a = {}
     blocks_b = {}
     kconfig_change = False
-    (worklist_a, worklist_b, removals, statements) = parse_patch(patchfile)
+    (worklist_a, worklist_b, removals, additions) = parse_patch(patchfile)
 
     for item in list(worklist_a):
         if REGEX_FILE_KCONFIG.match(item):
@@ -128,9 +130,9 @@ def main():
     if not opts.models:
         # if no model is specified, we need to generate new ones
         model_path = generate_models(arch=opts.arch)
-    elif opts.arch:
+    elif opts.arch and ".model" not in opts.models:
         # if arch-specific model is not present, generate it
-        if not glob.glob("%s/%s.model" % (model_path, opts.arch)):
+        if not os.path.exists("%s/%s.model" % (model_path, opts.arch)):
             logging.info("Model for specified architecture is not present")
             model_path = generate_models(arch=opts.arch)
 
@@ -164,16 +166,14 @@ def main():
         if defects[srcfile]:
             is_defect = True
 
-    # load RSF models for later checks
+    # load models for later checks
     models = []
     mainmodel = None
     if kconfig_change or opts.check:
         models, mainmodel = load_models(model_path, opts.arch)
 
-    # check if changes to Kconfig cause defects
-    if kconfig_change:
-        if check_kconfig_constraints(removals, statements, models):
-            is_defect = True
+    # check referential integrity of the patch
+    is_defect = check_referential_integrity(removals, additions, models)
 
     # if no defect is detected, we can stop here
     if not is_defect:
@@ -259,7 +259,7 @@ def load_models(model_path, arch):
 
 def search_item_tree(item):
     """Return a list of files referencing @item."""
-    item += "[^_]"  # avoid substring matches (e.g., for CONFIG_X86*)
+    item += "[^_a-zA-Z0-9]"  # avoid substring matches (e.g., for CONFIG_X86*)
     (files, _) = tools.execute("git grep -n '%s'" % item)
     # if there is no reference we get [""]
     if files[0] == "":
@@ -289,40 +289,46 @@ def in_models(feature, models, arch=""):
     return False
 
 
-def check_kconfig_constraints(removals, statements, models):
-    """Cross-check changes of Kconfig files with the models and report
-    referential integrity violations."""
+def check_referential_integrity(removals, additions, models):
+    """Check removed Kconfig features and all added lines for violations of the
+    referential integrity."""
+    if not removals and not additions:
+        return False
+
     defect = False
-    # removed Kconfig features
-    for srcfile in removals:
-        for feature in removals[srcfile]:
+    # removed features in Kconfig files
+    for filepath in removals:
+        for feature in removals[filepath]:
             if not in_models(feature, models):
                 references = search_item_tree(feature)
+                references.extend(search_item_tree(feature + '_MODULE'))
                 if not references:
                     continue
                 defect = True
                 print "Feature %s is removed but still referenced in:" % \
                         feature
-                for reference in references:
+                for reference in set(references):
                     print reference
-    # added Kconfig statements
-    for srcfile in statements:
-        arch = tools.get_architecture(srcfile)
-        for feature in statements[srcfile]:
+
+    # added references on Kconfig features in any file type
+    for filepath in additions:
+        arch = tools.get_architecture(filepath)
+        for feature in additions[filepath]:
             if not in_models(feature, models, arch):
                 defect = True
                 print "%s: patch adds undefined reference on %s" % \
-                        (srcfile, feature)
+                        (filepath, feature)
     return defect
 
 
 def parse_patch(patchfile):
     """Parse @patchfile and return related data."""
+    #pylint: disable=R0912
     diffs = []
     worklist_a = []
     worklist_b = []
     removals = {}
-    statements = {}
+    additions = {}
 
     # https://pypi.python.org/pypi/whatthepatch/0.0.2
     with open(patchfile) as stream:
@@ -341,30 +347,42 @@ def parse_patch(patchfile):
             worklist_a.append(diff.header.old_path[2:])
             worklist_b.append(diff.header.new_path[2:])
 
-        # for now, we only parse Kconfig files
-        if not REGEX_FILE_KCONFIG.match(path):
-            continue
+        # parse Kconfig file
+        if REGEX_FILE_KCONFIG.match(path):
+            # change = [line# before, line# after, text]
+            for change in diff.changes:
+                # Removed features ({menu}config FOO)
+                if change[0] and not change[1] and \
+                        REGEX_KCONFIG_DEF.match(change[2]):
+                    feature = get_kconfig_definition(change[2])
+                    if feature:
+                        removed = removals.get(path, set())
+                        removed.add("CONFIG_" + feature)
+                        removals[path] = removed
 
-        # change = [line# before, line# after, text]
-        for change in diff.changes:
-            # Removed features ({menu}config FOO)
-            if change[0] and not change[1] and \
-                    REGEX_KCONFIG_DEF.match(change[2]):
-                feature = get_kconfig_definition(change[2])
-                if feature:
-                    removed = removals.get(path, set())
-                    removed.add("CONFIG_" + feature)
-                    removals[path] = removed
+                # added statements (if, select, depends on)
+                elif not change[0] and change[1] and \
+                        REGEX_KCONFIG_STMT.match(change[2]):
+                    stmts = additions.get(path, set())
+                    for feature in REGEX_FEATURE.findall(change[2]):
+                        stmts.add("CONFIG_" + feature)
+                    additions[path] = stmts
 
-            # added statements (if, select, depends on)
-            elif not change[0] and change[1] and \
-                    REGEX_KCONFIG_STMT.match(change[2]):
-                stmts = statements.get(path, set())
-                for feature in REGEX_FEATURE.findall(change[2]):
-                    stmts.add("CONFIG_" + feature)
-                statements[path] = stmts
+        # parse any file that is no Kconfig, source or log file
+        elif not REGEX_FILE_SOURCE.match(path) and \
+                not "ChangeLog" in path and \
+                not ".log" in path:
+            # change = [line# before, line# after, text]
+            for change in diff.changes:
+                # any added line is interesting
+                if not change[0] and change[1] and \
+                        "CONFIG_" in change[2]:
+                    refs = additions.get(path, set())
+                    for feature in REGEX_SOURCE_FEATURE.findall(change[2]):
+                        refs.add("CONFIG_" + feature)
+                    additions[path] = refs
 
-    return (worklist_a, worklist_b, removals, statements)
+    return (worklist_a, worklist_b, removals, additions)
 
 
 if __name__ == "__main__":
