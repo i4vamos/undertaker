@@ -27,14 +27,14 @@ def defect_analysis(srcfile, models, flag=""):
     """Defect analysis using the Undertaker tool.
     Returns list of defect reports."""
     reports = []
-    defect_pattern = re.compile(r"[\S]+\.c\.B[0-9]+[\S]+")
+    defect_pattern = re.compile(r"[\S]+\.[cSh]\.B[0-9]+[\S]+")
     (output, _) = tools.execute("undertaker -v -m %s %s %s" %
             (models, srcfile, flag), failok=True)
     for report in output:
         if not report.startswith("I:"):
             continue
         matches = defect_pattern.findall(report)
-        if len(matches) != 0:
+        if matches:
             defect = matches[0].strip()
             if not defect.endswith(".mus"):
                 # we just need to know if there is a defect, but do not need
