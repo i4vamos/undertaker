@@ -183,10 +183,8 @@ public:
     }
 
     // Prints the assignments in an human readable way on stdout
-    static void pprintAssignments(std::ostream& out,
-        const std::list<AssignmentMap> solution,
-        const ConfigurationModel *model,
-        const MissingSet &missingSet);
+    static void pprintAssignments(std::ostream &out, const std::list<AssignmentMap> solution,
+                                  const ConfigurationModel *model, const MissingSet &missingSet);
 
     void loadCnfModel(const ConfigurationModel *);
 

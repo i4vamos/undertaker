@@ -31,13 +31,13 @@
 namespace kconfig {
     bool hasPrompt(struct symbol *sym);
 
-    expr * visibilityExpression(struct symbol *sym);
-    expr * dependsExpression(struct symbol *sym);
+    expr *visibilityExpression(struct symbol *sym);
+    expr *dependsExpression(struct symbol *sym);
     /* this function is ONLY valid for bool/tristate defaults! */
-    expr * defaultExpression_bool_tristate(struct symbol *sym);
-    expr * reverseDepExpression(struct symbol *sym);
-    expr * choiceExpression(struct symbol *sym);
-    expr * selectExpression(struct symbol *sym);
+    expr *defaultExpression_bool_tristate(struct symbol *sym);
+    expr *reverseDepExpression(struct symbol *sym);
+    expr *choiceExpression(struct symbol *sym);
+    expr *selectExpression(struct symbol *sym);
 
     void nameSymbol(struct symbol *sym);
     struct symbol *getModulesSym(void);

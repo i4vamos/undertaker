@@ -37,6 +37,9 @@ using StringList = std::deque<std::string>;
  * \brief Reads .model files
  */
 class RsfReader : public std::map<std::string, std::string> {
+    RsfReader() = default;
+    std::map<std::string, StringList> meta_information;
+
 public:
     explicit RsfReader(const std::string &filename, const std::string metaflag = "UNDERTAKER_SET");
     virtual ~RsfReader() = default;
@@ -48,10 +51,6 @@ public:
     const StringList *getMetaValue(const std::string &key) const;
 
     void print_contents(std::ostream &out);
-
-private:
-    RsfReader() = default;
-    std::map<std::string, StringList> meta_information;
 };
 
 /**

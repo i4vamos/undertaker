@@ -183,7 +183,7 @@ namespace kconfig {
 /************************************************************************/
 
     class BoolExpConst : public BoolExp {
-        explicit BoolExpConst(bool val) { value = val; }
+        explicit BoolExpConst(bool val) : value(val) {}
 
     public:
         bool value;
@@ -209,11 +209,9 @@ namespace kconfig {
             this->name = addPrefix ? "CONFIG_" + name : name;
         }
 
-        BoolExpVar(struct symbol *sym, TristateRelation rel) {
+        BoolExpVar(struct symbol *sym, TristateRelation rel) : rel(rel), sym(sym) {
             nameSymbol(sym);
             std::string name(sym->name ? sym->name : "[unnamed_menu]");
-            this->rel = rel;
-            this->sym = sym;
             this->name = "CONFIG_" + name + TristateRelationNames[rel];
         }
 

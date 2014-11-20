@@ -72,5 +72,4 @@ public:
     explicit MinimizeCoverageAnalyzer(CppFile *f) : CoverageAnalyzer(f){};
     std::list<SatChecker::AssignmentMap> blockCoverage(ConfigurationModel *) final override;
 };
-
 #endif /* _COVERAGEANALYZER_H_ */

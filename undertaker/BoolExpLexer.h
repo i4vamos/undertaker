@@ -25,12 +25,10 @@
 
 #ifndef YY_DECL
 
-#define YY_DECL \
-    kconfig::BoolExpParser::token_type \
-    kconfig::BoolExpLexer::lex( \
-    kconfig::BoolExpParser::semantic_type* yylval, \
-    kconfig::BoolExpParser::location_type* yylloc \
-    )
+#define YY_DECL                                                                                   \
+    kconfig::BoolExpParser::token_type kconfig::BoolExpLexer::lex(                                \
+        kconfig::BoolExpParser::semantic_type *yylval,                                            \
+        kconfig::BoolExpParser::location_type *yylloc)
 #endif
 
 #ifndef __FLEX_LEXER_H
@@ -50,9 +48,8 @@ namespace kconfig {
 
         virtual ~BoolExpLexer();
 
-        BoolExpParser::token_type lex(
-                BoolExpParser::semantic_type* yylval,
-                BoolExpParser::location_type* yylloc);
+        BoolExpParser::token_type lex(BoolExpParser::semantic_type *yylval,
+                                      BoolExpParser::location_type *yylloc);
 
         void set_debug(bool b);
     };

@@ -67,11 +67,11 @@ public:
     */
     ConditionalBlock *topBlock() const { return top_block; };
 
-    typedef std::map<std::string, CppDefine*> DefineMap;
+    typedef std::map<std::string, CppDefine *> DefineMap;
     /**
      * \return map with defined symbol to define object
      */
-    DefineMap * getDefines() { return &define_map; };
+    DefineMap *getDefines() { return &define_map; };
 
     //! \return filename given in the constructor
     const std::string &getFilename() const { return filename; };
@@ -104,25 +104,31 @@ public:
 /************************************************************************/
 
 class ConditionalBlock : public CondBlockList {
+    std::string _exp;
+    std::string *cached_code_expression = nullptr;
+
+    void insertBlockIntoFile(ConditionalBlock *prevBlock, ConditionalBlock *nblock,
+                             bool insertAfter = false);
+
 public:
     //! defect type used in block defect analysis
     BlockDefect::DEFECTTYPE defectType;
     //! location related accessors
-    virtual unsigned int lineStart()       const = 0;
-    virtual unsigned int colStart()        const = 0;
-    virtual unsigned int lineEnd()         const = 0;
-    virtual unsigned int colEnd()          const = 0;
+    virtual unsigned int lineStart()    const = 0;
+    virtual unsigned int colStart()     const = 0;
+    virtual unsigned int lineEnd()      const = 0;
+    virtual unsigned int colEnd()       const = 0;
     /// @}
 
     //! \return original untouched expression
-    virtual const char * ExpressionStr() const = 0;
-    virtual bool isIfBlock()             const = 0; //!< is if or ifdef block
-    virtual bool isIfndefine()           const = 0; //!< is ifndef
-    virtual bool isElseIfBlock()         const = 0; //!< is elif
-    virtual bool isElseBlock()           const = 0; //!< is else
-    virtual bool isDummyBlock()          const = 0; //!< is Dummy-Block
-    virtual void setDummyBlock()               = 0; //!< set Block to dummy state
-    virtual const std::string getName()  const = 0; //!< unique identifier for block
+    virtual const char *ExpressionStr() const = 0;
+    virtual bool isIfBlock()            const = 0; //!< is if or ifdef block
+    virtual bool isIfndefine()          const = 0; //!< is ifndef
+    virtual bool isElseIfBlock()        const = 0; //!< is elif
+    virtual bool isElseBlock()          const = 0; //!< is else
+    virtual bool isDummyBlock()         const = 0; //!< is Dummy-Block
+    virtual void setDummyBlock()              = 0; //!< set Block to dummy state
+    virtual const std::string getName() const = 0; //!< unique identifier for block
 
     /**
      * This function doesn't affect the logic of the CPPPC algorithm, but changes
@@ -139,7 +145,7 @@ public:
     /* None virtual functions follow */
 
     ConditionalBlock(CppFile *file, ConditionalBlock *parent, ConditionalBlock *prev)
-        : cpp_file(file), _parent(parent), _prev(prev) {};
+            : cpp_file(file), _parent(parent), _prev(prev){};
 
     //! Has to be called after constructing a ConditionalBlock
     void lateConstructor();
@@ -151,11 +157,11 @@ public:
     //! \return name of the file variable from inferences
     const std::string &fileVar() const { return cpp_file->getFileVar(); };
     //! \return enclosing block or 0 if == cpp_file->topBlock()
-    const ConditionalBlock * getParent() const { return _parent; }
+    const ConditionalBlock *getParent() const { return _parent; }
     //! \return previous block on current level or 0 if first block on level
     //! note: a level is from an #if-Directive to an #endif-Directive
     //! there is no connection from one #if-Directive to a preceeding #if/#elif/#else
-    const ConditionalBlock * getPrev() const { return _prev; }
+    const ConditionalBlock *getPrev() const { return _prev; }
 
     //! \return associated file
     CppFile *getFile() const { return cpp_file; }
@@ -164,9 +170,9 @@ public:
     std::string ifdefExpression() const { return _exp; };
 
     std::string getCodeConstraints(UniqueStringJoiner *and_clause = nullptr,
-                                  std::set<ConditionalBlock *> *visited = nullptr);
+                                   std::set<ConditionalBlock *> *visited = nullptr);
 
-    void addDefine(CppDefine* define) { _defines.push_back(define); }
+    void addDefine(CppDefine *define) { _defines.push_back(define); }
 
     std::string getConstraintsHelper(UniqueStringJoiner *and_clause = nullptr) const;
     const std::deque<CppDefine *> &getDefines() const { return _defines; };
@@ -187,13 +193,6 @@ protected:
     std::deque<CppDefine *> _defines;
     //!< if set blocknames of getName() are extended with a normalized filename
     static bool useBlockWithFilename;
-
-private:
-    std::string _exp;
-    std::string *cached_code_expression = nullptr;
-
-    void insertBlockIntoFile(ConditionalBlock *prevBlock, ConditionalBlock *nblock,
-            bool insertAfter = false);
 };
 
 /************************************************************************/
@@ -201,6 +200,15 @@ private:
 /************************************************************************/
 
 class CppDefine {
+    std::set<std::string> isUndef;
+    std::string actual_symbol;  // The defined symbol will be replaced by this
+    std::string defined_symbol;  // The defined symbol
+
+    std::deque<ConditionalBlock *> defined_in;
+    std::deque<std::string> defineExpressions;
+
+    boost::regex replaceRegex;
+
 public:
     CppDefine(ConditionalBlock *parent, bool define, const std::string &id);
     void newDefine(ConditionalBlock *parent, bool define);
@@ -213,17 +221,5 @@ public:
     void getConstraintsHelper(UniqueStringJoiner *and_clause) const;
 
     bool containsDefinedSymbol(const std::string &exp);
-
-private:
-    std::set<std::string> isUndef;
-    std::string actual_symbol; // The defined symbol will be replaced by this
-
-    std::string defined_symbol; // The defined symbol
-
-    std::deque <ConditionalBlock *> defined_in;
-    std::deque<std::string> defineExpressions;
-
-    boost::regex replaceRegex;
 };
-
 #endif /* _CONDITIONALBLOCK_H_ */

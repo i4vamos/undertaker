@@ -30,7 +30,6 @@
 
 namespace kconfig {
     class BoolExpSymbolSet : public BoolVisitor {
-    private:
         std::set<std::string> symbolset;
         bool ignoreFunctionSymbols;
 

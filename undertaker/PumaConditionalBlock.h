@@ -67,10 +67,10 @@ class PumaConditionalBlock : public ConditionalBlock {
 
 public:
     PumaConditionalBlock(CppFile *file, ConditionalBlock *parent, ConditionalBlock *prev,
-            const Puma::PreTree *node, const unsigned long nodeNum,
-            PumaConditionalBlockBuilder &builder) :
-            ConditionalBlock(file, parent, prev), _number(nodeNum),
-            _current_node(node), _builder(builder) {
+                         const Puma::PreTree *node, const unsigned long nodeNum,
+                         PumaConditionalBlockBuilder &builder)
+            : ConditionalBlock(file, parent, prev), _number(nodeNum), _current_node(node),
+              _builder(builder) {
         lateConstructor();
     };
 
@@ -142,8 +142,8 @@ class PumaConditionalBlockBuilder : public Puma::PreVisitor {
     ConditionalBlock *parse(const std::string &filename);
 
 public:
-    PumaConditionalBlockBuilder(CppFile *file, const std::string &filename) : _file(file),
-            null_stream("/dev/null"), _err(null_stream) {
+    PumaConditionalBlockBuilder(CppFile *file, const std::string &filename)
+            : _file(file), null_stream("/dev/null"), _err(null_stream) {
         _top = parse(filename);
     }
 
@@ -164,7 +164,7 @@ public:
     void visitPreDefineFunctionDirective_Pre(Puma::PreDefineFunctionDirective *) final override;
     void visitPreUndefDirective_Pre (Puma::PreUndefDirective *)                  final override;
 
-    unsigned long * getNodeNum() { return &_nodeNum; }
+    unsigned long *getNodeNum() { return &_nodeNum; }
     static void addIncludePath(const char *);
 };
 #endif
