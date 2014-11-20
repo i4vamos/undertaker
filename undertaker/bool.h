@@ -202,7 +202,7 @@ namespace kconfig {
     class BoolExpVar : public BoolExp {
     public:
         TristateRelation rel;
-        struct symbol *sym;
+        struct symbol *sym = nullptr;
 
         explicit BoolExpVar(std::string name, bool addPrefix = true) {
             this->rel = rel_helper;

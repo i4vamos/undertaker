@@ -182,8 +182,8 @@ public:
     void printConditionalBlocks(int indent);
 
 protected:
-    CppFile *cpp_file;
-    const ConditionalBlock *_parent, *_prev;
+    CppFile *cpp_file = nullptr;
+    const ConditionalBlock *_parent = nullptr, *_prev = nullptr;
     std::deque<CppDefine *> _defines;
     //!< if set blocknames of getName() are extended with a normalized filename
     static bool useBlockWithFilename;

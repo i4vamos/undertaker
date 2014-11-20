@@ -56,7 +56,7 @@ class PumaConditionalBlock : public ConditionalBlock {
     unsigned long _number;
     Puma::Token *_start = nullptr, *_end = nullptr;
 
-    const Puma::PreTree *_current_node;
+    const Puma::PreTree *_current_node = nullptr;
 
     bool _isIfBlock = false;
     bool _isDummyBlock = false;
@@ -122,9 +122,9 @@ class PumaConditionalBlockBuilder : public Puma::PreVisitor {
     // Stack of open conditional blocks. Pushed to when entering #ifdef
     // (and similar) blocks, popped from when leaving them.
     std::stack<PumaConditionalBlock *> _condBlockStack;
-    PumaConditionalBlock* _current = nullptr;
+    PumaConditionalBlock *_current = nullptr;
     ConditionalBlock *_top = nullptr;
-    CppFile *_file;
+    CppFile *_file = nullptr;
     std::ofstream null_stream;
     Puma::ErrorStream _err;
     // order seems to be important here, do not exchange!
@@ -132,7 +132,7 @@ class PumaConditionalBlockBuilder : public Puma::PreVisitor {
     std::unique_ptr<Puma::CTranslationUnit> _tu;
     std::unique_ptr<Puma::PreprocessorParser> _cpp;
 
-    Puma::Unit *_unit; // the unit we are working on
+    Puma::Unit *_unit = nullptr; // the unit we are working on
 
     static std::list<std::string> _includePaths;
 

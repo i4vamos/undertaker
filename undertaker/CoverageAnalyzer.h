@@ -49,7 +49,7 @@ protected:
 
     std::string baseFileExpression(const ConfigurationModel *model);
 
-    const CppFile * file;
+    const CppFile *file = nullptr;
     MissingSet missingSet; // set of strings
 };
 

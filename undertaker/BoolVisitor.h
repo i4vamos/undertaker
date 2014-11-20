@@ -46,8 +46,8 @@ namespace kconfig {
 
     protected:
         std::map <BoolExp *, void *> visited;
-        void *left, *right;
-        void *result;
+        void *left = nullptr, *right = nullptr;
+        void *result = nullptr;
         virtual void visit(BoolExp *e) = 0;
         virtual void visit(BoolExpAnd *e) = 0;
         virtual void visit(BoolExpOr *e) = 0;

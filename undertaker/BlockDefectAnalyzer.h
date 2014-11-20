@@ -110,7 +110,7 @@ protected:
     std::string _formula;
     std::string _arch;
     std::string _suffix;
-    ConditionalBlock *_cb;
+    ConditionalBlock *_cb = nullptr;
 };
 
 

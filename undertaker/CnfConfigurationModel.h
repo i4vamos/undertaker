@@ -30,7 +30,7 @@ namespace kconfig {
 
 
 class CnfConfigurationModel: public ConfigurationModel {
-    kconfig::PicosatCNF *_cnf;
+    kconfig::PicosatCNF *_cnf = nullptr;
 
     void doIntersectPreprocess(std::set<std::string> &, StringJoiner &) const final override {}
 

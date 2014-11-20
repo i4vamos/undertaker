@@ -31,7 +31,7 @@ class ItemRsfReader;
 
 
 class RsfConfigurationModel : public ConfigurationModel {
-    RsfReader *_model;
+    RsfReader *_model = nullptr;
     ItemRsfReader *_rsf = nullptr;
 
     void doIntersectPreprocess(std::set<std::string> &start_items,

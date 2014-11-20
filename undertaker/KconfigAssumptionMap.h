@@ -35,7 +35,7 @@ namespace kconfig {
      * configuration fragement).
      */
     class KconfigAssumptionMap : public std::map<std::string, bool> {
-        PicosatCNF *_model;
+        PicosatCNF *_model = nullptr;
     public:
         //! loads the given models
         explicit KconfigAssumptionMap(PicosatCNF *model) : _model(model) { };

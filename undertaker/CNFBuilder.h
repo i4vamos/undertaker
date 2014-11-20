@@ -35,7 +35,7 @@ namespace kconfig {
     class CNFBuilder : public BoolVisitor {
     public:
         enum class ConstantPolicy {BOUND, FREE};
-        PicosatCNF *cnf;
+        PicosatCNF *cnf = nullptr;
     private:
         int boolvar = 0;
         ConstantPolicy constPolicy;
