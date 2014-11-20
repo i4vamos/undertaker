@@ -39,8 +39,10 @@ namespace Logging {
     extern Logger logger;
 
     namespace {
+#pragma GCC diagnostic ignored "-Wunused-function"
         int getLogLevel() { return logger.logLevel; }
         void setLogLevel(int l) { logger.logLevel = l; }
+#pragma GCC diagnostic ignored "-Wunused-function"
     } // namespace
 
     // TODO gcc 4.8.1 currently has a bug and evaluates the parameters backwards...this
