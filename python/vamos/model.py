@@ -4,6 +4,7 @@
 # Copyright (C) 2011-2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2014 Andreas Ruprecht <rupran@einserver.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from vamos.rsf2model.RsfReader import RsfReader
+from vamos.rsf2model.RsfReader import ItemRsfReader, RsfReader
 
 import logging
 import re
@@ -37,14 +38,14 @@ def get_model_for_arch(arch):
     return None
 
 
-def parse_model(path):
+def parse_model(path, shallow=False):
     if path.endswith('.cnf'):
         return CnfModel(path)
-    return RsfModel(path)
+    return RsfModel(path, shallow=shallow)
 
 
 class RsfModel(dict):
-    def __init__(self, path, rsf=None, readrsf=True):
+    def __init__(self, path, rsf=None, readrsf=True, shallow=False):
         dict.__init__(self)
         self.path = path
         self.always_on_items = set()
@@ -59,7 +60,10 @@ class RsfModel(dict):
         if readrsf and rsf:
             try:
                 with open(rsf) as f:
-                    self.rsf = RsfReader(f)
+                    if shallow:
+                        self.rsf = ItemRsfReader(f)
+                    else:
+                        self.rsf = RsfReader(f)
             except IOError:
                 logging.warning("no rsf file for model %s was found", path)
 

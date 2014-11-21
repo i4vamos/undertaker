@@ -3,6 +3,7 @@
 
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2014 Andreas Ruprecht <rupran@einserver.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -129,6 +130,31 @@ class RsfReader:
         for (item, kconfig_type) in self.database["Item"]:
             if item == symbol:
                 return kconfig_type
+        return None
+
+class ItemRsfReader(dict):
+
+    def __init__(self, fd):
+        """ Read rsf file and store item types in a dict."""
+        super(ItemRsfReader, self).__init__()
+
+        for line in fd:
+            if not line.startswith("Item\t"):
+                continue
+            tokens = line.split()
+            self[tokens[1]] = tokens[2]
+
+    def is_bool_tristate(self, symbol):
+        """Returns true if symbol is boolean or tristate, otherwise false is returned."""
+
+        return self.get_type(symbol) in ["boolean", "tristate"]
+
+    def get_type(self, symbol):
+        """ Get data type of symbol or None if item is not found."""
+        if symbol.startswith("CONFIG_"):
+            symbol = symbol[7:]
+        if symbol in self:
+            return self[symbol]
         return None
 
 class OptionInvalid(Exception):
