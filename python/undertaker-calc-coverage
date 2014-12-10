@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-#
-#   undertaker-calc-coverage - configuration coverage analysis on Linux
-#
+
+""" undertaker-calc-coverage - configuration coverage analysis on Linux """
+
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,12 @@
 #
 
 import sys
-from os.path import join, dirname
+import os
 
-sys.path = [join(dirname(sys.path[0]), 'lib', 'python%d.%d' % \
-                (sys.version_info[0], sys.version_info[1]), 'site-packages')] \
-                + sys.path
+sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib',
+                         'python%d.%d' % (sys.version_info[0],
+                                          sys.version_info[1]),
+                         'site-packages')] + sys.path
 
 from vamos.golem.kbuild import *
 from vamos.model import parse_model

@@ -22,8 +22,10 @@
 import sys
 import os
 
-sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib', 'python%d.%d' % \
-               (sys.version_info[0], sys.version_info[1]), 'site-packages')] + sys.path
+sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib',
+                         'python%d.%d' % (sys.version_info[0],
+                                          sys.version_info[1]),
+                         'site-packages')] + sys.path
 
 from vamos.rsf2model import RsfReader
 from vamos.rsf2model import TranslatedModel
