@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
+# Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
 
 """Utilities to detect and analyze defects in a given source file."""
 
@@ -29,7 +29,7 @@ def defect_analysis(srcfile, models, flag=""):
     reports = []
     defect_pattern = re.compile(r"[\S]+\.[cSh]\.B[0-9]+[\S]+")
     (output, _) = tools.execute("undertaker -v -m %s %s %s" %
-            (models, srcfile, flag), failok=True)
+                                (models, srcfile, flag), failok=True)
     for report in output:
         if not report.startswith("I:"):
             continue
@@ -64,15 +64,17 @@ def batch_analysis(srclist, models, flags=""):
     # defect analysis and assignment of defects to each source file
     flags += " -b %s" % batchfile
     for report in defect_analysis("", models, flags):
-        # get block id, source file and defect class from report
         bid = Block.get_block_id(report)
         bfile = Block.get_block_file(report)
-        bdefect = Block.get_block_defect(report)
         # assign information to the blocks of the source file
         srcblocks = blocks[bfile]
-        srcblocks[bid].defect = bdefect
         if report.endswith(".mus"):
             srcblocks[bid].mus = report
+            # remove the '.mus' suffix from the defect report
+            bdefect = Block.get_block_defect(report[:-len('.mus')])
+        else:
+            bdefect = Block.get_block_defect(report)
+        srcblocks[bid].defect = bdefect
 
     for srcfile in blocks:
         blocks[srcfile] = list(blocks[srcfile].values())  # dict to list
@@ -81,9 +83,11 @@ def batch_analysis(srclist, models, flags=""):
     return blocks
 
 
-def compare_and_report(blocks_a, blocks_b):
-    """Compare both block lists and report if a defect is introduced, fixed,
-    changed or unchanged. Return a list of all unique defects."""
+def compare_blocks(blocks_a, blocks_b):
+    """Compare both lists of blocks to detect if a defect is introduced, fixed,
+    changed or unchanged. Return a sorted list of defect affected blocks. Note
+    that a defect is repaired in case block.match is None and block.report does
+    not contain ' repaired '."""
     defects = []
 
     for block_a in blocks_a:
@@ -93,7 +97,7 @@ def compare_and_report(blocks_a, blocks_b):
                 block_b.match = block_a
 
     for block_b in [b for b in blocks_b if not b.match and b.is_defect()]:
-        print "New defect: %s" % block_b
+        block_b.report = "\nNew defect: %s" % block_b
         defects.append(block_b)
 
     for block_a in blocks_a:
@@ -101,111 +105,118 @@ def compare_and_report(blocks_a, blocks_b):
 
         if not block_b:
             if block_a.is_defect():
-                print "Defect repaired (removed): %s" % block_a
+                block_a.report = "\nDefect repaired (removed): %s" % block_a
+                defects.append(block_a)
+        elif not block_a.is_defect() and block_b.is_defect():
+            block_b.report = "\nNew defect: %s" % block_b
+            defects.append(block_b)
+        elif block_a.defect == block_b.defect and block_a.is_defect():
+            block_b.report = "\nUnchanged defect: %s" % block_b
+            defects.append(block_b)
+        elif block_a.defect != block_b.defect and block_a.is_defect():
+            block_b.report = "\nChanged defect FROM: %s" % block_a
+            block_b.report += "\n                 TO: %s" % block_b
+            defects.append(block_b)
+        elif block_a.is_defect() and not block_b.is_defect():
+            block_a.report = "\nDefect repaired: %s" % block_a
+            defects.append(block_a)
+
+    return sorted(defects, key=lambda x: x.bid)
+
+
+def in_models(feature, models, arch=""):
+    """Check if the feature is defined in at least one of the models or in the
+    model of the specified architecture."""
+    if arch:
+        for model in models:
+            if re.search(r"\/%s\.model$" % arch, model.path):
+                return model.is_defined(feature)
+    for model in models:
+        if model.is_defined(feature):
+            return True
+    return False
+
+
+def check_missing_defect(block, mainmodel, models, arch=""):
+    """Check the missing defect and extend its defect report."""
+    missing_found = False
+
+    for item in block.get_transitive_items(mainmodel):
+        if in_models(item, models, arch):
+            # filter architecture dependent features to avoid false positives
             continue
-        if block_a.defect == block_b.defect:
-            if block_a.is_defect():
-                print "Unchanged defect: %s" % block_b
-                defects.append(block_b)
+        missing_found = True
+        if item in block.ref_items:
+            block.report += "\n\t%s is referenced but not defined in Kconfig" \
+                            % item
         else:
-            if block_a.is_defect() and not block_b.is_defect():
-                print "Defect repaired: %s" % block_a
-            elif not block_a.is_defect() and block_b.is_defect():
-                print "New defect: %s" % block_b
-                defects.append(block_b)
-            else:
-                print "Changed defect: from %s to %s " % (block_a, block_b)
-                defects.append(block_b)
+            block.report += "\n\t%s is in dependencies but not defined in " \
+                            "Kconfig" % item
 
-    return defects
+    if missing_found:
+        return
 
-
-def check_missing_defect(block, model):
-    """Check the missing defect."""
-    # missing item is referenced in macro?
-    in_macro = False
-    in_dependencies = False
-    missings = []
-    for item in block.ref_items:
-        if not model.is_defined(item):
-            in_macro = True
-            missings.append(item)
-            print "%s: %s referenced but not defined" % (block, item)
-    if in_macro:
-        return missings
-    # missing item is in dependencies of the block?
-    for item in block.ref_items:
-        (interesting, _) = tools.execute("undertaker -j interesting %s -m %s" %
-                (item, model.path))
-        interesting = tools.get_kconfig_items(interesting[0])
-        for intr in interesting:
-            if not model.is_defined(intr):
-                in_dependencies = True
-                missings.append(item)
-                print "%s: %s is in dependencies but not defined" % \
-                        (block, intr)
-    if not in_dependencies:
-        print "%s: could not detect cause of defect" % block
-    return missings
+    # this should not happen
+    block.defect += "\n\tcould not detect cause of defect"
 
 
 def check_kconfig_defect(block, model):
-    """Check the kconfig defect. Return true if cause is identified."""
-    identified = False
-    for item in block.ref_items:
+    """Check the kconfig defect and extend its defect report. This function only
+    covers the trivial case of a kconfig defect being caused by referencing
+    always_on or always_off items.
+
+    Note: always_{on, off} items do not always contribute to the
+    contradictory formula, and should thereby only be seen as indicators of a
+    defect's cause. Oftentimes, manual analysis of the minimal unsatisfiable
+    subformula (see undertaker --mus) is required."""
+
+    for item in block.get_transitive_items(model):
         if item in model.always_on_items:
-            print "%s: referenced item %s is always on" % (block, item)
-            identified = True
+            if item in block.ref_items:
+                block.report += "\n\t%s is referenced and always on" % item
+            else:
+                block.report += "\n\t%s is in dependencies and always on" \
+                                % item
         elif item in model.always_off_items:
-            print "%s: referenced item %s is always off" % (block, item)
-            identified = True
-            continue
-        (interesting, _) = tools.execute("undertaker -j interesting %s -m %s" %
-                (item, model.path))
-        interesting = tools.get_kconfig_items(interesting[0])
-        for intr in interesting:
-            if item in model.always_on_items:
-                print "%s: %s is in dependencies and always on" % \
-                        (block, intr)
-                identified = True
-            elif item in model.always_off_items:
-                print "%s: %s is in dependencies and always off" % \
-                        (block, intr)
-                identified = True
-    return identified
+            if item in block.ref_items:
+                block.report += "\n\t%s is referenced and always off" % item
+            else:
+                block.report += "\n\t%s is in dependencies and always off" \
+                                % item
 
 
 def check_code_defect(block):
-    """ Check the code defect."""
-    defines = []
-    undefines = []
-    is_define = False
-    # defines
-    (output, _) = tools.execute(r"grep '^\s*#def' %s" % block.srcfile)
-    for out in output:
-        defines.extend(tools.get_kconfig_items(out))
-    # undefines
-    (output, _) = tools.execute(r"grep '^\s*#undef' %s" % block.srcfile)
-    for out in output:
-        undefines.extend(tools.get_kconfig_items(out))
-
-    for ref in block.ref_items:
-        if ref in defines:
-            print "%s: referencing previously defined item %s" % (block, ref)
-            is_define = True
-        elif ref in undefines:
-            print "%s: referencing previously undefined item %s" % (block, ref)
-            is_define = True
-    if is_define:
-        return
-
-    # display the block's precondition
-    reason = "contradiction"
+    """Check the code defect and extend its defect report."""
+    # report the block's boolean precondition
+    reason = "Contradiction"
     if "undead" in block.defect:
-        reason = "tautology"
-    print "%s: there is a %s in the block's precondition" % (block, reason)
+        reason = "Tautology"
+    block.report += "\n\t%s in the block's precondition:" % reason
+
     block_loc = block.srcfile + ":" + str(block.range[0]+1) + ":1"
     (output, _) = tools.execute("undertaker -j blockpc %s" % block_loc,
-            failok=False)
+                                failok=False)
     for out in output:
-        print out
+        block.report += "\n\t%s" % out
+
+    cpp_items = []
+
+    # find previously defined CPP items (e.g., #define CONFIG_)
+    (output, _) = tools.execute(r"git grep -n '^\s*#def' %s" % block.srcfile)
+    for out in output:
+        feature = tools.get_kconfig_items(out)
+        if feature and feature[0] in block.ref_items:
+            cpp_items.append(out)
+
+    # find previously undefined CPP items (e.g., #undefine CONFIG_)
+    (output, _) = tools.execute(r"git grep -n '^\s*#undef' %s" % block.srcfile)
+    for out in output:
+        feature = tools.get_kconfig_items(out)
+        if feature and feature[0] in block.ref_items:
+            cpp_items.append(out)
+
+    if cpp_items:
+        block.report += "\n\n\tThe following lines of source code may cause "
+        block.report += "the defect:"
+        for item in sorted(cpp_items):
+            block.report += "\n\t\t%s" % item

@@ -2,7 +2,7 @@
 
 """Check a specified patch for variability related defects in a Linux tree."""
 
-# Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
+# Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ import glob
 import logging
 import whatthepatch
 from optparse import OptionParser
+from collections import OrderedDict
 
 
 # regex expressions
@@ -44,7 +45,7 @@ FEATURE = r"\w*[A-Z0-9]{1}\w*"
 CONFIG_DEF = r"^\s*(?:menu){,1}config\s+(" + FEATURE + r")\s*"
 EXPR = r"(?:" + OPERATORS + r"|\s|" + FEATURE + r")+"
 STMT = r"^\s*(?:if|select|depends\s+on)\s+" + EXPR
-SOURCE_FEATURE = r"(?:\W|\b)+[D]{,1}CONFIG_(" + FEATURE + r")"
+SOURCE_FEATURE = r"(?:\W|\b)+[D]{,1}(CONFIG_" + FEATURE + r")"
 
 # regex objects
 REGEX_FILE_KCONFIG = re.compile(r".*Kconfig[\.\w+\-]*$")
@@ -69,11 +70,6 @@ def parse_options():
 
     parser.add_option('-m', '--models', dest='models', action='store',
             default="", help="Consider only these models for analysis.")
-
-    parser.add_option('-c', '--check', dest='check', action='store_true',
-            default=False, help="Try to find defect causes and effects." +
-            "If no architecture is specified, the model defaults" +
-            " to the x86 architecture.")
 
     parser.add_option('-u', '--mus', dest='mus', action='store_true',
             default=False, help="Generate minimally unsatisfiable" +
@@ -132,11 +128,11 @@ def main():
     if not opts.models:
         # if no model is specified, we need to generate new ones
         model_path = generate_models(arch=opts.arch)
-    elif opts.arch and ".model" not in opts.models:
-        # if arch-specific model is not present, generate it
-        if not os.path.exists("%s/%s.model" % (model_path, opts.arch)):
-            logging.info("Model for specified architecture is not present")
-            model_path = generate_models(arch=opts.arch)
+    elif opts.arch and not opts.arch + ".model" in model_path and \
+            not os.path.exists("%s/%s.model" % (model_path, opts.arch)):
+        # if there is no model for the specified arch, generate it
+        logging.info("Model for specified architecture is not present")
+        model_path = generate_models(arch=opts.arch)
 
     # detect defects before applying the patch
     blocks_a = defect_analysis.batch_analysis(worklist_a, model_path, "")
@@ -156,58 +152,67 @@ def main():
         flags = "-u"
     blocks_b = defect_analysis.batch_analysis(worklist_b, model_path, flags)
 
-    # compare blocks before and after applying the patch to detect if a defect
-    # is a) introduced, b) fixed, c) changed or d) remained unchanged
-    print "Reporting defects:"
-    defects = {}
-    is_defect = False
-    for srcfile in set(worklist_a + worklist_b):
+    # load RSF models (mandatory for later checks)
+    models, mainmodel = load_models(model_path, opts.arch)
+
+    # compare blocks before and after the patch to detect if defects are
+    # new, repaired, changed classification or remained unchanged
+    defects = OrderedDict()
+    cpp_defects = False
+    for srcfile in sorted(set(worklist_a + worklist_b)):
         list_a = blocks_a.get(srcfile, [])
         list_b = blocks_b.get(srcfile, [])
-        defects[srcfile] = defect_analysis.compare_and_report(list_a, list_b)
+        defects[srcfile] = defect_analysis.compare_blocks(list_a, list_b)
         if defects[srcfile]:
-            is_defect = True
+            cpp_defects = True
 
-    # load models for later checks
-    models = []
-    mainmodel = None
-    if kconfig_change or opts.check:
-        models, mainmodel = load_models(model_path, opts.arch)
-
-    # check referential integrity of the patch
-    is_defect = check_referential_integrity(removals, additions, models)
-
-    # if no defect is detected, we can stop here
-    if not is_defect:
-        apply_patch(patchfile, "-R")
-        sys.exit(0)
-
-    if opts.check:
-        print "Analyzing defects:"
+    # check each defect (dead and undead block) and print its report
+    if cpp_defects:
+        print "----------------------- Reporting dead and undead blocks " + \
+              "-----------------------"
         for srcfile in defects:
             for block in defects[srcfile]:
+                # repaired defects don't require further checks
+                if block.match is None and ' repaired ' in block.report:
+                    print block.report
+                    continue
+
                 if "missing" in block.defect:
-                    defect_analysis.check_missing_defect(block, mainmodel)
+                    defect_analysis.check_missing_defect(block, mainmodel,
+                                                         models, opts.arch)
                 elif "kconfig" in block.defect:
                     defect_analysis.check_kconfig_defect(block, mainmodel)
                 elif "code" in block.defect:
                     defect_analysis.check_code_defect(block)
+                print block.report
+        print ""
 
-    if opts.mus:
-        print "MUS reports (only for dead blocks):"
+    # check patch for referential integrity violations
+    violations = check_referential_integrity(removals, additions, models)
+    if violations:
+        print "------------------ Reporting referential integrity " + \
+              "violations ------------------"
+        for violation in violations:
+            print violation
+        print ""
+
+    # if specified, print MUS reports
+    if opts.mus and cpp_defects:
+        print "----------------------- Reporting paths to MUS formulas " + \
+              "-----------------------"
         for srcfile in defects:
             for block in defects[srcfile]:
                 if block.mus:
                     print block.mus
+        print ""
 
-    # remove generated models and revert patch
+    # revert previously applied patch
     apply_patch(patchfile, "-R")
 
 
 def apply_patch(patchfile, flags=""):
     """Apply @patchfile and return True if it could is applied successfully."""
-    patch = "patch -p1 -i %s " % patchfile
-    (_, err) = tools.execute(patch + flags)
+    (_, err) = tools.execute("git apply %s %s" % (patchfile, flags))
     return err == 0
 
 
@@ -261,12 +266,39 @@ def load_models(model_path, arch):
 
 def search_item_tree(item):
     """Return a list of files referencing @item."""
-    item += "[^_a-zA-Z0-9]"  # avoid substring matches (e.g., for CONFIG_X86*)
-    (files, _) = tools.execute("git grep -n '%s'" % item)
+    # this regex excludes substring matches and includes end of string ($)
+    regex = r"\b%s\b\|\b%s\b$" % (item, item)
+    (references, _) = tools.execute("git grep -n '%s'" % regex)
     # if there is no reference we get [""]
-    if files[0] == "":
+    if references[0] == "":
         return []
-    return files
+    return references
+
+
+def get_line(grep):
+    """Return line information as int from @grep. Note that @grep has the
+    following format: file path:line number:line content."""
+    match = re.search(r":([0-9]+):", grep)
+    return int(match.groups()[0])
+
+
+def get_file(grep):
+    """Return the file path from @grep. Note that @grep has the following
+    format: file path:line number:line content."""
+    match = re.search(r"^(.*):[0-9]+:", grep)
+    return match.groups()[0]
+
+
+def get_references(feature):
+    """Return a list of files referencing @feature. Note that Kconfig features
+    are prefixed with 'CONFIG_' and may also be suffixed with '_MODULE' in C
+    code. Hence, we need to grep 3 times to find all possible representations of
+    a Kconfig feature."""
+    references = search_item_tree(r"D\{,1\}" + feature)
+    references.extend(search_item_tree(feature[len('CONFIG_'):]))
+    references.extend(search_item_tree(r"D\{,1\}" + feature + '_MODULE'))
+    # multi-level sorting: 1st key is the file, 2nd key is the line
+    return sorted(set(references), key=lambda x: (get_file(x), get_line(x)))
 
 
 def get_kconfig_definition(line):
@@ -278,49 +310,35 @@ def get_kconfig_definition(line):
         return None
 
 
-def in_models(feature, models, arch=""):
-    """Check if the feature is defined in at least one of the models or
-    in the model of the specified architecture."""
-    if arch:
-        for model in models:
-            if re.search(r"\/%s\.model$" % arch, model.path):
-                return model.is_defined(feature)
-    for model in models:
-        if model.is_defined(feature):
-            return True
-    return False
-
-
 def check_referential_integrity(removals, additions, models):
     """Check removed Kconfig features and all added lines for violations of the
-    referential integrity."""
+    referential integrity. Return a list of violation reports."""
     if not removals and not additions:
-        return False
+        return []
 
-    defect = False
+    violations = []
     # removed features in Kconfig files
-    for filepath in removals:
-        for feature in removals[filepath]:
-            if not in_models(feature, models):
-                references = search_item_tree(feature)
-                references.extend(search_item_tree(feature + '_MODULE'))
-                if not references:
-                    continue
-                defect = True
-                print "Feature %s is removed but still referenced in:" % \
-                        feature
-                for reference in set(references):
-                    print reference
+    for filepath in sorted(removals):
+        for feature in [x for x in removals[filepath] if
+                        not defect_analysis.in_models(x, models)]:
+            references = get_references(feature)
+            if not references:
+                continue
+            violations.append("\n%s is removed from %s but still referenced "
+                              "in:" % (feature[len('CONFIG_'):], filepath))
+            for reference in references:
+                violations.append("\t" + reference)
 
     # added references on Kconfig features in any file type
-    for filepath in additions:
-        arch = tools.get_architecture(filepath)
-        for feature in additions[filepath]:
-            if not in_models(feature, models, arch):
-                defect = True
-                print "%s: patch adds undefined reference on %s" % \
-                        (filepath, feature)
-    return defect
+    for feature in [x for x in additions if
+                    not defect_analysis.in_models(x, models)]:
+        violations.append("\n%s is not defined in Kconfig but newly referenced "
+                          "in:" % feature[len('CONFIG_'):])
+        references = get_references(feature)
+        for reference in references:
+            violations.append("\t" + reference)
+
+    return violations
 
 
 def parse_patch(patchfile):
@@ -330,7 +348,7 @@ def parse_patch(patchfile):
     worklist_a = []
     worklist_b = []
     removals = {}
-    additions = {}
+    additions = set()
 
     # https://pypi.python.org/pypi/whatthepatch/0.0.2
     with open(patchfile) as stream:
@@ -365,10 +383,10 @@ def parse_patch(patchfile):
                 # added statements (if, select, depends on)
                 elif not change[0] and change[1] and \
                         REGEX_KCONFIG_STMT.match(change[2]):
-                    stmts = additions.get(path, set())
                     for feature in REGEX_FEATURE.findall(change[2]):
-                        stmts.add("CONFIG_" + feature)
-                    additions[path] = stmts
+                        additions.add("CONFIG_" + feature)
+            if removals.get(path, []):
+                removals[path] = sorted(removals[path])
 
         # parse any file that is no Kconfig, source or log file
         elif not REGEX_FILE_SOURCE.match(path) and \
@@ -379,12 +397,12 @@ def parse_patch(patchfile):
                 # any added line is interesting
                 if not change[0] and change[1] and \
                         "CONFIG_" in change[2]:
-                    refs = additions.get(path, set())
                     for feature in REGEX_SOURCE_FEATURE.findall(change[2]):
-                        refs.add("CONFIG_" + feature)
-                    additions[path] = refs
+                        if feature.endswith("_MODULE"):
+                            feature = feature[:-len("_MODULE")]
+                        additions.add(feature)
 
-    return (worklist_a, worklist_b, removals, additions)
+    return (worklist_a, worklist_b, removals, sorted(additions))
 
 
 if __name__ == "__main__":

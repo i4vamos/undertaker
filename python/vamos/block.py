@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
+# Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
 
 """Utilities for conditional CPP blocks."""
 
@@ -18,8 +18,10 @@
 
 import re
 import whatthepatch
+import itertools
 import vamos.tools as tools
 
+#pylint: disable=R0902
 
 class Block(object):
     """Represents a conditional block."""
@@ -28,7 +30,9 @@ class Block(object):
         self.srcfile = srcfile
         self.bid = ""
         self.range = (0, 0)
+        # defect related data
         self.defect = "no_defect"
+        self.report = ""
         self.match = None
         self.ref_items = set()
         self.mus = ""  # path to the MUS report
@@ -52,6 +56,22 @@ class Block(object):
         """Return true if the block is a defect."""
         return self.defect != "no_defect"
 
+    def get_transitive_items(self, model):
+        """Return a sorted list of all referenced items and items that are in
+        the block's dependencies of the specified model."""
+        items = " ".join(self.ref_items)
+        if not items:
+            return []
+
+        (deps, _) = tools.execute("undertaker -j interesting -m %s %s"
+                                  % (model.path, items))
+        items = set(tools.get_kconfig_items(deps[0]))
+
+        # filter Undertaker internal choice items (e.g., 'CONFIG_CHOICE_42')
+        choice_regex = re.compile(r"CONFIG\_CHOICE\_\d+$")
+        items = itertools.ifilterfalse(choice_regex.match, items)
+        return sorted(items)
+
     @staticmethod
     def parse_blocks(path):
         """Parse C source file and return a dictionary of
@@ -59,7 +79,7 @@ class Block(object):
         blocks = {}
         try:
             (output, _) = tools.execute("undertaker -j blockrange %s" % path,
-                    failok=False)
+                                        failok=False)
         except tools.CommandFailed:
             return blocks
         for out in output:
@@ -69,7 +89,7 @@ class Block(object):
             block.range = (int(split[2]), int(split[3]))
             if block.range[0] != 0:
                 (precond, _) = tools.execute("undertaker -j blockpc %s:%i:1" %
-                        (path, block.range[0]+1))
+                                             (path, block.range[0]+1))
                 for pre in precond:
                     block.ref_items.update(tools.get_kconfig_items(pre))
             blocks[block.bid] = block
@@ -139,4 +159,3 @@ class Block(object):
         if not match:
             raise ValueError("Could not get file of '%s'" % report)
         return match.groups()[0]
-
