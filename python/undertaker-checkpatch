@@ -60,25 +60,27 @@ REGEX_SOURCE_FEATURE = re.compile(SOURCE_FEATURE)
 
 def parse_options():
     """The user interface of this module."""
-    parser = OptionParser(usage="undertaker-check-patch file [options]\n\n"
-            "This tool needs to run in a Linux tree. Specify a patch file\n"
-            "to check if any defects are introduced, fixed, changed, or if\n"
-            "they remained present (unchanged).")
+    usage = "%prog [options] <filename>\n\n"                               \
+            "This tool needs to run in a Linux source tree.\n\nSpecify a " \
+            "patch file to check if any defects are introduced,\nfixed, "  \
+            "changed, or if they remained present (unchanged)."
 
-    parser.add_option('-a', '--arch', dest='arch', action='store', default="",
-            help="Generate models for only this architecture.")
-
-    parser.add_option('-m', '--models', dest='models', action='store',
-            default="", help="Consider only these models for analysis.")
-
-    parser.add_option('-u', '--mus', dest='mus', action='store_true',
-            default=False, help="Generate minimally unsatisfiable" +
-            "subformulas (MUS) for dead Kconfig defects.")
+    parser = OptionParser(usage=usage)
 
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
-            help="Increase verbosity (specify multiple times for more)")
+                      help="Increase verbosity (specify multiple times for "
+                           "more)")
+    parser.add_option('-a', '--arch', dest='arch', action='store', default="",
+                      help="Generate models only for this architecture")
+    parser.add_option('-m', '--models', dest='models', action='store',
+                      default="", help="Use these models for analysis")
+    parser.add_option('-u', '--mus', dest='mus', action='store_true',
+                      default=False,
+                      help="Generate minimally unsatisfiable subformulas (MUS) "
+                           "for dead Kconfig defects")
 
     (opts, args) = parser.parse_args()
+
     tools.setup_logging(opts.verbose)
 
     if not args or not os.path.exists(args[0]):

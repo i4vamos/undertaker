@@ -89,36 +89,45 @@ def main():
     # this method has too many branches and statements
     # pylint: disable=R0912
     # pylint: disable=R0915
-    parser = OptionParser(usage="%prog [options]\n\n"
-                "This tool is meant to be run in a Linux source tree.\n"
-                "It is sensitive to the environment variables $ARCH and $SUBARCH.\n"
-                "Change them to scan on specific architectures.")
+    usage = "%prog [options]\n\n"                                          \
+            "This tool needs to run in a Linux source tree.\n\nIt is "     \
+            "sensitive to the environment variables $ARCH and $SUBARCH.\n" \
+            "Change them to scan on specific architectures."
+
+    parser = OptionParser(usage=usage)
 
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
-                      help="increase verbosity (specify multiple times for more)")
+                      help="Increase verbosity (specify multiple times for "
+                            "more)")
     parser.add_option('-l', '--list', dest='do_list', action='store_true',
-                      help="list all object files that would be built"\
-                          +" in the current configuration")
+                      help="List all object files that would be built in the "
+                           "current configuration")
     parser.add_option('-e', '--expand', dest='partialconfig', action='store',
                       default=None,
-                      help="expand given partial configuration"\
-                          +" in the current configuration")
+                      help="Expand given partial configuration in the current "
+                           "configuration")
     parser.add_option('-s', '--strategy', dest='strategy', action='store',
                       default='alldefconfig',
-                      help="select how partial configurations get expanded")
-    parser.add_option('-o', '--options', dest='do_opt', action='store_true', default=False,
-                      help="list configuration options mentioned in Linux makefiles.")
+                      help="Select how partial configurations get expanded")
+    parser.add_option('-o', '--options', dest='do_opt', action='store_true',
+                      default=False,
+                      help="List configuration options mentioned in Linux "
+                           "makefiles")
     parser.add_option('-c', '--compiled', dest='compiled', action='append',
-                      help="check if a given file is compiled"\
-                      +" in the current configuration. This option can"\
-                      +" be given multiple times.")
-    parser.add_option('-i', '--inference', dest='inference', action='store_true',
-                      help="inference makefile configurability for"\
-                      +" symbols given as arguments")
-    parser.add_option('-d', '--directory', dest='do_directory', action='store_true',
-                      help="print variables in a subdirectory, uses '.' if none given")
+                      help="Check if a given file is compiled in the current "
+                           "configuration (this option can be given multiple "
+                           "times)")
+    parser.add_option('-i', '--inference', dest='inference',
+                      action='store_true',
+                      help="Inference makefile configurability for symbols "
+                           "given as arguments")
+    parser.add_option('-d', '--directory', dest='do_directory',
+                      action='store_true',
+                      help="Print variables in a subdirectory, uses '.' if "
+                           "not specified")
     parser.add_option('-b', '--batch', dest='batch_mode', action='store_true',
-                      help="operate in batch mode, read filenames from given worklists")
+                      help="Operate in batch mode, read filenames from given "
+                           "worklists")
 
     (opts, args) = parser.parse_args()
 

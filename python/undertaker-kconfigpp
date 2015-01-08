@@ -79,13 +79,17 @@ def ppFile(filename):
 
 
 if __name__ == '__main__':
-    parser = OptionParser(usage="%prog [options] <filename>\n\n"
-                "preprocess 'source' directives in Kconfig files.\n"
-                "The purpose of this script is to have a complex Kconfig tree\n"
-                "structure, such as commonly found in Linux flattened to a single\n"
-                "file, which helps writing test-cases and similar.")
+    usage = "%prog [options] <filename>\n\n"
+            "Preprocess 'source' directives in Kconfig files.\n The purpose "
+            "of this script is to have a complex Kconfig tree\n structure, "
+            "such as commonly found in Linux flattened to a single\n file, "
+            "which helps writing test-cases and similar."
+
+    parser = OptionParser(usage=usage)
+
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
-                      help="increase verbosity (specify multiple times for more)")
+                      help="Increase verbosity (specify multiple times for "
+                           "more)")
 
     (opts, args) = parser.parse_args()
 

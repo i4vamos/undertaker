@@ -62,6 +62,7 @@ def main(argv):
             invoke_gcc(argv)
 
     parser = PassThroughOptionParser(usage="%prog [options] <filename>")
+
     parser.add_option('-v', '--verbose', dest='verbose', action='count')
     parser.add_option("-o", '--output', dest='output', action='store',
                       type="string", default=None)

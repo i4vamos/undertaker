@@ -34,12 +34,17 @@ import vamos.busyfix.normalizer as normalizer
 
 def main():
     parser = OptionParser(usage="%prog [options] <filename>")
+
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
-                      help="increase verbosity (specify multiple times for more)")
-    parser.add_option('-b', '--batch', dest='batch_mode', action='store_true', default=False,
-                      help="operate in batch mode, read filenames from given worklists")
-    parser.add_option('-i', '--inline', dest='inline', action='store_true', default=False,
-                      help="replace all files inline")
+                      help="Increase verbosity (specify multiple times for "
+                           "more)")
+    parser.add_option('-b', '--batch', dest='batch_mode', action='store_true',
+                      default=False,
+                      help="Operate in batch mode, read filenames from given "
+                           "worklists")
+    parser.add_option('-i', '--inline', dest='inline', action='store_true',
+                      default=False,
+                      help="Replace all files inline")
 
     (opts, args) = parser.parse_args()
 

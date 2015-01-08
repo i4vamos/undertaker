@@ -312,64 +312,84 @@ def add_default_options(call, tool, options):
 
 def parse_options():
     """The user interface of this module."""
-    parser = OptionParser(usage="%prog [options] <filename>\n\n"
-                 "This tool need to run in a linux tree.\n"
-                 "Vampyr is a configurability aware driver for static analysis in a source tree.\n"
-                 "Either the variability can be analyzed or sourcefiles can be compile tested.")
+    usage = "%prog [options] <filename>\n\n"                                 \
+            "This tool needs to run in a Linux source tree.\n\nVampyr is a " \
+            "configurability aware driver for static analysis in a source "  \
+            "tree.\nEither the variability can be analyzed or source files " \
+            "can be compile tested."
+
+    parser = OptionParser(usage=usage)
+
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
-                      help="increase verbosity (specify multiple times for more)")
-    parser.add_option("-O", '--args', dest='args', action='append', type="string",
-                      default=[],
-                      help="add options to called programs, like -Osparse,-Wall")
-    parser.add_option("-C", '--call', dest='call', action='append', type="string",
-                      default=[],
-                      help="add static analyzers to call stack, like -C gcc -C sparse")
+                      help="Increase verbosity (specify multiple times for "
+                           "more)")
+    parser.add_option("-O", '--args', dest='args', action='append',
+                      type="string", default=[],
+                      help="Add options to called programs, like -Osparse,"
+                           "-Wall")
+    parser.add_option("-C", '--call', dest='call', action='append',
+                      type="string", default=[],
+                      help="Add static analyzers to call stack, like -C gcc "
+                           "-C sparse")
     parser.add_option("", '--cross-prefix', dest='cross_prefix', type='string',
                       default="",
-                      help="Use a cross-toolchain, (e.g. 'arm-linux-gnueabi-'")
-    parser.add_option("", '--exclude-others', dest='exclude_others', action='store_true',
-                      default=False,
-                      help="suppress warnings in '#included' source files")
-    parser.add_option("-f", '--framework', dest='framework', action='store', type="string",
-                      default=None,
-                      help="select build framework (one of 'bare', 'kbuild')")
-    parser.add_option("-m", '--model', dest='model', action='store', type="string",
-                      default=None,
-                      help="Use the given model. Only used with the bare-build framework")
-    parser.add_option('-A', '--algorithm', dest='coverage_strategy', action='store', default='min',
+                      help="Use a cross-toolchain, (e.g. 'arm-linux-gnueabi'")
+    parser.add_option("", '--exclude-others', dest='exclude_others',
+                      action='store_true', default=False,
+                      help="Suppress warnings in '#included' source files")
+    parser.add_option("-f", '--framework', dest='framework', action='store',
+                      type="string", default=None,
+                      help="Select build framework (one of 'bare', 'kbuild')")
+    parser.add_option("-m", '--model', dest='model', action='store',
+                      type="string", default=None,
+                      help="Use the given model. Only used with the bare-build "
+                           "framework")
+    parser.add_option('-A', '--algorithm', dest='coverage_strategy',
+                      action='store', default='min',
                       help='Coverage calculation algorithm, default "min"')
-    parser.add_option('-a', '--analyze', dest='do_analyze', action='store_true', default=False,
-                      help="analyze variability")
-    parser.add_option('-e', '--expand', dest='do_expansion', action='store_true',
-                      help="try to expand the given partial configuration")
-    parser.add_option('-b', '--batch', dest='batch_mode', action='store_true', default=False,
-                      help="operate in batch mode, read filenames from given worklists")
-    parser.add_option('-k', '--keep-configurations', dest='keep_configurations', action='store_true',
+    parser.add_option('-a', '--analyze', dest='do_analyze', action='store_true',
+                      default=False, help="Analyze variability")
+    parser.add_option('-e', '--expand', dest='do_expansion',
+                      action='store_true',
+                      help="Try to expand the given partial configuration")
+    parser.add_option('-b', '--batch', dest='batch_mode', action='store_true',
                       default=False,
-                      help="don't calculate partial configurations when they already exist")
-    parser.add_option('-t', '--threads', dest='threads', action='store', type='int',
-                      default=0,
-                      help="Number of parallel threads for undertaker dead analysis")
+                      help="Operate in batch mode, read filenames from given "
+                           "worklists")
+    parser.add_option('-k', '--keep-configurations', dest='keep_configurations',
+                      action='store_true', default=False,
+                      help="Don't calculate partial configurations when they "
+                           "already exist")
+    parser.add_option('-t', '--threads', dest='threads', action='store',
+                      type='int', default=0,
+                      help="Number of parallel threads for undertaker dead "
+                           "analysis")
     parser.add_option('-c', '--config', dest='configfile',
                       help="Analyze a given configuration in config.h format")
     parser.add_option('-s', '--strategy', dest='strategy', action='store',
                       default='alldefconfig',
-                      help="select how partial configurations get expanded")
+                      help="Select how partial configurations get expanded")
     parser.add_option('', '--stdconfig', dest='stdconfig',
                       default='allyesconfig',
-                      help="Use the given default configuration. "+\
-                           "Can be one of 'allyesconfig', 'allnoconfig', "+\
-                           "'allmodconfig', 'alldefconfig'; Defaults to 'allyesconfig'")
-    parser.add_option("-T", "--tests-dir", dest='testsdir', action='store', type='string',
-                      default="scripts/coccinelle",
-                      help="directory containing the tests that should be run with the program")
-    parser.add_option("-K", "--kconfig-configurations", dest='configurations', action='store',
-                      default=None, help="Batch file with predefined Kconfig configurations")
-    parser.add_option("-W", "--whitelist", dest='whitelist', action='store', default=None,
+                      help="Use the given default configuration. Can be one of "
+                           "'allyesconfig', 'allnoconfig', 'allmodconfig', "
+                           "'alldefconfig' (defaults to 'allyesconfig')")
+    parser.add_option("-T", "--tests-dir", dest='testsdir', action='store',
+                      type='string', default="scripts/coccinelle",
+                      help="Directory containing the tests that should be run "
+                           "with the program")
+    parser.add_option("-K", "--kconfig-configurations", dest='configurations',
+                      action='store', default=None,
+                      help="Batch file with predefined Kconfig configurations")
+    parser.add_option("-W", "--whitelist", dest='whitelist', action='store',
+                      default=None,
                       help="Use this whitelist when calculating configurations")
-    parser.add_option("-B", "--blacklist", dest='blacklist', action='store', default=None,
+    parser.add_option("-B", "--blacklist", dest='blacklist', action='store',
+                      default=None,
                       help="Use this blacklist when calculating configurations")
+
     (opts, args) = parser.parse_args()
+
     tools.setup_logging(opts.verbose)
 
     if len(args) < 1:
