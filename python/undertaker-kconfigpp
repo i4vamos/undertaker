@@ -79,10 +79,10 @@ def ppFile(filename):
 
 
 if __name__ == '__main__':
-    usage = "%prog [options] <filename>\n\n"
-            "Preprocess 'source' directives in Kconfig files.\n The purpose "
-            "of this script is to have a complex Kconfig tree\n structure, "
-            "such as commonly found in Linux flattened to a single\n file, "
+    usage = "%prog [options] <filename>\n\n"                                 \
+            "Preprocess 'source' directives in Kconfig files.\nThe purpose " \
+            "of this script is to have a complex Kconfig tree\nstructure, "  \
+            "such as commonly found in Linux flattened to a single\nfile, "  \
             "which helps writing test-cases and similar."
 
     parser = OptionParser(usage=usage)
