@@ -173,8 +173,7 @@ c var CONFIG_FOO 2
             self.assertTrue(model.is_bool_tristate(symbol),
                             "symbol %s has type %s " % (symbol, st))
 
-        with self.assertRaises(RuntimeError):
-            self.assertFalse(model.is_bool_tristate('HURZ'))
+        self.assertFalse(model.is_bool_tristate('HURZ'))
 
 if __name__ == '__main__':
     t.main()

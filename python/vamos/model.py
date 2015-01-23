@@ -190,47 +190,44 @@ class CnfModel(dict):
         self.path = path
         self.always_on_items = set()
         self.always_off_items = set()
-        self.symbols = {}
 
         with open(path) as fd:
             self.parse(fd)
 
     def parse(self, fd):
-        sym_regexp = re.compile(r"^c sym (.+) (\d)$")
-        meta_regexp = re.compile(r"^c meta_value ([^\s]+)\s+(.+)$")
+        for line in fd:
+            # we only need symbol information, stop when cnf formula starts
+            if line.startswith("p cnf"):
+                break
 
-        for line in fd.readlines():
-            m = sym_regexp.match(line)
-            if m:
-                sym = 'CONFIG_' + m.group(1)
-                code = int(m.group(2))
-                self[sym] = None
-                self.symbols[sym] = code
+            if line.startswith("c sym "):
+                line_split = line.split()
+                sym = "CONFIG_" + line_split[2]
+                code = int(line_split[3])
+                self[sym] = code
                 # tristate symbols also have a _MODULE sister
                 if code == 2:
-                    self[sym + '_MODULE'] = None
                     self[sym + '_MODULE'] = code
-                continue
 
-            m = meta_regexp.match(line)
-            if m:
-                if m.group(1) == 'ALWAYS_ON':
-                    self.always_on_items.add(m.group(2))
-                if m.group(1) == 'ALWAYS_OFF':
-                    self.always_off_items.add(m.group(2))
+            elif line.startswith("c meta_value "):
+                line_split = line.split()
+                if line_split[2] == 'ALWAYS_ON':
+                    self.always_on_items.update(line_split[3:])
+                elif line_split[2] == 'ALWAYS_OFF':
+                    self.always_off_items.update(line_split[3:])
 
     def get_type(self, symbol):
         """
-        @raises RuntimeError if no corresponding rsf is found.
-        @return data type of symbol.
+        @raises RuntimeError if type code is unknown.
+        @return data type of symbol or None if the symbol is missing.
         """
         if not symbol.startswith("CONFIG_"):
             symbol = "CONFIG_" + symbol
 
-        if not symbol in self.symbols:
-            raise RuntimeError("Symbol %s not found" % symbol)
+        if not symbol in self:
+            return None
 
-        code = int(self.symbols[symbol])
+        code = self[symbol]
         if code == 1:
             return 'boolean'
         if code == 2:
@@ -248,15 +245,15 @@ class CnfModel(dict):
 
     def is_bool_tristate(self, symbol):
         """
-        @raises RuntimeError on internal errors
-        @return True if symbol is tristate, otherwise False
+        @return True if symbol is tristate or boolean, otherwise False (other
+        type or symbol not known)
         """
 
         if not symbol.startswith("CONFIG_"):
             symbol = "CONFIG_" + symbol
 
-        if not symbol in self.symbols:
-            raise RuntimeError("Symbol %s not found" % symbol)
+        if not symbol in self:
+            return False
 
-        code = self.symbols[symbol]
+        code = self[symbol]
         return code == 1 or code == 2
