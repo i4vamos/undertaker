@@ -320,6 +320,7 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
     formula.push_back(code_formula);
     _formula = formula.join("\n&&\n");
 
+    // check for code defect
     SatChecker sc;
     if (!sc(_formula)) {
         _defectType = DEFECTTYPE::Implementation;
@@ -327,42 +328,47 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
         _musFormula = _formula;
         return true;
     }
-    if (model) {
-        std::set<std::string> missingSet;
-        std::string kconfig_formula;
-        model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
-                           kconfig_formula);
-        formula.push_back(kconfig_formula);
+    // we don't have a model, no further analyses possible
+    if (!model)
+        return false;
 
-        // increment sc with kconfig_formula and load model if necessary
-        if (model->getModelVersionIdentifier() == "cnf")
-            sc.loadCnfModel(model);
-        if (!sc(kconfig_formula)) {
-            if (_defectType != DEFECTTYPE::Configuration)
-                // Wasn't already identified as Configuration defect
-                _arch = ModelContainer::lookupArch(model);
-            _formula = formula.join("\n&&\n");
-            // save formula for mus analysis when we are analysing the main_model
-            if (is_main_model)
-                _musFormula = _formula;
-            _defectType = DEFECTTYPE::Configuration;
-            return true;
-        } else {
-            // An incomplete model (not all symbols mentioned) can't generate referential errors
-            if (!model->isComplete())
-                return false;
-            std::string missing = ConfigurationModel::getMissingItemsConstraints(missingSet);
-            if (!sc(missing)) {
-                formula.push_back(missing);
-                _formula = formula.join("\n&&\n");
-                if (_defectType != DEFECTTYPE::Configuration)
-                    _defectType = DEFECTTYPE::Referential;
-                // save formula for mus analysis when we are analysing the main_model
-                if (is_main_model)
-                    _musFormula = _formula;
-                return true;
-            }
-        }
+    // check for kconfig defect
+    std::set<std::string> missingSet;
+    std::string kconfig_formula;
+    model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
+                       kconfig_formula);
+    formula.push_back(kconfig_formula);
+
+    // increment sc with kconfig_formula and load model if necessary
+    if (model->getModelVersionIdentifier() == "cnf")
+        sc.loadCnfModel(model);
+    if (!sc(kconfig_formula)) {
+        if (_defectType != DEFECTTYPE::Configuration)
+            // Wasn't already identified as Configuration defect
+            _arch = ModelContainer::lookupArch(model);
+        _formula = formula.join("\n&&\n");
+        // save formula for mus analysis when we are analysing the main_model
+        if (is_main_model)
+            _musFormula = _formula;
+        _defectType = DEFECTTYPE::Configuration;
+        return true;
+    }
+
+    // An incomplete model (not all symbols mentioned) can't generate referential errors
+    if (!model->isComplete())
+        return false;
+
+    // check for missing defect
+    std::string missing = ConfigurationModel::getMissingItemsConstraints(missingSet);
+    if (!sc(missing)) {
+        formula.push_back(missing);
+        _formula = formula.join("\n&&\n");
+        if (_defectType != DEFECTTYPE::Configuration)
+            _defectType = DEFECTTYPE::Referential;
+        // save formula for mus analysis when we are analysing the main_model
+        if (is_main_model)
+            _musFormula = _formula;
+        return true;
     }
     return false;
 }
@@ -391,42 +397,48 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     formula.push_back(code_formula);
     _formula = formula.join("\n&&\n");
 
+    // check for code defect
     SatChecker sc;
     if (!sc(_formula)) {
         _defectType = DEFECTTYPE::Implementation;
         _isGlobal = true;
         return true;
     }
-    if (model) {
-        std::set<std::string> missingSet;
-        std::string kconfig_formula;
-        model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
-                           kconfig_formula);
-        formula.push_back(kconfig_formula);
+    // we don't have a model, no further analyses possible
+    if (!model)
+        return false;
 
-        // increment sc with kconfig_formula and load model if necessary
-        if (model->getModelVersionIdentifier() == "cnf")
-            sc.loadCnfModel(model);
-        if (!sc(kconfig_formula)) {
-            if (_defectType != DEFECTTYPE::Configuration)
-                // Wasn't already identified as Configuration defect
-                _arch = ModelContainer::lookupArch(model);
-            _formula = formula.join("\n&&\n");
-            _defectType = DEFECTTYPE::Configuration;
-            return true;
-        } else {
-            // An incomplete model (not all symbols mentioned) can't generate referential errors
-            if (!model->isComplete())
-                return false;
-            std::string missing = ConfigurationModel::getMissingItemsConstraints(missingSet);
-            if (!sc(missing)) {
-                formula.push_back(missing);
-                if (_defectType != DEFECTTYPE::Configuration)
-                    _defectType = DEFECTTYPE::Referential;
-                _formula = formula.join("\n&&\n");
-                return true;
-            }
-        }
+    // check for kconfig defect
+    std::set<std::string> missingSet;
+    std::string kconfig_formula;
+    model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
+                       kconfig_formula);
+    formula.push_back(kconfig_formula);
+
+    // increment sc with kconfig_formula and load model if necessary
+    if (model->getModelVersionIdentifier() == "cnf")
+        sc.loadCnfModel(model);
+    if (!sc(kconfig_formula)) {
+        if (_defectType != DEFECTTYPE::Configuration)
+            // Wasn't already identified as Configuration defect
+            _arch = ModelContainer::lookupArch(model);
+        _formula = formula.join("\n&&\n");
+        _defectType = DEFECTTYPE::Configuration;
+        return true;
+    }
+
+    // An incomplete model (not all symbols mentioned) can't generate referential errors
+    if (!model->isComplete())
+        return false;
+
+    // check for missing defect
+    std::string missing = ConfigurationModel::getMissingItemsConstraints(missingSet);
+    if (!sc(missing)) {
+        formula.push_back(missing);
+        if (_defectType != DEFECTTYPE::Configuration)
+            _defectType = DEFECTTYPE::Referential;
+        _formula = formula.join("\n&&\n");
+        return true;
     }
     return false;
 }
