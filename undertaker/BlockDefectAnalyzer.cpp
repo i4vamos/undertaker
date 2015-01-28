@@ -24,17 +24,13 @@
 #include "ConditionalBlock.h"
 #include "StringJoiner.h"
 #include "SatChecker.h"
-#include "PicosatCNF.h"
 #include "ModelContainer.h"
 #include "ConfigurationModel.h"
 #include "Logging.h"
 #include "Tools.h"
 #include "exceptions/CNFBuilderError.h"
 
-#include <pstreams/pstream.h>
-#include <iostream>
 #include <fstream>
-#include <string>
 
 
 /************************************************************************/
@@ -218,15 +214,13 @@ bool BlockDefect::writeReportToFile(bool skip_no_kconfig) const {
     if (!out.good()) {
         Logging::error("failed to open ", filename, " for writing ");
         return false;
-    } else {
-        Logging::info("creating ", filename);
-        out << "#" << _cb->getName() << ":"
-            << _cb->filename() << ":" << _cb->lineStart() << ":" << _cb->colStart() << ":"
-            << _cb->filename() << ":" << _cb->lineEnd() << ":" << _cb->colEnd() << ":"
-            << std::endl;
-        out << _formula << std::endl;
-        out.close();
     }
+    Logging::info("creating ", filename);
+    out << "#" << _cb->getName() << ":" << _cb->filename() << ":" << _cb->lineStart() << ":"
+        << _cb->colStart() << ":" << _cb->filename() << ":" << _cb->lineEnd() << ":"
+        << _cb->colEnd() << ":" << std::endl;
+    out << _formula << std::endl;
+    out.close();
     return true;
 }
 
@@ -245,53 +239,9 @@ void DeadBlockDefect::reportMUS(ConfigurationModel *main_model) const {
     // call Satchecker and get the CNF-Object
     SatChecker sc(main_model);
     sc(_musFormula);
-    const kconfig::PicosatCNF *cnf = sc.getCNF();
-    // call picosat in quiet mode with stdin as input and stdout as output
-    redi::pstream cmd_process("picomus - -");
-    // write to stdin of the process
-    cmd_process << "p cnf " << cnf->getVarCount() << " " << cnf->getClauseCount() << std::endl;
-    for (const int &clause : cnf->getClauses()) {
-        char sep = (clause == 0) ? '\n' : ' ';
-        cmd_process << clause << sep;
-    }
-    // send eof and tell cmd_process we will start reading from stdout of cmd
-    redi::peof(cmd_process);
-    cmd_process.out();
-    // read everything from cmd_process's stdout and close it
-    std::stringstream ss;
-    ss << cmd_process.rdbuf();
-    cmd_process.close();
-    // remove first line from ss (=UNSATISFIABLE)
-    std::string garbage;
-    std::getline(ss, garbage);
-
-    // create a string from DIMACs CNF Format (=picomus result) to a more readable CNF Format
-    // Note: The formula might be incomplete, since a lot operators create new CNF-IDs without
-    // having a destinct Symbolname, which are ignored in this output
-    int vars, lines; std::string p, cnfstr;
-    ss >> p >> cnfstr >> vars >> lines;
-    if (p != "p" || cnfstr != "cnf") {
-        Logging::error("Mismatched output format, skipping MUS analysis.");
+    if(!sc.checkMUS())
         return;
-    }
-    StringJoiner sj, clause;
-    for (int i = 0, tmp; i < lines; i++) {
-        clause.clear();
-        // process a line (i.e.: int int -int 0, where 0 terminates the clause)
-        while (ss >> tmp) {
-            if (tmp == 0)
-                break;
-            const std::string &sym = cnf->getSymbolName(abs(tmp));
-            if (sym == "")
-                continue;
-            if (tmp < 0)
-                clause.emplace_back("!" + sym);
-            else
-                clause.emplace_back(sym);
-        }
-        if (clause.size() > 0)  // collect only clauses with valid symbols
-            sj.emplace_back("(" + clause.join(" v ") + ")");
-    }
+
     // create filename for mus-defect report and open the outputfilestream
     std::string filename = this->getDefectReportFilename() + ".mus";
     std::ofstream ofs(filename);
@@ -299,14 +249,9 @@ void DeadBlockDefect::reportMUS(ConfigurationModel *main_model) const {
         Logging::error("Failed to open ", filename, " for writing.");
         return;
     }
-    // prepend some statistics about the picomus performance
     Logging::info("creating ", filename);
-    ofs << "ATTENTION: This formula _might_ be incomplete or even inconclusive!" << std::endl;
-    ofs << "Minimized Formula from:" << std::endl;
-    ofs << "p cnf " << cnf->getVarCount() << " " << cnf->getClauseCount() << std::endl;
-    ofs << "to" << std::endl;
-    ofs << "p cnf " << vars               << " " << lines                 << std::endl;
-    ofs << sj.join(" ^ ") << std::endl;
+    // print formula and prepend some statistics about the picomus performance
+    sc.writeMUS(ofs);
 }
 
 bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_model) {

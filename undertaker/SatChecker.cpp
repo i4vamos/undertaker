@@ -32,16 +32,17 @@
 #include "CNFBuilder.h"
 #include "exceptions/CNFBuilderError.h"
 #include "cpp14.h"
+#include "StringJoiner.h"
 
 #include <Puma/TokenStream.h>
-#include <boost/regex.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/regex.hpp>
 #include <pstreams/pstream.h>
 
-#include <ostream>
 #include <map>
-#include <vector>
+#include <ostream>
 #include <sstream>
+#include <vector>
 
 using kconfig::PicosatCNF;
 using kconfig::CNFBuilder;
@@ -86,6 +87,66 @@ const SatChecker::AssignmentMap &SatChecker::getAssignment() {
 bool SatChecker::operator()(const std::string &formula) {
     CNFBuilder builder(_cnf.get(), formula, true, CNFBuilder::ConstantPolicy::FREE);
     return _cnf->checkSatisfiable();
+}
+
+bool SatChecker::checkMUS() {
+    // call picosat in quiet mode with stdin as input and stdout as output
+    redi::pstream cmd_process("picomus - -");
+    // write to stdin of the process
+    cmd_process << "p cnf " << _cnf->getVarCount() << " " << _cnf->getClauseCount() << std::endl;
+    for (const int &clause : _cnf->getClauses()) {
+        char sep = (clause == 0) ? '\n' : ' ';
+        cmd_process << clause << sep;
+    }
+    // send eof and tell cmd_process we will start reading from stdout of cmd
+    redi::peof(cmd_process);
+    cmd_process.out();
+    // read everything from cmd_process's stdout and close it
+    std::stringstream ss;
+    ss << cmd_process.rdbuf();
+    cmd_process.close();
+    // remove first line from ss (=UNSATISFIABLE)
+    std::string garbage;
+    std::getline(ss, garbage);
+
+    // create a string from DIMACs CNF Format (=picomus result) to a more readable CNF Format
+    // Note: The formula might be incomplete, since a lot operators create new CNF-IDs without
+    // having a destinct Symbolname, which are ignored in this output
+    std::string p, cnfstr;
+    ss >> p >> cnfstr >> musData.vars >> musData.lines;
+    if (p != "p" || cnfstr != "cnf") {
+        Logging::error("Mismatched output format, skipping MUS analysis.");
+        return false;
+    }
+    StringJoiner sj, clause;
+    for (int i = 0, tmp; i < musData.lines; i++) {
+        clause.clear();
+        // process a line (i.e.: int int -int 0, where 0 terminates the clause)
+        while (ss >> tmp) {
+            if (tmp == 0)
+                break;
+            const std::string &sym = _cnf->getSymbolName(abs(tmp));
+            if (sym == "")
+                continue;
+            if (tmp < 0)
+                clause.emplace_back("!" + sym);
+            else
+                clause.emplace_back(sym);
+        }
+        if (clause.size() > 0)  // collect only clauses with valid symbols
+            sj.emplace_back("(" + clause.join(" v ") + ")");
+    }
+    musData.minimized_formula = sj.join(" ^ ");
+    return true;
+}
+
+void SatChecker::writeMUS(std::ostream &out) const {
+    out << "ATTENTION: This formula _might_ be incomplete or even inconclusive!" << std::endl;
+    out << "Minimized Formula from:" << std::endl;
+    out << "p cnf " << _cnf->getVarCount() << " " << _cnf->getClauseCount() << std::endl;
+    out << "to" << std::endl;
+    out << "p cnf " << musData.vars        << " " << musData.lines          << std::endl;
+    out << musData.minimized_formula << std::endl;
 }
 
 /************************************************************************/

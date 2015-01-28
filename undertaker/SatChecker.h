@@ -45,6 +45,12 @@ class CppFile;
 
 class SatChecker {
     enum class state {no, yes, module};
+
+    struct musData {
+        std::string minimized_formula;
+        int vars = 0, lines = 0;
+    } musData;
+
 public:
     explicit SatChecker(const ConfigurationModel * = nullptr,
                         Picosat::SATMode mode = Picosat::SAT_MAX);
@@ -178,15 +184,14 @@ public:
     // After doing the check, you can get the assignments for the formula
     const AssignmentMap &getAssignment();
 
-    const kconfig::PicosatCNF *getCNF() const {
-        return _cnf.get();
-    }
-
     // Prints the assignments in an human readable way on stdout
     static void pprintAssignments(std::ostream &out, const std::list<AssignmentMap> solution,
                                   const ConfigurationModel *model, const MissingSet &missingSet);
 
     void loadCnfModel(const ConfigurationModel *);
+
+    bool checkMUS();
+    void writeMUS(std::ostream &out) const;
 
 protected:
     std::unique_ptr<kconfig::PicosatCNF> _cnf;
