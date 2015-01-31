@@ -36,6 +36,6 @@ I: loaded cnf model for x86
 I: loaded cnf model for xtensa
 I: found 26 models
 I: Using x86 as primary model
-I: creating choice_always_on_cnf.c.B0.kconfig.x86.dead
+I: creating choice_always_on_cnf.c.B0.kconfig.globally.dead
  * check-output-end
  */
