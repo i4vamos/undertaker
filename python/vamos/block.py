@@ -30,6 +30,7 @@ class Block(object):
         self.srcfile = srcfile
         self.bid = ""
         self.range = (0, 0)
+        self.new_range = (0, 0)
         # defect related data
         self.defect = "no_defect"
         self.report = ""
@@ -40,9 +41,9 @@ class Block(object):
     def update_range(self, pos, value):
         """Update the block's ranges with respect to the given position."""
         if pos <= self.range[0]:
-            self.range = (self.range[0] + value, self.range[1])
+            self.new_range = (self.new_range[0] + value, self.new_range[1])
         if pos <= self.range[1]:
-            self.range = (self.range[0], self.range[1] + value)
+            self.new_range = (self.new_range[0], self.new_range[1] + value)
 
     def __str__(self):
         """To string method of block."""
@@ -87,6 +88,7 @@ class Block(object):
             split = out.split(":")
             block.bid = split[1]
             block.range = (int(split[2]), int(split[3]))
+            block.new_range = block.range
             if block.range[0] != 0:
                 (precond, _) = tools.execute("undertaker -j blockpc %s:%i:1" %
                                              (path, block.range[0]+1))
@@ -134,6 +136,11 @@ class Block(object):
                     blocks = block_dict.get(curr_file, [])
                     blocks = Block.update_block_ranges(blocks, curr_line-1, 1)
                     block_dict[curr_file] = blocks
+
+        # Set ranges to updated ranges
+        for curr_file in block_dict:
+            for block in block_dict[curr_file]:
+                block.range = block.new_range
         return block_dict
 
     @staticmethod
