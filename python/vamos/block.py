@@ -134,7 +134,7 @@ class Block(object):
                 elif not change[0] and change[1]:
                     curr_line = int(change[1])
                     blocks = block_dict.get(curr_file, [])
-                    blocks = Block.update_block_ranges(blocks, curr_line-1, 1)
+                    blocks = Block.update_block_ranges(blocks, curr_line, 1)
                     block_dict[curr_file] = blocks
 
         # Set ranges to updated ranges
