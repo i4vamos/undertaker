@@ -175,7 +175,7 @@ def main():
         for srcfile in defects:
             for block in defects[srcfile]:
                 # repaired defects don't require further checks
-                if block.match is None and ' repaired ' in block.report:
+                if 'repaired' in block.report:
                     print block.report
                     continue
 

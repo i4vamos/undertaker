@@ -84,10 +84,8 @@ def batch_analysis(srclist, models, flags=""):
 
 
 def compare_blocks(blocks_a, blocks_b):
-    """Compare both lists of blocks to detect if a defect is introduced, fixed,
-    changed or unchanged. Return a sorted list of defect affected blocks. Note
-    that a defect is repaired in case block.match is None and block.report does
-    not contain ' repaired '."""
+    """Compare both lists of blocks to detect if a defect is introduced, repaired,
+    changed or unchanged. Return a sorted list of defect affected blocks."""
     defects = []
 
     for block_a in blocks_a:
@@ -103,23 +101,32 @@ def compare_blocks(blocks_a, blocks_b):
     for block_a in blocks_a:
         block_b = block_a.match
 
+        # We did not find a match
         if not block_b:
             if block_a.is_defect():
                 block_a.report = "\nDefect repaired (removed): %s" % block_a
                 defects.append(block_a)
+        # We found a match, and only block_b is a defect -> introduced
         elif not block_a.is_defect() and block_b.is_defect():
             block_b.report = "\nNew defect: %s" % block_b
             defects.append(block_b)
-        elif block_a.defect == block_b.defect and block_a.is_defect():
-            block_b.report = "\nUnchanged defect: %s" % block_b
-            defects.append(block_b)
-        elif block_a.defect != block_b.defect and block_a.is_defect():
-            block_b.report = "\nChanged defect FROM: %s" % block_a
-            block_b.report += "\n                 TO: %s" % block_b
-            defects.append(block_b)
+        # Again a match, but only block_a is a defect -> repaired
         elif block_a.is_defect() and not block_b.is_defect():
             block_a.report = "\nDefect repaired: %s" % block_a
             defects.append(block_a)
+        # Match, block_a and block_b are the same defect class
+        # Note: Here, either both block_a and block_b are defect or
+        #       both are not defect
+        elif block_a.defect == block_b.defect and block_a.is_defect():
+            block_b.report = "\nUnchanged defect: %s" % block_b
+            defects.append(block_b)
+        # Match, block_a and block_b have different defect classes
+        # Note: we also reach this case if both block_a and block_b are not
+        #       defect, but then the check fails so we don't do anything
+        elif block_a.defect != block_b.defect:
+            block_b.report = "\nChanged defect FROM: %s" % block_a
+            block_b.report += "\n                 TO: %s" % block_b
+            defects.append(block_b)
 
     return sorted(defects, key=lambda x: x.bid)
 
