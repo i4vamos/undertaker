@@ -123,9 +123,8 @@ def handle_file(options, filename):
             print "  ---- Found %d messages with %s in %s ----" % (len(messages),
                                                                    tool, filename)
             for m in messages:
-                print "%s (in configs: %s)" % \
-                    (m.get_message(),
-                     ", ".join([c.filename() for c in m.in_configurations]))
+                print "%s (in configs: %s)" % (m.get_message(),
+                     ", ".join(sorted([c.filename() for c in m.in_configurations])))
             print "  --------------------------------------------------"
 
 
