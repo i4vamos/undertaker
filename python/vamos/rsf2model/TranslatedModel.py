@@ -195,13 +195,13 @@ class TranslatedModel(tools.UnicodeMixin):
 
 
     def __unicode__(self):
-        result = u""
-        result += u"I: Items-Count: %d\n" % len(self.symbols)
-        result += u"I: Format: <variable> [presence condition]\n"
-        result += "UNDERTAKER_SET SCHEMA_VERSION 1.1\n"
+        result = []
+        result.append(u"I: Items-Count: %d\n" % len(self.symbols))
+        result.append(u"I: Format: <variable> [presence condition]\n")
+        result.append("UNDERTAKER_SET SCHEMA_VERSION 1.1\n")
 
         if len(self.always_on) > 0:
-            result += "UNDERTAKER_SET ALWAYS_ON " + (" ".join(['"' + x + '"' for x in self.always_on])) + "\n"
+            result.append("UNDERTAKER_SET ALWAYS_ON " + (" ".join(['"' + x + '"' for x in self.always_on])) + "\n")
 
         for symbol in self.symbols:
             expression = ""
@@ -212,7 +212,7 @@ class TranslatedModel(tools.UnicodeMixin):
 
             expression = " && ".join(deps)
             if expression == "":
-                result += "%s\n" % symbol
+                result.append("%s\n" % symbol)
             else:
-                result += "%s \"%s\"\n" % (symbol, expression)
-        return result
+                result.append("%s \"%s\"\n" % (symbol, expression))
+        return "".join(result)
