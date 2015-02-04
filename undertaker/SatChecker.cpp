@@ -118,7 +118,8 @@ bool SatChecker::checkMUS() {
         Logging::error("Mismatched output format, skipping MUS analysis.");
         return false;
     }
-    StringJoiner sj, clause;
+    UniqueStringJoiner sj;
+    StringJoiner clause;
     for (int i = 0, tmp; i < musData.lines; i++) {
         clause.clear();
         // process a line (i.e.: int int -int 0, where 0 terminates the clause)
