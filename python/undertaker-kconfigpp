@@ -65,7 +65,9 @@ def ppFile(filename):
                 if m:
                     f = m.group(1)
                     if os.path.exists(f):
+                        print "# KCONFIGPP source: %s" %f
                         ppFile(f)
+                        print "# KCONFIGPP end source: %s" %f
                     else:
                         logging.debug("[%s] failed to source %s, (%s)\n",
                                       filename, f, line.rstrip())
