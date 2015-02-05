@@ -122,6 +122,11 @@ class Block(object):
             diffs = whatthepatch.parse_patch(stream.read())
         for diff in diffs:
             curr_file = diff.header.old_path
+            # In some cases, whatthepatch will set the path to "a/path/to/file"
+            # instead of "path/to/file", so we strip "a/" away to match with
+            # the dictionary key in block_dict
+            if curr_file.startswith("a/"):
+                curr_file = curr_file[2:]
             # change format: [line before patch, line after patch, text]
             for change in diff.changes:
                 # line removed
