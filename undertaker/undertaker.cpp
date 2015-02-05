@@ -270,7 +270,7 @@ void process_mergeblockconf(const std::string &filename) {
 void process_blockconf(const std::string &locationname) {
     UniqueStringJoiner sj;
     std::map<std::string, bool> filesolvable;
-    if(!process_blockconf_helper(sj, filesolvable, locationname) && sj.size() == 0)
+    if(!process_blockconf_helper(sj, filesolvable, locationname))
         std::exit(EXIT_FAILURE);
 
     SatChecker sc(ModelContainer::lookupMainModel(), Picosat::SAT_MIN);
