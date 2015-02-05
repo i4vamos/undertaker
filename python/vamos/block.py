@@ -40,9 +40,18 @@ class Block(object):
 
     def update_range(self, pos, value):
         """Update the block's ranges with respect to the given position."""
-        if pos <= self.range[0]:
+        if value < 0:
+            # Deleted lines are relative to the original file...
+            start_range = self.range[0]
+            end_range = self.range[1]
+        else:
+            # ...but inserted lines are relative to the updated file
+            start_range = self.new_range[0]
+            end_range = self.new_range[1]
+
+        if pos <= start_range:
             self.new_range = (self.new_range[0] + value, self.new_range[1])
-        if pos <= self.range[1]:
+        if pos <= end_range:
             self.new_range = (self.new_range[0], self.new_range[1] + value)
 
     def __str__(self):
