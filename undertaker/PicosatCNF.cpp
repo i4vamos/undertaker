@@ -315,6 +315,7 @@ bool PicosatCNF::checkSatisfiable() {
         // and load the current context
         currentContext = this;
         Picosat::picosat_set_global_default_phase(defaultPhase);
+        pushed_clauses_index = 0;
     }
     if (pushed_clauses_index < clauses.size()) {
         // tell picosat how many different variables it will receive

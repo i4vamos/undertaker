@@ -150,6 +150,40 @@ START_TEST(sequentialUsage) {
     fail_unless(satisfiable1.checkSatisfiable());
 } END_TEST;
 
+START_TEST(parallelUsage) {
+    PicosatCNF satisfiable;
+    PicosatCNF unsatisfiable;
+    // building the model
+
+    // v1 || !v1
+    satisfiable.pushVar(1);
+    satisfiable.pushVar(-1);
+    satisfiable.pushClause();
+
+     // v1 && !v1
+    unsatisfiable.pushVar(1);
+    unsatisfiable.pushClause();
+    unsatisfiable.pushVar(-1);
+    unsatisfiable.pushClause();
+
+    fail_unless(satisfiable.checkSatisfiable());
+    fail_if(unsatisfiable.checkSatisfiable());
+
+    fail_unless(satisfiable.checkSatisfiable());
+    fail_if(unsatisfiable.checkSatisfiable());
+
+    fail_unless(satisfiable.checkSatisfiable());
+    fail_unless(satisfiable.checkSatisfiable());
+    fail_unless(satisfiable.checkSatisfiable());
+
+    fail_if(unsatisfiable.checkSatisfiable());
+    fail_if(unsatisfiable.checkSatisfiable());
+
+    fail_unless(satisfiable.checkSatisfiable());
+    fail_if(unsatisfiable.checkSatisfiable());
+} END_TEST;
+
+
 START_TEST(toFile) {
     std::stringstream file;
 
@@ -391,6 +425,7 @@ Suite *cond_block_suite(void) {
     tcase_add_test(tc, simpleModel);
     tcase_add_test(tc, moreComplexModel);
     tcase_add_test(tc, sequentialUsage);
+    tcase_add_test(tc, parallelUsage);
     tcase_add_test(tc, toFile);
     tcase_add_test(tc, toFileWithSymbolTable);
     tcase_add_test(tc, readCnfFileWithInts);
