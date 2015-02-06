@@ -216,6 +216,10 @@ function do_convert() {
 function do_rsf2model_conversion() {
     ARCH=$1
     UPCASE_ARCH=$(echo $ARCH | tr 'a-z' 'A-Z')
+    # UM, again, has a special case: the internal kconfig symbol for the ARCH is not UM but UML
+    if [ $ARCH = "um" ]; then
+        UPCASE_ARCH="UML"
+    fi
 
     # Filter 'CONFIG_$UPCASE_ARCH' without conditions.
     rsf2model "$MODELS/$ARCH.rsf" | grep -v '^CONFIG_'"$UPCASE_ARCH"'$' | sort -u > "$MODELS/$ARCH.model"
