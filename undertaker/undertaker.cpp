@@ -44,6 +44,7 @@
 
 #include <boost/regex.hpp>
 #include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 
 using process_file_cb_t = void (*)(const std::string &filename);
@@ -414,7 +415,7 @@ void process_file_coverage_helper(const std::string &filename) {
 void process_file_coverage(const std::string &filename) {
     boost::thread t(process_file_coverage_helper, filename);
 
-    if (!t.timed_join(boost::posix_time::seconds(120))) {
+    if (!t.try_join_for(boost::chrono::seconds(120))) {
         Logging::error("timeout passed while processing ", filename);
         std::exit(EXIT_FAILURE);
     }
@@ -534,7 +535,7 @@ void process_file_cppsym_helper(const std::string &filename) {
 void process_file_cppsym(const std::string &filename) {
     boost::thread t(process_file_cppsym_helper, filename);
 
-    if (!t.timed_join(boost::posix_time::seconds(30))) {
+    if (!t.try_join_for(boost::chrono::seconds(30))) {
         Logging::error("timeout passed while processing ", filename);
         std::exit(EXIT_FAILURE);
     }
@@ -560,7 +561,7 @@ void process_file_blockrange_helper(const std::string &filename) {
 void process_file_blockrange(const std::string &filename) {
     boost::thread t(process_file_blockrange_helper, filename);
 
-    if (!t.timed_join(boost::posix_time::seconds(10))) {
+    if (!t.try_join_for(boost::chrono::seconds(10))) {
         Logging::error("timeout passed while processing ", filename);
         std::exit(EXIT_FAILURE);
     }
@@ -652,7 +653,7 @@ void process_file_dead(const std::string &filename) {
         timeout = 3600;
     }
 
-    if (!t.timed_join(boost::posix_time::seconds(timeout))) {
+    if (!t.try_join_for(boost::chrono::seconds(timeout))) {
         Logging::error("timeout passed while processing ", filename);
         std::exit(EXIT_FAILURE);
     }

@@ -26,6 +26,7 @@
 #include <Puma/ManipCommander.h>
 
 #include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 
 /// \brief cuts out all \#include statements
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
         usage("Need at least two arguments");
 
     boost::thread t(normalize_file, argc, argv);
-    if (!t.timed_join(boost::posix_time::seconds(30))) {
+    if (!t.try_join_for(boost::chrono::seconds(30))) {
         std::cerr << "E: timeout passed while processing " << argv[argc - 1] << std::endl;
         return 1;
     }

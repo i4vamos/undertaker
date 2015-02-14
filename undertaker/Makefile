@@ -12,7 +12,7 @@ CXXFLAGS = $(CFLAGS) -std=gnu++11
 CC = g++
 
 LDFLAGS =
-BOOST_LIBS = -lboost_system -lboost_regex -lboost_filesystem -lboost_thread
+BOOST_LIBS = -lboost_system -lboost_regex -lboost_filesystem -lboost_thread -lboost_chrono
 LDLIBS = $(BOOST_LIBS) -lpthread
 
 # LDCOV = -coverage
