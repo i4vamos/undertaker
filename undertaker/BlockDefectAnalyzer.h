@@ -34,6 +34,7 @@
  */
 
 #include <string>
+#include <map>
 
 class ConditionalBlock;
 class ConfigurationModel;
@@ -111,6 +112,8 @@ protected:
     std::string _arch;
     std::string _suffix;
     ConditionalBlock *_cb = nullptr;
+
+    std::map<std::string, std::string> defectMap;
 };
 
 

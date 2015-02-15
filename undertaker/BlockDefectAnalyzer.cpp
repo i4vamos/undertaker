@@ -220,6 +220,18 @@ bool BlockDefect::writeReportToFile(bool skip_no_kconfig) const {
         << _cb->colStart() << ":" << _cb->filename() << ":" << _cb->lineEnd() << ":"
         << _cb->colEnd() << ":" << std::endl;
     out << _formula << std::endl;
+    // for all processed arches, add the specific defect type to the defect report
+    if (defectMap.size() > 0)
+        out << [this]() {
+            std::string retstr("\nArch -> Defect Type:\n");
+            for (const auto &entry : defectMap) {
+                retstr += entry.first;
+                retstr += " -> ";
+                retstr += entry.second;
+                retstr += "\n";
+            }
+            return retstr;
+        }();
     out.close();
     return true;
 }
@@ -296,6 +308,7 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
         if (is_main_model)
             _musFormula = _formula;
         _defectType = DEFECTTYPE::Configuration;
+        defectMap.emplace(ModelContainer::lookupArch(model), "kconfig");
         return true;
     }
 
@@ -310,6 +323,7 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
         _formula = formula.join("\n&&\n");
         if (_defectType != DEFECTTYPE::Configuration)
             _defectType = DEFECTTYPE::Referential;
+        defectMap.emplace(ModelContainer::lookupArch(model), "missing");
         // save formula for mus analysis when we are analysing the main_model
         if (is_main_model)
             _musFormula = _formula;
@@ -369,6 +383,7 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
             _arch = ModelContainer::lookupArch(model);
         _formula = formula.join("\n&&\n");
         _defectType = DEFECTTYPE::Configuration;
+        defectMap.emplace(ModelContainer::lookupArch(model), "kconfig");
         return true;
     }
 
@@ -380,9 +395,10 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     std::string missing = ConfigurationModel::getMissingItemsConstraints(missingSet);
     if (!sc(missing)) {
         formula.push_back(missing);
+        _formula = formula.join("\n&&\n");
         if (_defectType != DEFECTTYPE::Configuration)
             _defectType = DEFECTTYPE::Referential;
-        _formula = formula.join("\n&&\n");
+        defectMap.emplace(ModelContainer::lookupArch(model), "missing");
         return true;
     }
     return false;
