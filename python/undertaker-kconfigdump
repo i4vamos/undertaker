@@ -198,9 +198,7 @@ function do_convert() {
 
     if [ $MODE = "rsf" ]; then
         echo "Calculating RSF model for $ARCH"
-        # Remove comments from dumpconf because they will confuse rsf2model.
-        SUBARCH=$SUBARCH ARCH=$ARCH dumpconf $KCONFIG_FILE | sort -u \
-            | grep -v '^#' > "$MODELS/$ARCH.rsf"
+        SUBARCH=$SUBARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
 
         do_rsf2model_conversion $ARCH
     fi
@@ -276,7 +274,7 @@ function do_inference() {
 function do_rsf_or_satyr_call() {
 
     if [ "$MODE" = "rsf" ]; then
-        dumpconf $2 | sort -u | grep -v '^#' > "$MODELS/$1.rsf"
+        dumpconf $2 > "$MODELS/$1.rsf"
 
         # Make model and append $3 and all items of $4.
         rsf2model "$MODELS/$1.rsf" > "$MODELS/$1.model"

@@ -37,6 +37,9 @@ class RsfReader:
             self.database[key] = []
 
         for line in fd.readlines():
+            # ignore comment lines in Rsf-Files
+            if line.startswith("#"):
+                continue
             try:
                 row = shlex.split(line)
             except ValueError:
