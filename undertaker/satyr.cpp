@@ -123,19 +123,13 @@ int main(int argc, char **argv) {
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
 
-    const char *arch = getenv("ARCH");
-    const char *srcarch = getenv("SRCARCH");
-    if (!arch) {
-        static const char *default_arch = "x86";
-        arch = default_arch;
-    }
-    if (!srcarch) {
-        srcarch = arch;
-    }
-    std::cerr << "using arch " << arch << std::endl;
+    // to prevent some warnings we have to set environment variables that don't have an impact on
+    // our formulae
+    if (!getenv("ARCH"))
+        setenv("ARCH", "x86", 1);
+    if (!getenv("SUBARCH"))
+        setenv("SUBARCH", "x86", 1);
 
-    setenv("ARCH", arch, 1);
-    setenv("SRCARCH", srcarch, 0);
     setenv("KERNELVERSION", "2.6.30-vamos", 0);
 
     PicosatCNF cnf;
@@ -157,7 +151,7 @@ int main(int argc, char **argv) {
         translator.traverse();
 
         if (translator.featuresWithStringDependencies()) {
-            Logging::info("Features w string dep (", arch, "): ",
+            Logging::info("Features w string dep (", getenv("ARCH"), "): ",
                           translator.featuresWithStringDependencies(), " with ",
                           translator.totalStringComparisons(), " comparisons.");
         }

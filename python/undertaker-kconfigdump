@@ -193,12 +193,11 @@ cleanup_empty_intermediates_for_arch() {
 function do_convert() {
     # Convert the model files for the specified Linux arch.
     ARCH=$1
-    SUBARCH=$ARCH
     KCONFIG_FILE="$(get_kconfig_file $ARCH)"
 
     if [ $MODE = "rsf" ]; then
         echo "Calculating RSF model for $ARCH"
-        SUBARCH=$SUBARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
+        SUBARCH=$ARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
 
         do_rsf2model_conversion $ARCH
     fi
@@ -206,7 +205,7 @@ function do_convert() {
     if [ $MODE = "cnf" ]; then
         echo "Calculating CNF model for $ARCH"
         # Run satyr to generate CNF models.
-        SUBARCH=$SUBARCH SRCARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
+        SUBARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
     fi
 }
 
@@ -252,11 +251,11 @@ function do_rsf2model_conversion() {
     echo "CONFIG_m" >> "$MODELS/$ARCH.model"
 }
 
-# Parameters {project/arch} {subarch}
+# Parameters {project/arch}
 function do_inference() {
     if [ $DO_INFERENCES = "yes" ]; then
         echo "Calculating makefile inferences for $1"
-        if SUBARCH=$2 ARCH=$1 golem -i 2> $MODELS/$1.golem-errors | sort -u > \
+        if SUBARCH=$1 ARCH=$1 golem -i 2> $MODELS/$1.golem-errors | sort -u > \
             "$MODELS/$1.inferences"; then
             # Filter out "AttributeError" messages. This is a known upstream
             # python bug, cf: http://bugs.python.org/issue14308
@@ -428,7 +427,7 @@ while [ $(jobs -r | wc -l) -gt 0 ]; do
 done
 
 for ARCH in $ARCHS; do
-    do_inference $ARCH $ARCH
+    do_inference $ARCH
 
     if [ $MODE = "rsf" ]; then
         cat "$MODELS/$ARCH.inferences" >> "$MODELS/$ARCH.model"
