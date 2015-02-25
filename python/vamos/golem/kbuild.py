@@ -626,7 +626,7 @@ def get_linux_version():
                           cmd)
 
         # 'standard' Linux repository descriptions start with v
-        if git_version.startswith(("v3.", "v2.6")):
+        if git_version.startswith(("v2.6", "v3.", "v4.")):
             return git_version
 
     extra_vars = "-f %(basedir)s/Makefile.version UNDERTAKER_SCRIPTS=%(basedir)s" % \
@@ -637,8 +637,8 @@ def get_linux_version():
         raise NotALinuxTree("The call to Makefile.version failed")
 
     version = output[-1] # use last line, if not configured we get additional warning messages
-    if not version.startswith(("3.", "2.6")):
-        raise NotALinuxTree("Only versions 2.6 and 3.x are supported, but not %s",
+    if not version.startswith(("2.6", "3.", "4.")):
+        raise NotALinuxTree("Only versions 2.6, 3.x and 4.x are supported, but not %s",
                             version)
     else:
         return version
