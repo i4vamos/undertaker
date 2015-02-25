@@ -8,6 +8,8 @@ ALLNOCONFIGS=$(MODELS:.fm=.allnoconfig)
 ALLDEFCONFIGS=$(MODELS:.fm=.alldefconfig)
 ALLCONFIGS=$(ALLYESCONFIGS) $(ALLNOCONFIGS) $(ALLMODCONFIGS) $(ALLDEFCONFIGS)
 
+PREFIX=env KCONFIG_CONFIG=$@ ARCH="" KERNELVERSION=""
+
 all: check
 
 $(SATYR):
@@ -20,19 +22,19 @@ $(CONF):
 	$(SATYR) $< -c $@
 
 %.allyesconfig: %.fm $(CONF) $(SATYR)
-	env KCONFIG_CONFIG=$@ $(CONF) $< --allyesconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
+	$(PREFIX) $(CONF) $< --allyesconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
 %.allnoconfig: %.fm $(CONF) $(SATYR)
-	env KCONFIG_CONFIG=$@ $(CONF) $< --allnoconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
+	$(PREFIX) $(CONF) $< --allnoconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
 %.allmodconfig: %.fm $(CONF) $(SATYR)
-	env KCONFIG_CONFIG=$@ $(CONF) $< --allmodconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
+	$(PREFIX) $(CONF) $< --allmodconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
 %.alldefconfig: %.fm $(CONF) $(SATYR)
-	env KCONFIG_CONFIG=$@ $(CONF) $< --alldefconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
+	$(PREFIX) $(CONF) $< --alldefconfig > /dev/null || (echo "Calculation of $@ failed" && exit 1)
 	$(SATYR) $< -a $@ 2> /dev/null || (echo "call of satyr on $@ failed" && exit 1)
 
 check: $(ALLCONFIGS)
