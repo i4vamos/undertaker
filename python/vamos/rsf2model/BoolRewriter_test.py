@@ -49,7 +49,7 @@ CRAP CARASDD"""
         rewrite("!(A && C)", "(!CONFIG_A || !CONFIG_C)")
 
         rewrite("B", "(CONFIG_B_MODULE || CONFIG_B)")
-        rewrite("!B", "!CONFIG_B")
+        rewrite("!B", "(!CONFIG_B || CONFIG_B_MODULE)")
         rewrite("B", "CONFIG_B", False)
         rewrite("!B", "(!CONFIG_B_MODULE && !CONFIG_B)", False)
 

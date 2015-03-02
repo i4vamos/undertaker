@@ -63,10 +63,32 @@ class BoolRewriter(tools.UnicodeMixin):
 
     def __rewrite_tristate(self, tree):
         #pylint: disable=R0912
+
+# Dependencies reduce the upper limit of a symbol (tristate means 3 values: y=2, m=1, n=0).
+# When the dependency of a symbol evaluates to m (=1), the symbol cannot
+# evaluate to y (=2) anymore. Example:
+#
+# config A | tristate | depends on B
+# config B | tristate
+#
+# B=y  -> A=m || A=n || A=y
+# B=m  -> A=m || A=n
+# B=n  -> /
+#
+# config A | tristate | depends on !B
+# config B | tristate
+#
+# B=y  -> /
+# B=m  -> A=m || A=n
+# B=n  -> A=m || A=n || A=y
+
         def tristate_not(symbol):
             if symbol in self.rsf.options() and self.rsf.options()[symbol].tristate():
                 if self.eval_to_module:
-                    return [BoolParser.NEQUAL, symbol, "y"]
+                    # when B is a tristate and is allowed to be 'm', !B means (B!=y || B=m).
+                    return [BoolParser.OR,
+                            [BoolParser.NEQUAL, symbol, "y"],
+                            [BoolParser.EQUAL, symbol, "m"]]
                 else:
                     return [BoolParser.EQUAL,  symbol, "n"]
             return [BoolParser.NOT, symbol]
@@ -116,8 +138,7 @@ class BoolRewriter(tools.UnicodeMixin):
                 else:
                     #otherwise it is false, because expr = y is needed
                     a = tools.new_free_item()
-                    return [BoolParser.AND, a,
-                            [BoolParser.NOT, a]]
+                    return [BoolParser.AND, a, [BoolParser.NOT, a]]
             return self.rsf.symbol(tree)
 
         if tree[0] in [BoolParser.NOT, BoolParser.AND, BoolParser.OR]:
