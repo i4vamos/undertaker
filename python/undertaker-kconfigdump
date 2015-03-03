@@ -5,7 +5,7 @@
 # Copyright (C) 2009-2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2009-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012-2013 Manuel Zerpies <manuel.f.zerpies@ww.stud,uni-erlangen.de>
-# Copyright (C) 2012-2014 Stefan Hengelein <stefan.hengelein@informatik.stud.uni-erlangen.de>
+# Copyright (C) 2012-2015 Stefan Hengelein <stefan.hengelein@informatik.stud.uni-erlangen.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+#########################################################################################
 # This script is used for precalculating the configuration models of a
 # Linux tree. Therefore the config is first dumped with dumpconf to a
 # rsf file. This rsf file is piped to rsf2model which calculates the
@@ -35,10 +37,9 @@
 #
 # Arguments:
 # - Architectures for which models will be built
-
+#########################################################################################
 
 MODELS=${MODELS:-models}
-CNFMODELS=${MODELS:-cnfmodels}
 PROCESSORS=${PROCESSORS:-$(getconf _NPROCESSORS_ONLN)}
 
 DO_INFERENCES="no"
@@ -73,17 +74,16 @@ while getopts ircmbfh OPT; do
             CALC_FM="yes"
             ;;
         h)
-            echo "\`undertaker-kconfigdump' generates models for Linux, busybox"
-            echo "and coreboot"
+            echo "\`undertaker-kconfigdump' generates models for Linux, busybox and coreboot"
+            echo ""
             echo "Usage: ${0##*/} [-r] [-c] [-i] [-h] [-f] [-b]"
             echo " -r  generate Format 1.0 (RSF) Models (default)"
             echo " -c  generate Format 2.0 (CNF) Models"
-            echo " -i  calculate inferences"
+            echo " -i  calculate inferences (file preconditions) and append them to models"
             echo " -h  displays this message"
-            echo " -f  create .fm files for all arches"
-            echo " -b  use busyfix to transform busybox trees"
+            echo " -f  create .fm files for all Linux arches in a Linux-tree"
+            echo " -b  use busyfix to transform a Busybox tree"
             exit
-            ;;
     esac
 done
 
@@ -96,7 +96,8 @@ function debug() {
 }
 
 if ! which undertaker > /dev/null; then
-    echo "No undertaker program found, please run 'make install' first."
+    echo "No undertaker program found, please run 'make install' first or put"
+    echo "the undertaker tools into the PATH."
     exit 1
 fi
 
@@ -143,43 +144,14 @@ debug "dumpconf: $(which dumpconf)"
 debug "satyr: $(which satyr)"
 debug "undertaker-kconfigpp: $(which undertaker-kconfigpp)"
 
-function all_linux_archs () {
-    echo "$(ls arch/*/Kconfig* | cut -d '/' -f 2 | sort -u)"
-}
-
 mkdir -p "$MODELS"
 
-# Parameter {nr. of subprocesses}
-function pwait() {
-    # This function blocks until less than $1 subprocesses are running.
-    jobs="$1"
-    [ -z "$jobs" ] && jobs=5
-
-    while [ $(jobs -r | wc -l) -ge "$jobs" ]; do
-        sleep 0.5
-    done
-}
+#########################################################################################
+# shared functions                                                                      #
+#########################################################################################
 
 # Parameter {arch}
-function get_kconfig_file() {
-    # Return the relative path to the main Kconfig file of the specified arch.
-    # Special case for user mode Linux to support old versions the kernel.
-    local ARCHSTR=$1
-    local KCONFIG=Kconfig
-    if [ "$ARCHSTR" = "um" ]; then
-        # The upstream commit 5c48b108ecbf6505d929e64d50dace13ac2bdf34
-        # renamed arch/{um/Kconfig.x86 => x86/um/Kconfig}.
-        if [ -r arch/x86/um/Kconfig ]; then
-            ARCHSTR=x86/um
-        else
-            KCONFIG=Kconfig.x86
-        fi
-    fi
-    echo "arch/$ARCHSTR/$KCONFIG"
-}
-
-# Parameter {arch}
-cleanup_empty_intermediates_for_arch() {
+function cleanup_empty_intermediates_for_arch() {
     # Remove stale, zero-sized intermediate files of the specified arch.
     for suffix in "inferences" "whitelist" "blacklist" "model" "cnf"; do
         f="$MODELS/$1.$suffix"
@@ -187,68 +159,6 @@ cleanup_empty_intermediates_for_arch() {
             rm -f $f
         fi
     done
-}
-
-# Parameter {arch}
-function do_convert() {
-    # Convert the model files for the specified Linux arch.
-    ARCH=$1
-    KCONFIG_FILE="$(get_kconfig_file $ARCH)"
-
-    if [ $MODE = "rsf" ]; then
-        echo "Calculating RSF model for $ARCH"
-        SUBARCH=$ARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
-
-        do_rsf2model_conversion $ARCH
-    fi
-
-    if [ $MODE = "cnf" ]; then
-        echo "Calculating CNF model for $ARCH"
-        # Run satyr to generate CNF models.
-        SUBARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
-    fi
-}
-
-# Parameters {arch} {,intermediate} Note: $2 is only required if "-m" mode is used.
-function do_rsf2model_conversion() {
-    ARCH=$1
-    UPCASE_ARCH=$(echo $ARCH | tr 'a-z' 'A-Z')
-    # UM, again, has a special case: the internal kconfig symbol for the ARCH is not UM but UML
-    if [ $ARCH = "um" ]; then
-        UPCASE_ARCH="UML"
-    fi
-
-    # Filter 'CONFIG_$UPCASE_ARCH' without conditions.
-    rsf2model "$MODELS/$ARCH.rsf" | grep -v '^CONFIG_'"$UPCASE_ARCH"'$' | sort -u > "$MODELS/$ARCH.model"
-
-    if [ "$2" = "intermediate" ]; then
-        ALL_ARCHS=$(ls $MODELS/*.rsf | sed 's,models/,,g' | sed 's/.rsf//g')
-    else
-        ALL_ARCHS=$(all_linux_archs)
-    fi
-
-    ALL_NOT_CONFIG_ARCH=$(echo $ALL_ARCHS | sed "s/ *$ARCH */ /" | tr 'a-z' 'A-Z' \
-        | sed 's/ *$//g; s/^ *//g; s/\</!CONFIG_/g;')
-
-    if grep -q "^CONFIG_$UPCASE_ARCH " $MODELS/$ARCH.model; then
-        # If there is already a 'CONFIG_$UPCASE_ARCH' rule in the model,
-        # conditions that other architectures can't be selected at the same
-        # time will be appended to this rule.
-        # E.g. X86 -> "CONFIG_INODES && ... && !ARM && !S390 && ..."
-        sed -i '/^CONFIG_'"$UPCASE_ARCH"' / s/"$/ \&\& '"$(echo $ALL_NOT_CONFIG_ARCH | \
-            sed 's/ / \\\&\\\& /g')"'"/' $MODELS/$ARCH.model
-    else
-        # If CONFIG_$UPCASE_ARCH is not present, a new rule is appended to the model.
-        # E.g. X86 -> "!ARM && !S390 && ..."
-        echo $ALL_NOT_CONFIG_ARCH | sed 's/ / \&\& /g; s/$/"/; s/^/'"CONFIG_$UPCASE_ARCH "'"/;' \
-            >> "$MODELS/$ARCH.model"
-    fi
-
-    # CONFIG_{n,y,m} need to be defined in the models as some conditions
-    # depend on them.
-    echo "CONFIG_n" >> "$MODELS/$ARCH.model"
-    echo "CONFIG_y" >> "$MODELS/$ARCH.model"
-    echo "CONFIG_m" >> "$MODELS/$ARCH.model"
 }
 
 # Parameters {project/arch}
@@ -289,11 +199,9 @@ function do_rsf_or_satyr_call() {
         # Remove all golem warnings and errors from the model file.
         sed -i "/^[EWI]: /d" "$MODELS/$1.model"
 
-        # CONFIG_{n,y,m} need to be defined in the models as some conditions
-        # depend on them.
+        # CONFIG_{n,y} need to be defined in the models as some conditions depend on them.
         echo "CONFIG_n" >> "$MODELS/$1.model"
         echo "CONFIG_y" >> "$MODELS/$1.model"
-        echo "CONFIG_m" >> "$MODELS/$1.model"
     fi
 
     if [ "$MODE" = "cnf" ]; then
@@ -328,6 +236,10 @@ function do_rsf_or_satyr_call() {
     cleanup_empty_intermediates_for_arch $1
 }
 
+#########################################################################################
+# handle Busybox                                                                        #
+#########################################################################################
+
 if [ -f scripts/gen_build_files.sh ]; then
     echo "Detected a busybox source tree"
     # Disable problematic options
@@ -349,6 +261,10 @@ if [ -f scripts/gen_build_files.sh ]; then
 
     exit 0
 fi
+
+#########################################################################################
+# handle Coreboot                                                                       #
+#########################################################################################
 
 if test -r Makefile && grep -q 'This file is part of the coreboot project.' Makefile; then
     echo "Detected a coreboot source tree"
@@ -380,9 +296,116 @@ if test -r Makefile && grep -q 'This file is part of the coreboot project.' Make
     exit 0
 fi
 
+#########################################################################################
+# Linux specific functions                                                              #
+#########################################################################################
+
+if [ "$MODE" = "intermediateRSF" ] && [ "$2" = "intermediate" ]; then
+    LINUX_ARCHES=$(ls $MODELS/*.rsf | sed 's,models/,,g ; s/.rsf//g')
+else
+    LINUX_ARCHES=$(ls arch/*/Kconfig* 2>/dev/null | cut -d '/' -f 2 | sort -u)
+fi
+
+ALL_UPCASE_ARCHES=$(echo $LINUX_ARCHES | tr 'a-z' 'A-Z')
+# some arches have a special case for internal kconfig symbols
+ALL_UPCASE_ARCHES=$(echo $ALL_UPCASE_ARCHES | sed 's/UM/UML/; s/SH/SUPERH/; s/POWERPC/PPC/')
+
+
+# Parameter {nr. of subprocesses}
+function pwait() {
+    # This function blocks until less than $1 subprocesses are running.
+    jobs="$1"
+    [ -z "$jobs" ] && jobs=5
+
+    while [ $(jobs -r | wc -l) -ge "$jobs" ]; do
+        sleep 0.5
+    done
+}
+
+# Parameter {arch}
+function get_kconfig_file() {
+    # Return the relative path to the main Kconfig file of the specified arch.
+    # Special case for user mode Linux to support old versions the kernel.
+    local ARCHSTR=$1
+    local KCONFIG=Kconfig
+    if [ "$ARCHSTR" = "um" ]; then
+        # The upstream commit 5c48b108ecbf6505d929e64d50dace13ac2bdf34
+        # renamed arch/{um/Kconfig.x86 => x86/um/Kconfig}.
+        if [ -r arch/x86/um/Kconfig ]; then
+            ARCHSTR=x86/um
+        else
+            KCONFIG=Kconfig.x86
+        fi
+    fi
+    echo "arch/$ARCHSTR/$KCONFIG"
+}
+
+# Parameter {arch}
+function do_convert() {
+    # Convert the model files for the specified Linux arch.
+    ARCH=$1
+    KCONFIG_FILE="$(get_kconfig_file $ARCH)"
+
+    if [ $MODE = "rsf" ]; then
+        echo "Calculating RSF model for $ARCH"
+        SUBARCH=$ARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
+
+        rsf2model_conversion $ARCH
+    fi
+
+    if [ $MODE = "cnf" ]; then
+        echo "Calculating CNF model for $ARCH"
+        # Run satyr to generate CNF models.
+        SUBARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
+    fi
+}
+
+# Parameter {arch}
+function rsf2model_conversion() {
+    ARCH=$1
+    # special cases: the internal kconfig symbol for some ARCHes is not the
+    # folder in the arch/ directory (i.e. not UM but UML)
+    if [ $ARCH = "um" ]; then
+        UPCASE_ARCH="UML"
+    elif [ $ARCH = "sh" ]; then
+        UPCASE_ARCH="SUPERH"
+    elif [ $ARCH = "powerpc" ]; then
+        UPCASE_ARCH="PPC"
+    else
+        UPCASE_ARCH=$(echo $ARCH | tr 'a-z' 'A-Z')
+    fi
+
+    rsf2model "$MODELS/$ARCH.rsf" | sort -u > "$MODELS/$ARCH.model"
+
+    if ! grep -q "^CONFIG_$UPCASE_ARCH" "$MODELS/$ARCH.model" ; then
+        echo "WARNING: there is no arch-specific symbol for $UPCASE_ARCH in the model!"
+        echo "Maybe '$ARCH' is another special case? Conditions might be incomplete!"
+        return
+    fi
+
+    # prepend all symbols with "!CONFIG_"
+    ALL_NOT_CONFIG_ARCH=$(echo $ALL_UPCASE_ARCHES | sed "s/ *$UPCASE_ARCH */ /" \
+        | sed 's/ *$//g ; s/^ *//g ; s/\</!CONFIG_/g')
+    # conjugate all symbols (escaped)
+    ALL_NOT_CONFIG_ARCH=$(echo $ALL_NOT_CONFIG_ARCH | sed 's/ / \\\&\\\& /g')
+
+    # Architectures are selectable mutually exclusive. Append conditions
+    # to the ARCH-specific kconfig symbol that represent this exclusivity.
+    # E.g. X86 "CONFIG_INODES && ... && !ARM && !S390 && ..."
+    sed -i '/^CONFIG_'$UPCASE_ARCH' / s/"$/ \&\& '"$ALL_NOT_CONFIG_ARCH"'"/' $MODELS/$ARCH.model
+
+    # CONFIG_{n,y} need to be defined in the models as some conditions depend on them.
+    echo "CONFIG_n" >> "$MODELS/$ARCH.model"
+    echo "CONFIG_y" >> "$MODELS/$ARCH.model"
+}
+
+#########################################################################################
+# handle Linux                                                                          #
+#########################################################################################
+
 if [ "$MODE" = "intermediateRSF" ] && [ "$2" = "intermediate" ]; then
     echo "Calling intermediate_rsf2model for arch $1 ..."
-    do_rsf2model_conversion $1 $2
+    rsf2model_conversion $1
     exit 0
 elif ! [ -f arch/x86/Kconfig -o -f arch/i386/Kconfig ]; then
     echo "This version supports Linux, busybox and coreboot"
@@ -391,21 +414,21 @@ elif ! [ -f arch/x86/Kconfig -o -f arch/i386/Kconfig ]; then
 fi
 
 if [ "$CALC_FM" = "yes" ]; then
-    for ARCH in $(all_linux_archs); do
+    for ARCH in $LINUX_ARCHES; do
         ARCH=$ARCH undertaker-kconfigpp $(get_kconfig_file $ARCH) > $MODELS/$ARCH.fm
     done
     exit 0
 fi
 
 if [ -z "$1" ]; then
-    ARCHS=$(all_linux_archs)
+    ARCHS=$LINUX_ARCHES
 else
     ARCHS="$@"
     # Input validation: check if the main Kconfig files for the specified
     # architectures exist.
     errors=0
     for ARCH in $ARCHS; do
-        if [ ! -f $(get_kconfig_file $ARCH) ]; then
+        if [ ! -f $(get_kconfig_file "$ARCH") ]; then
             echo "ERROR: Architecture $ARCH not found"
             ((++errors))
         fi
