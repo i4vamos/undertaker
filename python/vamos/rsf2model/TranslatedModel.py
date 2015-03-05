@@ -32,7 +32,7 @@ class TranslatedModel(tools.UnicodeMixin):
         self.deps = {}
         self.defaultSelects = {}
 
-        self.always_on = []
+        self.always_on = set()
 
         self.rsf = rsf
         for t in self.rsf.options().items():
@@ -71,7 +71,7 @@ class TranslatedModel(tools.UnicodeMixin):
         self.defaultSelects[symbol] = []
 
         if option.omnipresent():
-            self.always_on.append(option.symbol())
+            self.always_on.add(option.symbol())
 
         if option.tristate():
             symbol_module = option.symbol_module()
@@ -116,7 +116,7 @@ class TranslatedModel(tools.UnicodeMixin):
                and option.prompts() == 0 \
                and not option.tristate() \
                and not option.has_depends():
-            self.always_on.append(option.symbol())
+            self.always_on.add(option.symbol())
             # we add a free item to the defaultSelect list. this is
             # important in the following scenario:
             # 1. Item ist default on
@@ -201,9 +201,11 @@ class TranslatedModel(tools.UnicodeMixin):
         result.append("UNDERTAKER_SET SCHEMA_VERSION 1.1\n")
 
         if len(self.always_on) > 0:
-            result.append("UNDERTAKER_SET ALWAYS_ON " + (" ".join(['"' + x + '"' for x in self.always_on])) + "\n")
+            result.append("UNDERTAKER_SET ALWAYS_ON "
+                          + (" ".join(['"' + x + '"' for x in sorted(self.always_on)]))
+                          + "\n")
 
-        for symbol in self.symbols:
+        for symbol in sorted(self.symbols):
             expression = ""
             deps = self.deps.get(symbol, [])
             if symbol in self.defaultSelects and len(self.defaultSelects[symbol]) > 0:

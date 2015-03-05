@@ -375,7 +375,7 @@ function rsf2model_conversion() {
         UPCASE_ARCH=$(echo $ARCH | tr 'a-z' 'A-Z')
     fi
 
-    rsf2model "$MODELS/$ARCH.rsf" | sort -u > "$MODELS/$ARCH.model"
+    rsf2model "$MODELS/$ARCH.rsf" > "$MODELS/$ARCH.model"
 
     if ! grep -q "^CONFIG_$UPCASE_ARCH" "$MODELS/$ARCH.model" ; then
         echo "WARNING: there is no arch-specific symbol for $UPCASE_ARCH in the model!"
