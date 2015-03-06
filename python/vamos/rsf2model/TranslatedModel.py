@@ -2,7 +2,7 @@
 """rsf2model - extracts presence implications from kconfig dumps"""
 
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
-# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2014-2015 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,33 +30,32 @@ class TranslatedModel(tools.UnicodeMixin):
 
         self.symbols = []
         self.deps = {}
-        self.defaultSelects = {}
+        # mapping: key-symbol is selected by a list of options [symbol1, symbol2]
+        self.selectedBy = {}
 
         self.always_on = set()
 
         self.rsf = rsf
-        for t in self.rsf.options().items():
-            option = t[1]
+        for option in self.rsf.options().values():
             self.translate_option(option)
 
-        for t in self.rsf.options().items():
-            option = t[1]
+        for option in self.rsf.options().values():
             if type(option) == Choice:
                 self.translate_choice(option)
 
         for (item, default_set) in self.rsf.collect("Default", 0, True).items():
-            for default in default_set:
-                option = self.rsf.options().get(item, None)
-                if option:
+            option = self.rsf.options().get(item, None)
+            if option:
+                for default in default_set:
                     try:
                         self.translate_default(option, default)
                     except BoolParserException:
                         # Parsing expression failed, just ignore it
                         pass
         for (item, select_set) in self.rsf.collect("ItemSelects", 0, True).items():
-            for select in select_set:
-                option = self.rsf.options().get(item, None)
-                if option:
+            option = self.rsf.options().get(item, None)
+            if option:
+                for select in select_set:
                     try:
                         self.translate_select(option, select)
                     except BoolParserException:
@@ -68,7 +67,7 @@ class TranslatedModel(tools.UnicodeMixin):
         symbol = option.symbol()
         self.symbols.append(symbol)
         self.deps[symbol] = []
-        self.defaultSelects[symbol] = []
+        self.selectedBy[symbol] = []
 
         if option.omnipresent():
             self.always_on.add(option.symbol())
@@ -83,8 +82,8 @@ class TranslatedModel(tools.UnicodeMixin):
             self.deps[symbol_module].append("!%s" % symbol)
             self.deps[symbol_module].append("CONFIG_MODULES")
 
-        # Add dependency
-        if option.tristate():
+            # Add dependency
+
             # For tristate symbols (without _MODULE) the dependency must evaluate to y
             dep = option.dependency(eval_to_module = False)
             if dep:
@@ -113,41 +112,39 @@ class TranslatedModel(tools.UnicodeMixin):
 
         [state, cond] = dependency
         if state == "y" and cond == "y" \
-               and option.prompts() == 0 \
-               and not option.tristate() \
-               and not option.has_depends():
+                        and not option.has_depends():
             self.always_on.add(option.symbol())
-            # we add a free item to the defaultSelect list. this is
+            # we add a free item to the 'selectedBy' list. this is
             # important in the following scenario:
             # 1. Item ist default on
             # 2. item is selected by other item
             # 3. without the free item it is implied, that the second
-            #    item is on, byt with default to y this isn't right
+            #    item is on, but with default to y this isn't right
             #
             # Difference:
             # A DEPS && (SELECT1)
             # A DEPS && (__FREE__ || SELECT1)
-            self.defaultSelects[option.symbol()].append(tools.new_free_item())
+            self.selectedBy[option.symbol()].append(tools.new_free_item())
         elif state == "y" or cond == "y":
             expr = state
             if state == "y":
                 expr = cond
             expr =  str(BoolRewriter.BoolRewriter(self.rsf, expr, eval_to_module = True).rewrite())
-            self.defaultSelects[option.symbol()].append(expr)
+            self.selectedBy[option.symbol()].append(expr)
         # Default FOO "BAR" "BAZ"
         elif len(state) > 1 and len(cond) > 1:
             expr =  str(BoolRewriter.BoolRewriter(self.rsf, "(%s) && (%s)" % (state, cond),
                                                   eval_to_module = True).rewrite())
-            self.defaultSelects[option.symbol()].append(expr)
+            self.selectedBy[option.symbol()].append(expr)
 
 
     def translate_select(self, option, select):
         #pylint: disable=R0912
         """
         @param option the option that declares the 'select' verb
-        @param select: the option that is unconditionally slected (if option is selected
+        @param select: the option that is unconditionally selected (if option is selected)
 
-        select is a tuple of (seleted, condition)
+        select is a tuple of (selected, condition)
         """
         if type(option) == Choice:
             return
@@ -165,33 +162,26 @@ class TranslatedModel(tools.UnicodeMixin):
         if type(selected) == Choice or selected.tristate():
             return
 
+        imply = selected.symbol()
+
         if expr == "y":
             # select foo if y
-            if selected.prompts() == 0:
-                self.defaultSelects[selected.symbol()].append(option.symbol())
             self.deps[option.symbol()].append(selected.symbol())
-
-            if option.tristate():
-                if selected.prompts() == 0:
-                    self.defaultSelects[selected.symbol()].append(option.symbol_module())
-                self.deps[option.symbol_module()].append(selected.symbol())
         else:
             # select foo if expr
             expr = str(BoolRewriter.BoolRewriter(self.rsf, expr, eval_to_module = True).rewrite())
-            if expr == "":
-                # We are in a Choice, and the choice is the only dependency....
-                imply = selected.symbol()
-            else:
+            if expr != "":
                 imply = "((%s) -> %s)" %(expr, selected.symbol())
 
-            if selected.prompts() == 0:
-                self.defaultSelects[selected.symbol()].append(option.symbol())
-
             self.deps[option.symbol()].append(imply)
-            if option.tristate():
-                if selected.prompts() == 0:
-                    self.defaultSelects[selected.symbol()].append(option.symbol_module())
-                self.deps[option.symbol_module()].append(imply)
+
+        if selected.prompts() == 0:
+            self.selectedBy[selected.symbol()].append(option.symbol())
+
+        if option.tristate():
+            if selected.prompts() == 0:
+                self.selectedBy[selected.symbol()].append(option.symbol_module())
+            self.deps[option.symbol_module()].append(imply)
 
 
     def __unicode__(self):
@@ -208,9 +198,9 @@ class TranslatedModel(tools.UnicodeMixin):
         for symbol in sorted(self.symbols):
             expression = ""
             deps = self.deps.get(symbol, [])
-            if symbol in self.defaultSelects and len(self.defaultSelects[symbol]) > 0:
-                dS = self.defaultSelects[symbol]
-                deps.append("(" + (" || ".join(dS)) + ")")
+            if symbol in self.selectedBy and len(self.selectedBy[symbol]) > 0:
+                dS = self.selectedBy[symbol]
+                deps.append("(" + " || ".join(dS) + ")")
 
             expression = " && ".join(deps)
             if expression == "":

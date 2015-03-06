@@ -2,8 +2,8 @@
 """rsf2model - extracts presence implications from kconfig dumps"""
 
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
-# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
 # Copyright (C) 2014 Andreas Ruprecht <rupran@einserver.de>
+# Copyright (C) 2014-2015 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -271,7 +271,7 @@ class Choice(Option):
                     if self.tristate():
                         # If the choice is tristate the CHOICE_MODULE
                         # implies, that no option from the choice is
-                        # selected as static unit
+                        # selected as builtin unit
                         deps[self.rsf.symbol_module(self.name)].append("!" + self.rsf.symbol(symbol))
                         opt = self.rsf.options()[symbol]
                         if opt.tristate():
