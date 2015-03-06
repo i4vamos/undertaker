@@ -365,9 +365,18 @@ def parse_patch(patchfile):
             worklist_a.append(diff.header.old_path)
             worklist_b.append(diff.header.old_path)
         else:
-            path = diff.header.new_path[2:]
-            worklist_a.append(diff.header.old_path[2:])
-            worklist_b.append(diff.header.new_path[2:])
+            # whatthepatch 0.0.3 removes the leading 'a/' or 'b/' itself through
+            # better parsing, so check if we really need to strip it away
+            old_path = diff.header.old_path
+            new_path = diff.header.new_path
+            if old_path.startswith('a/'):
+                old_path = old_path[2:]
+            if new_path.startswith('b/'):
+                new_path = new_path[2:]
+
+            path = new_path
+            worklist_a.append(old_path)
+            worklist_b.append(new_path)
 
         # parse Kconfig file
         if REGEX_FILE_KCONFIG.match(path):
