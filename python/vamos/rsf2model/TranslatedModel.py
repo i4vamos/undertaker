@@ -126,9 +126,17 @@ class TranslatedModel(tools.UnicodeMixin):
             # A DEPS && (__FREE__ || SELECT1)
             self.selectedBy[option.symbol()].append(tools.new_free_item())
         elif state == "y" or cond == "y":
-            expr = state
             if state == "y":
                 expr = cond
+            else:
+                expr = state
+
+            if expr == "n":
+                # don't create pointless CONFIG_n entries
+                return
+            elif expr == "y" and not "CONFIG_y" in self.symbols:
+                self.symbols.append("CONFIG_y")
+
             expr =  str(BoolRewriter.BoolRewriter(self.rsf, expr, eval_to_module = True).rewrite())
             self.selectedBy[option.symbol()].append(expr)
         # Default FOO "BAR" "BAZ"

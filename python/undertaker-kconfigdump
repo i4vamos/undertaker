@@ -198,10 +198,6 @@ function do_rsf_or_satyr_call() {
 
         # Remove all golem warnings and errors from the model file.
         sed -i "/^[EWI]: /d" "$MODELS/$1.model"
-
-        # CONFIG_{n,y} need to be defined in the models as some conditions depend on them.
-        echo "CONFIG_n" >> "$MODELS/$1.model"
-        echo "CONFIG_y" >> "$MODELS/$1.model"
     fi
 
     if [ "$MODE" = "cnf" ]; then
@@ -253,10 +249,10 @@ if [ -f scripts/gen_build_files.sh ]; then
             -print > busyfix-worklist
     fi
 
-    # Generate config files, execute dumpconf, and remove all comments because
-    # they will confuse rsf2model.
+    # Generate config files
     make gen_build_files
 
+    # execute dumpconf / rsf2model
     do_rsf_or_satyr_call busybox Config.in "$ALWAYS_OFF_ITEMS"
 
     exit 0
@@ -393,10 +389,6 @@ function rsf2model_conversion() {
     # to the ARCH-specific kconfig symbol that represent this exclusivity.
     # E.g. X86 "CONFIG_INODES && ... && !ARM && !S390 && ..."
     sed -i '/^CONFIG_'$UPCASE_ARCH' / s/"$/ \&\& '"$ALL_NOT_CONFIG_ARCH"'"/' $MODELS/$ARCH.model
-
-    # CONFIG_{n,y} need to be defined in the models as some conditions depend on them.
-    echo "CONFIG_n" >> "$MODELS/$ARCH.model"
-    echo "CONFIG_y" >> "$MODELS/$ARCH.model"
 }
 
 #########################################################################################
