@@ -3,7 +3,7 @@
 
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
-# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2014-2015 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ class BoolRewriter(tools.UnicodeMixin):
                     # m is true, if the expression can evaluate to module
                     return tools.new_free_item()
                 else:
-                    #otherwise it is false, because expr = y is needed
+                    # otherwise it is false, because expr = y is needed
                     a = tools.new_free_item()
                     return [BoolParser.AND, a, [BoolParser.NOT, a]]
             return self.rsf.symbol(tree)
@@ -160,6 +160,7 @@ class BoolRewriter(tools.UnicodeMixin):
             right, left = left, right
         if left.lower() in ["y", "n", "m"]:
             raise BoolRewriterException("compare literal with literal")
+
         if right == "y":
             return left_y
         elif right == "m":
@@ -168,15 +169,23 @@ class BoolRewriter(tools.UnicodeMixin):
             return [BoolParser.AND,
                     [BoolParser.NOT, left_m],
                     [BoolParser.NOT, left_y]]
-        else:
-            # Symbol == Symbol
-            return [BoolParser.OR,
-                    [BoolParser.AND, left_y, right_y], # Either both y
-                    [BoolParser.AND, left_m, right_m], # Or both
-                    [BoolParser.AND, # Or everything disabled
-                     [BoolParser.NOT, left_y], [BoolParser.NOT, right_y],
-                     [BoolParser.NOT, left_m], [BoolParser.NOT, right_m]]]
 
+        # Symbol == Symbol
+        result = [BoolParser.OR,
+                  [BoolParser.AND, left_y, right_y], # Either both y
+                  [BoolParser.AND, # Or everything disabled
+                   [BoolParser.NOT, left_y], [BoolParser.NOT, right_y]]]
+
+        if not left in self.rsf.options() or not right in self.rsf.options():
+            return result
+
+        # if both items are tristate, add comparison between tristate symbols
+        if self.rsf.options()[left].tristate() and self.rsf.options()[right].tristate():
+            result[-1].append([BoolParser.NOT, left_m])
+            result[-1].append([BoolParser.NOT, right_m])
+            result.append([BoolParser.AND, left_m, right_m]) # both m
+
+        return result
 
     def __rewrite_symbol_nequal(self,tree):
         left = tree[1]

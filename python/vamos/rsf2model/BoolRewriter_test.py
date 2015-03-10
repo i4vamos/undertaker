@@ -3,6 +3,7 @@
 #   rsf2model - extracts presence implications from kconfig dumps
 #
 # Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+# Copyright (C) 2015 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +33,11 @@ ItemFoo B some_value
 Item C boolean
 Item S string
 Item H hex
+Item FOO tristate
+Item BAR tristate
+Item HURZ tristate
+Item B43 tristate
+Item HW_RANDOM tristate
 CRAP CARASDD"""
         self.rsf = RsfReader.RsfReader(StringIO.StringIO(rsf))
 
@@ -40,8 +46,8 @@ CRAP CARASDD"""
             self.assertEqual(str(BR(self.rsf, a, eval_to_module = to_module).rewrite()), b)
 
         rewrite("64BIT", "CONFIG_64BIT")
-        rewrite("FOO && 64BIT", "(CONFIG_FOO && CONFIG_64BIT)")
-        rewrite("FOO && (64BIT)", "(CONFIG_FOO && CONFIG_64BIT)")
+        rewrite("A && 64BIT", "(CONFIG_A && CONFIG_64BIT)")
+        rewrite("A && (64BIT)", "(CONFIG_A && CONFIG_64BIT)")
 
 
         rewrite("A", "CONFIG_A")
@@ -64,48 +70,49 @@ CRAP CARASDD"""
         rewrite("FOO!=n", "(CONFIG_FOO_MODULE || CONFIG_FOO)")
         rewrite("FOO!=m", "!CONFIG_FOO_MODULE")
 
-        rewrite("FOO=BAR",
-                "((CONFIG_FOO && CONFIG_BAR) || (CONFIG_FOO_MODULE && CONFIG_BAR_MODULE) "
-                + "|| (!CONFIG_FOO && !CONFIG_BAR && !CONFIG_FOO_MODULE && !CONFIG_BAR_MODULE))")
+        rewrite("FOO=BAR", "((CONFIG_FOO && CONFIG_BAR) "
+                + "|| (!CONFIG_FOO && !CONFIG_BAR && !CONFIG_FOO_MODULE && !CONFIG_BAR_MODULE) "
+                + "|| (CONFIG_FOO_MODULE && CONFIG_BAR_MODULE))")
 
         rewrite("FOO!=BAR", "((CONFIG_FOO && !CONFIG_BAR) "
                 + "|| (CONFIG_FOO_MODULE && !CONFIG_BAR_MODULE) "
                 + "|| (!CONFIG_FOO && CONFIG_BAR) "
                 + "|| (!CONFIG_FOO_MODULE && CONFIG_BAR_MODULE))")
 
-        rewrite("FOO && BAR", "(CONFIG_FOO && CONFIG_BAR)")
+        rewrite("A && C", "(CONFIG_A && CONFIG_C)")
 
-        rewrite("FOO && BAR=HURZ",
-                "(CONFIG_FOO && "
-                + "((CONFIG_BAR && CONFIG_HURZ) || (CONFIG_BAR_MODULE && CONFIG_HURZ_MODULE) || "
-                + "(!CONFIG_BAR && !CONFIG_HURZ && !CONFIG_BAR_MODULE && !CONFIG_HURZ_MODULE)))")
+        rewrite("A && BAR=HURZ", "(CONFIG_A && "
+                + "((CONFIG_BAR && CONFIG_HURZ) "
+                + "|| (!CONFIG_BAR && !CONFIG_HURZ && !CONFIG_BAR_MODULE && !CONFIG_HURZ_MODULE) "
+                + "|| (CONFIG_BAR_MODULE && CONFIG_HURZ_MODULE)))")
 
-        rewrite("FOO && BAR=FOO",
-                "(CONFIG_FOO && "
-                + "((CONFIG_BAR && CONFIG_FOO) || (CONFIG_BAR_MODULE && CONFIG_FOO_MODULE) || "
-                + "(!CONFIG_BAR && !CONFIG_FOO && !CONFIG_BAR_MODULE && !CONFIG_FOO_MODULE)))")
+        # rewrite comparison between tristate with bool symbol
+        rewrite("FOO=C",
+                "((CONFIG_FOO && CONFIG_C) || (!CONFIG_FOO && !CONFIG_C))")
+
+        rewrite("A && BAR=A",
+                "(CONFIG_A && ((CONFIG_BAR && CONFIG_A) || (!CONFIG_BAR && !CONFIG_A)))")
 
         rewrite("B43 && (HW_RANDOM || HW_RANDOM=B43)",
-                "(CONFIG_B43 && "
-                + "(CONFIG_HW_RANDOM || "
-                + "((CONFIG_HW_RANDOM && CONFIG_B43) || "
-                + "(CONFIG_HW_RANDOM_MODULE && CONFIG_B43_MODULE) || "
-                + "(!CONFIG_HW_RANDOM && !CONFIG_B43 && "
-                + "!CONFIG_HW_RANDOM_MODULE && !CONFIG_B43_MODULE))))")
+                "((CONFIG_B43_MODULE || CONFIG_B43) && "
+                + "((CONFIG_HW_RANDOM_MODULE || CONFIG_HW_RANDOM) || "
+                  + "((CONFIG_HW_RANDOM && CONFIG_B43) "
+                  + "|| (!CONFIG_HW_RANDOM && !CONFIG_B43 "
+                  + "&& !CONFIG_HW_RANDOM_MODULE && !CONFIG_B43_MODULE) "
+                  + "|| (CONFIG_HW_RANDOM_MODULE && CONFIG_B43_MODULE))))")
 
         self.rsf = RsfReader.RsfReader(open("validation/equals-module.fm"))
 
         rewrite("SSB_POSSIBLE && SSB && (PCI || PCI=SSB)",
                 "(CONFIG_SSB_POSSIBLE && (CONFIG_SSB_MODULE || CONFIG_SSB) && "
-                + "((CONFIG_PCI_MODULE || CONFIG_PCI) || ((CONFIG_PCI && CONFIG_SSB) || "
-                + "(CONFIG_PCI_MODULE && CONFIG_SSB_MODULE) || "
-                + "(!CONFIG_PCI && !CONFIG_SSB && !CONFIG_PCI_MODULE && !CONFIG_SSB_MODULE))))")
+                + "((CONFIG_PCI_MODULE || CONFIG_PCI) || ((CONFIG_PCI && CONFIG_SSB) "
+                + "|| (!CONFIG_PCI && !CONFIG_SSB && !CONFIG_PCI_MODULE && !CONFIG_SSB_MODULE) "
+                + "|| (CONFIG_PCI_MODULE && CONFIG_SSB_MODULE))))")
 
         rewrite("THINKPAD_ACPI && SND && (SND=y || THINKPAD_ACPI=SND)",
                 "(CONFIG_THINKPAD_ACPI && CONFIG_SND && "
-                + "(CONFIG_SND || ((CONFIG_THINKPAD_ACPI && CONFIG_SND) || "
-                + "(CONFIG_THINKPAD_ACPI_MODULE && CONFIG_SND_MODULE) || "
-                + "(!CONFIG_THINKPAD_ACPI && !CONFIG_SND && !CONFIG_THINKPAD_ACPI_MODULE && !CONFIG_SND_MODULE))))")
+                + "(CONFIG_SND || ((CONFIG_THINKPAD_ACPI && CONFIG_SND) "
+                + "|| (!CONFIG_THINKPAD_ACPI && !CONFIG_SND))))")
 
 
 if __name__ == '__main__':
