@@ -34,6 +34,7 @@ class TranslatedModel(tools.UnicodeMixin):
         self.selectedBy = {}
 
         self.always_on = set()
+        self.always_off = set()
 
         self.rsf = rsf
         for option in self.rsf.options().values():
@@ -52,6 +53,7 @@ class TranslatedModel(tools.UnicodeMixin):
                     except BoolParserException:
                         # Parsing expression failed, just ignore it
                         pass
+
         for (item, select_set) in self.rsf.collect("ItemSelects", 0, True).items():
             option = self.rsf.options().get(item, None)
             if option:
@@ -64,6 +66,10 @@ class TranslatedModel(tools.UnicodeMixin):
 
         if self.rsf.has_ignored_symbol:
             self.symbols.append("CONFIG_CADOS_IGNORED")
+
+        if self.rsf.has_compare_with_nonexistent:
+            self.symbols.append("CONFIG_COMPARE_WITH_NONEXISTENT")
+            self.always_off.add("CONFIG_COMPARE_WITH_NONEXISTENT")
 
     def translate_option(self, option):
         # Generate symbols
@@ -208,6 +214,11 @@ class TranslatedModel(tools.UnicodeMixin):
         if len(self.always_on) > 0:
             result.append("UNDERTAKER_SET ALWAYS_ON "
                           + (" ".join(['"' + x + '"' for x in sorted(self.always_on)]))
+                          + "\n")
+
+        if len(self.always_off) > 0:
+            result.append("UNDERTAKER_SET ALWAYS_OFF "
+                          + (" ".join(['"' + x + '"' for x in sorted(self.always_off)]))
                           + "\n")
 
         for symbol in sorted(self.symbols):

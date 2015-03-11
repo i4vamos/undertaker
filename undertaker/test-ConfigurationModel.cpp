@@ -75,12 +75,13 @@ START_TEST(blacklistManagement) {
     fail_unless (model != NULL);
 
     always_off = model->getBlacklist();
-    fail_unless (always_off == NULL);
+    fail_unless (always_off->size() == 1,
+                 "Blacklist size: %d", always_off->size());
 
     model->addFeatureToBlacklist("CONFIG_SHINY_FEATURE");
 
     always_off = model->getBlacklist();
-    fail_unless (always_off->size() == 1,
+    fail_unless (always_off->size() == 2,
                  "Blacklist size: %d", always_off->size());
 
     for (const auto & elem : *always_off) {

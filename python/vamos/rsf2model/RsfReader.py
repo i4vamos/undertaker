@@ -49,6 +49,7 @@ class RsfReader:
                 self.database[row[0]].append(row[1:])
 
         self.has_ignored_symbol = False
+        self.has_compare_with_nonexistent = False
 
     @staticmethod
     def symbol(name):

@@ -90,6 +90,17 @@ CRAP CARASDD"""
         rewrite("FOO=C",
                 "((CONFIG_FOO && CONFIG_C) || (!CONFIG_FOO && !CONFIG_C))")
 
+        # rewrite comparison between tristate and non-existent symbol
+        rewrite("FOO=NOT_EXISTENT",
+                "(CONFIG_NOT_EXISTENT && CONFIG_COMPARE_WITH_NONEXISTENT)")
+
+        rewrite("NOT_EXISTENT=y",
+                "(CONFIG_NOT_EXISTENT && CONFIG_COMPARE_WITH_NONEXISTENT)")
+
+        rewrite("H=CVALUE_0xdeadbeef",
+                "((CONFIG_H && CONFIG_CVALUE_0xdeadbeef) "
+                + "|| (!CONFIG_H && !CONFIG_CVALUE_0xdeadbeef))")
+
         rewrite("A && BAR=A",
                 "(CONFIG_A && ((CONFIG_BAR && CONFIG_A) || (!CONFIG_BAR && !CONFIG_A)))")
 

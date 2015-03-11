@@ -157,10 +157,22 @@ class BoolRewriter(tools.UnicodeMixin):
         right_y = self.rsf.symbol(right)
         right_m = self.rsf.symbol_module(right)
 
+        left_value = left.startswith("CVALUE_")
+        right_value = right.startswith("CVALUE_")
+
         if left.lower() in ["y", "n", "m"]:
             right, left = left, right
         if left.lower() in ["y", "n", "m"]:
             raise BoolRewriterException("compare literal with literal")
+
+        # if anything is compared with a non-existent symbol, it can never be true
+        if not left_value and not left in self.rsf.options():
+            self.rsf.has_compare_with_nonexistent = True
+            return [BoolParser.AND, left_y, "CONFIG_COMPARE_WITH_NONEXISTENT"]
+        elif not right.lower() in ["y", "n", "m"] and not right_value \
+                                                  and not right in self.rsf.options():
+            self.rsf.has_compare_with_nonexistent = True
+            return [BoolParser.AND, right_y, "CONFIG_COMPARE_WITH_NONEXISTENT"]
 
         if right == "y":
             return left_y
@@ -194,10 +206,20 @@ class BoolRewriter(tools.UnicodeMixin):
         right_y = self.rsf.symbol(right)
         right_m = self.rsf.symbol_module(right)
 
+        left_value = left.startswith("CVALUE_")
+        right_value = right.startswith("CVALUE_")
+
         if left.lower() in ["y", "n", "m"]:
             right, left = left, right
         if left.lower() in ["y", "n", "m"]:
             raise BoolRewriterException("compare literal with literal")
+
+        # if anything is compared with a non-existent symbol, it is always true
+        if (not left_value and not left in self.rsf.options()) or \
+           (not right.lower() in ["y", "n", "m"] and not right_value \
+                                                 and not right in self.rsf.options()):
+            return tools.new_free_item()
+
         if right == "y":
             return [BoolParser.NOT, left_y]
         elif right == "m":
