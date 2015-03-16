@@ -6,7 +6,8 @@
 # Copyright (C) 2012 Christoph Egger <siccegge@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Valentin Rothberg <valentinrothberg@googlemail.com>
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
-# Copyright (C) 2012-2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2012-2015 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2015 Andreas Ruprecht <rupran@einserver.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -631,25 +632,17 @@ def select_framework(identifier, options):
                   'coreboot': CorebootBuildFramework}
 
     if identifier is None:
-        identifier='bare'
-        try:
-            logging.info("Detected Linux version %s, selecting kbuild framework",
-                         kbuild.get_linux_version())
+        if kbuild.is_linux():
+            logging.info("Detected Linux, selecting kbuild framework")
             identifier='linux'
-        except kbuild.NotALinuxTree:
-            pass
-        try:
-            logging.info("Detected Busybox version %s; selecting busybox framework",
-                         kbuild.get_busybox_version())
+        elif kbuild.is_busybox():
+            logging.info("Detected Busybox; selecting busybox framework")
             identifier='busybox'
-        except kbuild.NotABusyboxTree:
-            pass
-        try:
-            logging.info("Detected Coreboot version %s; selecting Coreboot framework",
-                         kbuild.get_coreboot_version())
+        elif kbuild.is_coreboot():
+            logging.info("Detected Coreboot; selecting Coreboot framework")
             identifier='coreboot'
-        except kbuild.NotACorebootTree:
-            pass
+        else:
+            identifier='bare'
 
     if not options.has_key('arch') and os.environ.has_key('ARCH'):
         options['arch'] = os.environ['ARCH']

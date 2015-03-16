@@ -3,7 +3,7 @@
 """busyfix - normalizes the '#if ENABLE', 'IF' and 'IF_NOT' statements in  Busybox source files"""
 
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
-# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2014-2015 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ sys.path = [os.path.join(os.path.dirname(sys.path[0]), 'lib',
                          'site-packages')] + sys.path
 
 import vamos.tools as tools
+import vamos.golem.kbuild as kbuild
 import vamos.busyfix.normalizer as normalizer
 
 def main():
@@ -47,6 +48,9 @@ def main():
                       help="Replace all files inline")
 
     (opts, args) = parser.parse_args()
+
+    if not kbuild.is_busybox():
+        sys.exit("This tool needs to run inside a busybox tree.")
 
     tools.setup_logging(opts.verbose)
 

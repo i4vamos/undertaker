@@ -3,6 +3,7 @@
 """Check a specified patch for variability related defects in a Linux tree."""
 
 # Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
+# Copyright (C) 2015 Andreas Ruprecht <rupran@einserver.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,10 +104,8 @@ def main():
     #pylint: disable=R0914
     #pylint: disable=R0915
     (opts, args) = parse_options()
-    try:
-        logging.info("Detected Linux version " + kbuild.get_linux_version())
-    except kbuild.NotALinuxTree:
-        sys.exit("Cannot detect Linux version.")
+    if not kbuild.is_linux():
+        sys.exit("This tool needs to run inside a Linux tree.")
 
     patchfile = args[0]
     model_path = opts.models.rstrip('/')

@@ -3,9 +3,9 @@
 
 # Copyright (C) 2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
-# Copyright (C) 2012 Andreas Ruprecht <rupran@einserver.de>
 # Copyright (C) 2012 Manuel Zerpies <manuel.f.zerpies@ww.stud.uni-erlangen.de>
-# Copyright (C) 2012-2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2012-2015 Andreas Ruprecht <rupran@einserver.de>
+# Copyright (C) 2012-2015 Stefan Hengelein <stefan.hengelein@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,19 +48,6 @@ class TreeNotConfigured(RuntimeError):
     """ Indicates that this Linux tree is not configured yet """
     pass
 
-
-class NotALinuxTree(RuntimeError):
-    """ Indicates we are not in a Linux tree """
-    pass
-
-
-class NotABusyboxTree(RuntimeError):
-    """ Indicates we are not in a Busybox tree """
-    pass
-
-class NotACorebootTree(RuntimeError):
-    """ Indicates we are not in a Coreboot tree """
-    pass
 
 def find_autoconf():
     """ returns the path to the autoconf.h file in this linux tree
@@ -587,155 +574,36 @@ def call_linux_makefile(target, extra_env="", extra_variables="",
         extra_env += " ARCH=%s" % arch
     extra_env += " SUBARCH=%s" % subarch
 
-    if not 'KERNELVERSION=' in extra_variables:
-        if not vamos.kernelversion:
-            (output, rc) = execute("git describe", failok=True)
-            if rc == 0:
-                vamos.kernelversion = output[-1]
-        if vamos.kernelversion:
-            extra_env += ' KERNELVERSION="%s"' % vamos.kernelversion
-
     return call_makefile_generic(target, failok=failok, njobs=njobs,
                                  dryrun=dryrun,
                                  extra_env=extra_env,
                                  extra_variables=extra_variables)
 
-
-def get_linux_version():
+def is_linux():
     """
-    Check that the current working directory is actually a Linux tree
-
-    If we are in a git tree, return that kernel version. Otherwise,
-    use a custom Makefile to retrieve the current kernel version.
-
-    Raises a 'NotALinuxTree' exception if the version could not be retrieved.
+    Check if we are inside a Linux tree.
     """
+    if os.path.isfile("arch/x86/Kconfig") or os.path.isfile("arch/i386/Kconfig"):
+        return True
+    return False
 
-    scriptsdir = find_scripts_basedir()
-
-    if not os.path.exists('Makefile'):
-        raise NotALinuxTree("No 'Makefile' found")
-
-    if os.path.isdir('.git'):
-        cmd = "git describe"
-        (output, ret) = execute(cmd)
-        git_version = output[0]
-        if (ret > 0):
-            git_version = ""
-            logging.debug("Execution of '%s' command failed, analyzing the Makefile instead",
-                          cmd)
-
-        # 'standard' Linux repository descriptions start with v
-        if git_version.startswith(("v2.6", "v3.", "v4.")):
-            return git_version
-
-    extra_vars = "-f %(basedir)s/Makefile.version UNDERTAKER_SCRIPTS=%(basedir)s" % \
-        { 'basedir' : scriptsdir }
-
-    (output, ret) = call_linux_makefile('', extra_variables=extra_vars)
-    if ret > 0:
-        raise NotALinuxTree("The call to Makefile.version failed")
-
-    version = output[-1] # use last line, if not configured we get additional warning messages
-    if not version.startswith(("2.6", "3.", "4.")):
-        raise NotALinuxTree("Only versions 2.6, 3.x and 4.x are supported, but not %s",
-                            version)
-    else:
-        return version
-
-
-def get_busybox_version():
+def is_busybox():
     """
-    Check that the current working directory is actually a Busybox tree
-
-    If we are in a git tree, return that kernel version. Otherwise,
-    use a custom Makefile to retrieve the current kernel version.
-
-    Raises a 'NotABusyboxTree' exception if the version could not be retrieved.
+    Check if we are inside a Busybox tree.
     """
+    if os.path.isfile("scripts/gen_build_files.sh"):
+        return True
+    return False
 
-    scriptsdir = find_scripts_basedir()
-
-    if not os.path.exists('Makefile'):
-        raise NotABusyboxTree("No 'Makefile' found")
-
-    if os.path.isdir('.git'):
-        cmd = "git describe"
-        (output, ret) = execute(cmd)
-        git_version = output[0]
-        if (ret > 0):
-            git_version = ""
-            logging.debug("Execution of '%s' command failed, analyzing the Makefile instead",
-                          cmd)
-
-        # 'standard' Busybox repository descriptions start with 1_
-        if git_version.startswith("1_"):
-            return git_version
-        else:
-            raise NotABusyboxTree("Git does not indicate a supported busybox version")
-
-    extra_vars = "-f %(basedir)s/Makefile.version UNDERTAKER_SCRIPTS=%(basedir)s" % \
-        { 'basedir' : scriptsdir }
-
-    (output, ret) = call_makefile_generic('', extra_variables=extra_vars)
-    if ret > 0:
-        raise NotABusyboxTree("The call to Makefile.version failed")
-
-    version = output[-1] # use last line, if not configured we get additional warning messages
-    if not version.startswith("1."):
-        raise NotABusyboxTree("Only 1.x versions are supported, but not %s",
-                              version)
-    else:
-        return version
-
-
-def get_coreboot_version():
+def is_coreboot():
     """
-    Check that the current working directory is actually a Coreboot tree.
-
-    If we are in a git tree or a tarball with build/autoconf.h, return that bios
-    version if it starts with 4., else raise a NotACorebootTree-Exception
-    or return "coreboot-UNKNOWN" if in a bare tarball.
+    Check if we are inside a Coreboot tree.
     """
-
-    if not (os.path.exists('Makefile') and os.path.exists('Makefile.inc') \
-            and os.path.exists('src/Kconfig')):
-        raise NotACorebootTree("No 'Makefile', 'Makefile.inc' or 'src/Kconfig' found")
-
-    if os.path.isdir('.git'):
-        cmd = "git describe"
-        (output, ret) = execute(cmd)
-        git_version = output[0]
-        if (ret > 0):
-            git_version = ""
-            logging.debug("Execution of '%s' command failed, analyzing the Makefile instead",
-                          cmd)
-        # 'standard' Coreboot repository descriptions start with 4.
-        if git_version.startswith("4."):
-            return git_version
-        raise NotACorebootTree("Only 4.x versions are supported, but not %s",
-                              git_version)
-
-    if os.path.exists('build/config.h'):
-        regx = re.compile(r" \* coreboot version: ([a-zA-Z_0-9_.-]+)")
-        with open('build/config.h') as conf:
-            version = None
-            for line in conf:
-                if regx.match(line):
-                    m = regx.match(line)
-                    version = m.group(1)
-                    break
-
-        # 'standard' Coreboot repository descriptions start with 4.
-        if version and version.startswith("4."):
-            return version
-        raise NotACorebootTree("Only 4.x versions are supported, but not %s",
-                              version)
-
-    # at this stage, we are "sure" to have a coreboot tree, since Makefile and
-    # Makefile.inc and src/Kconfig files exist, but no valid version is known
-    return "coreboot-UNKNOWN"
-
+    if os.access("Makefile", os.R_OK):
+        with open("Makefile", "r") as fd:
+            if fd.read().find('This file is part of the coreboot project.') != -1:
+                return True
+    return False
 
 def find_scripts_basedir():
     executable = os.path.realpath(sys.argv[0])
@@ -797,7 +665,7 @@ def files_for_selected_features_coreboot(features):
 
 
     if len(dirs) == 0 or len(files) == 0:
-        raise NotACorebootTree("Couldn't parse output of printall")
+        sys.exit("Couldn't parse output of printall")
 
     return (files, dirs)
 

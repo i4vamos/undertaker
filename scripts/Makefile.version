@@ -1,9 +1,0 @@
-# -*- mode: makefile -*-
-
-print_version:
-	@echo $(KERNELVERSION)
-
-# disable Kconfig reconfiguration
-KBUILD_EXTMOD := 1
-
-include Makefile

@@ -5,7 +5,8 @@
 # Copyright (C) 2011-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2011-2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 # Copyright (C) 2012-2014 Valentin Rothberg <valentinrothberg@googlemail.com>
-# Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2014-2015 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2015 Andreas Ruprecht <rupran@einserver.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -136,8 +137,8 @@ def main():
     arch = None
     subarch = None
 
-    try:
-        logging.info("detected Linux version %s", kbuild.get_linux_version())
+    if kbuild.is_linux():
+        logging.info("detected a Linux tree")
 
         if os.environ.has_key('ARCH'):
             arch = os.environ['ARCH']
@@ -152,26 +153,15 @@ def main():
                             arch, subarch)
         if not subarch:
             subarch = kbuild.guess_subarch_from_arch(arch)
-    except kbuild.NotALinuxTree:
-        pass
-
-    if not arch:
-        try:
-            logging.info("detected Busybox version %s", kbuild.get_busybox_version())
-            arch = 'busybox'
-        except kbuild.NotABusyboxTree:
-            pass
-
-    if not arch:
-        try:
-            logging.info("detected Coreboot version %s", kbuild.get_coreboot_version())
-            arch = 'coreboot'
-            if os.environ.has_key('SUBARCH'):
-                subarch = os.environ['SUBARCH']
-        except kbuild.NotACorebootTree:
-            pass
-
-    if not arch:
+    elif kbuild.is_busybox():
+        logging.info("detected a Busybox tree")
+        arch = 'busybox'
+    elif kbuild.is_coreboot():
+        logging.info("detected a Coreboot tree")
+        arch = 'coreboot'
+        if os.environ.has_key('SUBARCH'):
+            subarch = os.environ['SUBARCH']
+    else:
         sys.exit("No supported software project found")
 
     if opts.inference:
