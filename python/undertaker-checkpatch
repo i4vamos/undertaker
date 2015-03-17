@@ -214,7 +214,7 @@ def main():
 
 def apply_patch(patchfile, flags=""):
     """Apply @patchfile and return True if it could is applied successfully."""
-    (_, err) = tools.execute("git apply %s %s" % (patchfile, flags))
+    (_, err) = tools.execute("git apply --index %s %s" % (patchfile, flags))
     return err == 0
 
 
