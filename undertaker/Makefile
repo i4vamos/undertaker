@@ -113,7 +113,7 @@ zconf.tab.o: ../scripts/kconfig/zconf.tab.o
 	ln -sf $< $@
 
 ../scripts/kconfig/zconf.tab.o:
-	$(MAKE) -C .. scripts/kconfig/conf
+	$(MAKE) -C .. scripts/kconfig/dumpconf
 
 #Don't create dependencies when we're cleaning, for instance
 ifeq (0, $(words $(filter $(MAKECMDGOALS), $(NODEPS))))

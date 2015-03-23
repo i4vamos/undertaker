@@ -1,4 +1,4 @@
-OTHER_PROGS = scripts/kconfig/dumpconf tailor/undertaker-traceutil ziz/zizler
+OTHER_PROGS = tailor/undertaker-traceutil ziz/zizler
 MANPAGES = doc/undertaker.1.gz doc/undertaker-linux-tree.1.gz doc/undertaker-kconfigdump.1.gz \
 	doc/undertaker-kconfigpp.1.gz
 
