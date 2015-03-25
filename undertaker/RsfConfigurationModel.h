@@ -34,8 +34,8 @@ class RsfConfigurationModel : public ConfigurationModel {
     RsfReader *_model = nullptr;
     ItemRsfReader *_rsf = nullptr;
 
-    void doIntersectPreprocess(std::set<std::string> &start_items,
-                               StringJoiner &sj) const final override;
+    void doIntersectPreprocess(std::set<std::string> &start_items, StringJoiner &sj,
+                               std::set<std::string> *exclude_set) const final override;
 
     void addMetaValue(const std::string &key, const std::string &val) const final override;
 

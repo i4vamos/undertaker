@@ -37,23 +37,22 @@ std::string ConfigurationModel::getMissingItemsConstraints(const std::set<std::s
     return {};
 }
 
-int ConfigurationModel::doIntersect(const std::string exp,
-                                    const std::function<bool(std::string)> &c,
-                                    std::set<std::string> &missing,
-                                    std::string &intersected) const {
+std::set<std::string> ConfigurationModel::doIntersect(const std::string exp,
+                                                      const std::function<bool(std::string)> &c,
+                                                      std::set<std::string> &missing,
+                                                      std::string &intersected,
+                                                      std::set<std::string> *exclude_set) const {
     std::set<std::string> start_items = undertaker::itemsOfString(exp);
 
     StringJoiner sj;
-    doIntersectPreprocess(start_items, sj);  // preprocess depending on model type
+    doIntersectPreprocess(start_items, sj, exclude_set);  // preprocess depending on model type
 
     // add all items from start_items into 'sj' if they are in the model && in ALWAYS_{ON,OFF}
     // and if they are not in the model, check if they could be missing
-    int valid_items = 0;
     const StringList *always_on = getWhitelist();
     const StringList *always_off = getBlacklist();
     for (const std::string &str : start_items) {
         if (containsSymbol(str)) {
-            valid_items++;
             if (always_on) {
                 const auto &cit = std::find(always_on->begin(), always_on->end(), str);
                 if (cit != always_on->end())  // str is found
@@ -79,7 +78,7 @@ int ConfigurationModel::doIntersect(const std::string exp,
     intersected = sj.join("\n&& ");
     Logging::debug("Out of ", start_items.size(), " items ", missing.size(),
                    " have been put in the MissingSet");
-    return valid_items;
+    return start_items;
 }
 
 void ConfigurationModel::addFeatureToWhitelist(const std::string &feature) {

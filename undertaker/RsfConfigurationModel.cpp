@@ -88,7 +88,8 @@ void RsfConfigurationModel::extendWithInterestingItems(std::set<std::string> &wo
 }
 
 void RsfConfigurationModel::doIntersectPreprocess(std::set<std::string> &item_set,
-                                                  StringJoiner &sj) const {
+                                                  StringJoiner &sj,
+                                                  std::set<std::string> *exclude_set) const {
     extendWithInterestingItems(item_set);
     const StringList *always_on = getWhitelist();
     const StringList *always_off = getBlacklist();
@@ -98,6 +99,11 @@ void RsfConfigurationModel::doIntersectPreprocess(std::set<std::string> &item_se
     if (always_on)
         for (const std::string &str : *always_on)
             item_set.insert(str);
+
+    if (exclude_set)
+        for (const std::string &str : *exclude_set)
+            item_set.erase(str);
+
     // For all symbols in 'item_set', retrieve the formula from the model and push it into sj.
     for (const std::string &str : item_set) {
         const std::string *item = _model->getValue(str);

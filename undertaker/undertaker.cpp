@@ -445,6 +445,11 @@ void process_file_cpppc(const std::string &filename) {
             else
                 main_model = ModelContainer::lookupMainModel();
 
+            /* Add information from build system */
+            code_formula += "\n&& ";
+            code_formula += file.topBlock()->getBuildSystemCondition();
+            sj.push_back(file.topBlock()->getBuildSystemCondition());
+
             std::set<std::string> missingSet;
 
             main_model->doIntersect(code_formula, nullptr, missingSet, code_formula);
@@ -645,7 +650,7 @@ void process_file_dead_helper(const std::string &filename) {
 
 void process_file_dead(const std::string &filename) {
     boost::thread t(process_file_dead_helper, filename);
-    static unsigned int timeout = 120;  // default timeout in seconds
+    static unsigned int timeout = 150;  // default timeout in seconds
 
     ConfigurationModel *main_model = ModelContainer::lookupMainModel();
     if (main_model && "cnf" == main_model->getModelVersionIdentifier()) {

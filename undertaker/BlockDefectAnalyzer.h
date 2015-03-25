@@ -6,6 +6,7 @@
  * Copyright (C) 2009-2011 Julio Sincero <Julio.Sincero@informatik.uni-erlangen.de>
  * Copyright (C) 2010-2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
  * Copyright (C) 2013-2014 Stefan Hengelein <stefan.hengelein@fau.de>
+ * Copyright (C) 2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +53,7 @@ namespace BlockDefectAnalyzer {
 
 class BlockDefect {
 public:
-    enum class DEFECTTYPE { None, Implementation, Configuration, Referential, NoKconfig };
+    enum class DEFECTTYPE { None, Implementation, Configuration, Referential, NoKconfig, BuildSystem };
 
     virtual bool isDefect(const ConfigurationModel *, bool = false) = 0;  //!< checks for a defect
     virtual void reportMUS(ConfigurationModel *) const = 0;

@@ -38,6 +38,11 @@ std::string CoverageAnalyzer::baseFileExpression(const ConfigurationModel *model
 
     if (model) {
         std::string kconfig_formula;
+        // add file precondition
+        code_formula += "\n&& ";
+        code_formula += file->topBlock()->getBuildSystemCondition();
+        formula.push_back(file->topBlock()->getBuildSystemCondition());
+
         model->doIntersect(code_formula, file->getDefineChecker(), missingSet, kconfig_formula);
         formula.push_back(kconfig_formula);
         // only add missing items if we can assume the model is complete

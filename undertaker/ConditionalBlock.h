@@ -4,8 +4,8 @@
  * Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
  * Copyright (C) 2012 Bernhard Heinloth <bernhard@heinloth.net>
  * Copyright (C) 2012 Valentin Rothberg <valentinrothberg@gmail.com>
- * Copyright (C) 2012 Andreas Ruprecht  <rupran@einserver.de>
  * Copyright (C) 2013-2014 Stefan Hengelein <stefan.hengelein@fau.de>
+ * Copyright (C) 2012-2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -171,6 +171,8 @@ public:
 
     std::string getCodeConstraints(UniqueStringJoiner *and_clause = nullptr,
                                    std::set<ConditionalBlock *> *visited = nullptr);
+
+    std::string getBuildSystemCondition() const;
 
     void addDefine(CppDefine *define) { _defines.push_back(define); }
 

@@ -5,6 +5,7 @@
  * Copyright (C) 2009-2011 Julio Sincero <Julio.Sincero@informatik.uni-erlangen.de>
  * Copyright (C) 2010-2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
  * Copyright (C) 2013-2014 Stefan Hengelein <stefan.hengelein@fau.de>
+ * Copyright (C) 2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +43,7 @@ std::string BlockDefectAnalyzer::getBlockPrecondition(ConditionalBlock *cb,
     StringJoiner formula;
 
     /* Adding block and code constraints extraced from code sat stream */
-    const std::string code_formula = cb->getCodeConstraints();
+    std::string code_formula = cb->getCodeConstraints();
     formula.push_back(cb->getName());
     formula.push_back(code_formula);
 
@@ -50,6 +51,10 @@ std::string BlockDefectAnalyzer::getBlockPrecondition(ConditionalBlock *cb,
         /* Adding kconfig constraints and kconfig missing */
         std::set<std::string> missingSet;
         std::string kconfig_formula;
+        // add file precondition
+        code_formula += " && ";
+        code_formula += cb->getBuildSystemCondition();
+        formula.push_back(cb->getBuildSystemCondition());
         model->doIntersect(code_formula, cb->getFile()->getDefineChecker(), missingSet,
                            kconfig_formula);
         formula.push_back(kconfig_formula);
@@ -143,6 +148,8 @@ const std::string BlockDefect::defectTypeToString() const {
         return "missing";
     case DEFECTTYPE::NoKconfig:
         return "no_kconfig";
+    case DEFECTTYPE::BuildSystem:
+        return "kbuild";
     default:
         assert(false);
     }
@@ -292,8 +299,9 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
     // check for kconfig defect
     std::set<std::string> missingSet;
     std::string kconfig_formula;
-    model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
-                       kconfig_formula);
+    std::set<std::string> kconfigItems = model->doIntersect(code_formula,
+                                                            _cb->getFile()->getDefineChecker(),
+                                                            missingSet, kconfig_formula);
     formula.push_back(kconfig_formula);
 
     // increment sc with kconfig_formula and load model if necessary
@@ -307,8 +315,26 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
         // save formula for mus analysis when we are analysing the main_model
         if (is_main_model)
             _musFormula = _formula;
-        _defectType = DEFECTTYPE::Configuration;
+        if (_defectType != DEFECTTYPE::BuildSystem)
+            _defectType = DEFECTTYPE::Configuration;
         defectMap.emplace(ModelContainer::lookupArch(model), "kconfig");
+        return true;
+    }
+
+    // check for kbuild defect
+    std::string precondition = _cb->getBuildSystemCondition();
+    std::string precondition_formula;
+    model->doIntersect(precondition, nullptr, missingSet, precondition_formula, &kconfigItems);
+    if (precondition_formula.size() > 0)
+        precondition_formula += "\n&& ";
+    precondition_formula += precondition;
+    formula.push_back(precondition_formula);
+    if (!sc(precondition_formula)) {
+        _formula = formula.join("\n&&\n");
+        if (is_main_model)
+            _musFormula = _formula;
+        _defectType = DEFECTTYPE::BuildSystem;
+        defectMap.emplace(ModelContainer::lookupArch(model), "kbuild");
         return true;
     }
 
@@ -321,7 +347,7 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
     if (!sc(missing)) {
         formula.push_back(missing);
         _formula = formula.join("\n&&\n");
-        if (_defectType != DEFECTTYPE::Configuration)
+        if (_defectType != DEFECTTYPE::Configuration && _defectType != DEFECTTYPE::BuildSystem)
             _defectType = DEFECTTYPE::Referential;
         defectMap.emplace(ModelContainer::lookupArch(model), "missing");
         // save formula for mus analysis when we are analysing the main_model
@@ -370,8 +396,9 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     // check for kconfig defect
     std::set<std::string> missingSet;
     std::string kconfig_formula;
-    model->doIntersect(code_formula, _cb->getFile()->getDefineChecker(), missingSet,
-                       kconfig_formula);
+    std::set<std::string> kconfigItems = model->doIntersect(code_formula,
+                                                            _cb->getFile()->getDefineChecker(),
+                                                            missingSet, kconfig_formula);
     formula.push_back(kconfig_formula);
 
     // increment sc with kconfig_formula and load model if necessary
@@ -382,8 +409,24 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
             // Wasn't already identified as Configuration defect
             _arch = ModelContainer::lookupArch(model);
         _formula = formula.join("\n&&\n");
-        _defectType = DEFECTTYPE::Configuration;
+        if (_defectType != DEFECTTYPE::BuildSystem)
+            _defectType = DEFECTTYPE::Configuration;
         defectMap.emplace(ModelContainer::lookupArch(model), "kconfig");
+        return true;
+    }
+
+    // check for kbuild defect
+    std::string precondition = _cb->getBuildSystemCondition();
+    std::string precondition_formula;
+    model->doIntersect(precondition, nullptr, missingSet, precondition_formula, &kconfigItems);
+    if (precondition_formula.size() > 0)
+        precondition_formula += "\n&& ";
+    precondition_formula += precondition;
+    formula.push_back(precondition_formula);
+    if (!sc(precondition_formula)) {
+        _formula = formula.join("\n&&\n");
+        _defectType = DEFECTTYPE::BuildSystem;
+        defectMap.emplace(ModelContainer::lookupArch(model), "kbuild");
         return true;
     }
 
@@ -396,7 +439,7 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     if (!sc(missing)) {
         formula.push_back(missing);
         _formula = formula.join("\n&&\n");
-        if (_defectType != DEFECTTYPE::Configuration)
+        if (_defectType != DEFECTTYPE::Configuration && _defectType != DEFECTTYPE::BuildSystem)
             _defectType = DEFECTTYPE::Referential;
         defectMap.emplace(ModelContainer::lookupArch(model), "missing");
         return true;

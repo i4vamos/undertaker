@@ -4,6 +4,7 @@
  * Copyright (C) 2011 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
  * Copyright (C) 2009-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
  * Copyright (C) 2013-2014 Stefan Hengelein <stefan.hengelein@fau.de>
+ * Copyright (C) 2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -351,18 +352,6 @@ std::string ConditionalBlock::getCodeConstraints(UniqueStringJoiner *and_clause,
                     define->getConstraints(and_clause, visited);
             }
         }
-
-        if (ModelContainer::getInstance().size() > 0) {
-            StringJoiner file_joiner;
-
-            file_joiner.push_back("(");
-            file_joiner.push_back("B00");
-            file_joiner.push_back("<->");
-            // push the file inference symbol
-            file_joiner.push_back(fileVar());
-            file_joiner.push_back(")");
-            and_clause->push_back(file_joiner.join(" "));
-        }
     }
 
     if (!cached_code_expression)
@@ -370,6 +359,10 @@ std::string ConditionalBlock::getCodeConstraints(UniqueStringJoiner *and_clause,
 
     // Do the join of the and clause only if we are the toplevel clause
     return join ? and_clause->join("\n&& ") : "";
+}
+
+std::string ConditionalBlock::getBuildSystemCondition() const {
+    return "( B00 <-> " + fileVar() + " )";
 }
 
 /************************************************************************/

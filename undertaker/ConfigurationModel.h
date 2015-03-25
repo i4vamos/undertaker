@@ -34,8 +34,8 @@ struct StringJoiner;
 
 
 class ConfigurationModel {
-    virtual void doIntersectPreprocess(std::set<std::string> &start_items,
-                                       StringJoiner &sj) const = 0;
+    virtual void doIntersectPreprocess(std::set<std::string> &start_items, StringJoiner &sj,
+                                       std::set<std::string> *exclude_set) const = 0;
 
     virtual void addMetaValue(const std::string &key, const std::string &feature) const = 0;
 
@@ -68,8 +68,10 @@ public:
 /* non virtual methods                                                  */
 /************************************************************************/
 
-    int doIntersect(const std::string exp, const std::function<bool(std::string)> &c,
-                    std::set<std::string> &missing, std::string &intersected) const;
+    std::set<std::string> doIntersect(const std::string exp,
+                                      const std::function<bool(std::string)> &c,
+                                      std::set<std::string> &missing, std::string &intersected,
+                                      std::set<std::string> *exclude_set = nullptr) const;
 
     //! add feature to whitelist ('ALWAYS_ON')
     void addFeatureToWhitelist(const std::string &feature);
