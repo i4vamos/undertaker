@@ -164,7 +164,7 @@ def check_missing_defect(block, mainmodel, models, arch=""):
         return
 
     # this should not happen
-    block.defect += "\n\tcould not detect cause of defect"
+    block.report += "\n\tcould not detect cause of defect"
 
 
 def check_kconfig_defect(block, model):
