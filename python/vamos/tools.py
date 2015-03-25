@@ -5,6 +5,7 @@
 # Copyright (C) 2011 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2014 Valentin Rothberg <valentinrothberg@gmail.com>
 # Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+# Copyright (C) 2014-2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -200,3 +201,42 @@ def generate_models(arch="", cnf=False):
         else:
             model_path += ".model"
     return model_path
+
+def remove_makefile_comment(line):
+    """ Strips everything after the first # (Makefile comment) from a line."""
+    return line.split("#", 1)[0].rstrip()
+
+
+def get_multiline_from_file(infile):
+    """ Reads a line from infile. If the line ends with a line continuation,
+    it is substituted with a space and the next line is appended. Returns
+    (True, line) if reading has succeeded, (False, "") otherwise. The boolean
+    value is required to distinguish an error from empty lines in the input
+    (which might also occur by stripping the comment from a line which only
+    contains that comment)."""
+    line = ""
+    current = infile.readline()
+    if not current:
+        return (False, "")
+    current = remove_makefile_comment(current)
+    while current.endswith('\\'):
+        current = current.replace('\\', ' ')
+        line += current
+        current = infile.readline()
+        if not current:
+            break
+        current = remove_makefile_comment(current)
+    line += current
+    line.rstrip()
+    return (True, line)
+
+
+def get_config_string(item, model):
+    """ Return a string with CONFIG_ for a given item. If the item is
+    a tristate symbol in model, CONFIG_$(item)_MODULE is added as an
+    alternative."""
+    if item.startswith("CONFIG_"):
+        item = item[7:]
+    if model.get_type(item) == "tristate":
+        return "(CONFIG_" + item + " || CONFIG_" + item + "_MODULE)"
+    return "CONFIG_" + item

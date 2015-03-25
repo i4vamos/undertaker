@@ -49,6 +49,12 @@ class TreeNotConfigured(RuntimeError):
     pass
 
 
+def normalize_filename(filename):
+    """ Normalizes a path given in @filename by replacing illegal
+    characters with '_'."""
+    return re.sub('[-+:,/]', '_', filename)
+
+
 def find_autoconf():
     """ returns the path to the autoconf.h file in this linux tree
     """

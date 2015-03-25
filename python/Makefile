@@ -1,5 +1,5 @@
 PYTHONPROGRAMS = busyfix golem rsf2model undertaker-calc-coverage undertaker-kconfigpp \
-	vampyr undertaker-checkpatch
+	vampyr undertaker-checkpatch minigolem
 PYTHONFILES    = $(PYTHONPROGRAMS) $(wildcard vamos/*/*.py) $(wildcard vamos/*.py)
 SEARCHPATH     = "$(CURDIR)/../undertaker:$(CURDIR)/../ziz:$(CURDIR):$(PATH)"
 
@@ -10,7 +10,7 @@ pylint:
 
 check:
 	$(MAKE) -s clean-check
-	@for test in vamos/*/*_test.py vamos/*_test.py; do \
+	@for test in vamos/*/*_test.py vamos/*_test.py validation-minigolem/minigolem_test.py; do \
 	   echo "Running python unittest $$test"; \
 	   if ! env PATH="$(SEARCHPATH)" PYTHONPATH=$(CURDIR) python "$$test"; then \
 	       echo "FAIL: $$test"; exit 1; \

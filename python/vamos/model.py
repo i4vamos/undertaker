@@ -26,6 +26,7 @@ import logging
 import re
 import os
 
+CONFIG_FORMAT = r"CONFIG_([A-Za-z0-9_-]+)"
 
 def get_model_for_arch(arch):
     """

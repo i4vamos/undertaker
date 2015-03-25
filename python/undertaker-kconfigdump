@@ -6,6 +6,7 @@
 # Copyright (C) 2009-2012 Reinhard Tartler <tartler@informatik.uni-erlangen.de>
 # Copyright (C) 2012-2013 Manuel Zerpies <manuel.f.zerpies@ww.stud,uni-erlangen.de>
 # Copyright (C) 2012-2015 Stefan Hengelein <stefan.hengelein@informatik.stud.uni-erlangen.de>
+# Copyright (C) 2014-2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +43,6 @@
 MODELS=${MODELS:-models}
 PROCESSORS=${PROCESSORS:-$(getconf _NPROCESSORS_ONLN)}
 
-DO_INFERENCES="no"
 MODE="rsf"
 USE_BUSYFIX="no"
 CALC_FM="no"
@@ -53,11 +53,8 @@ set -o pipefail
 
 trap "kill 0" SIGINT SIGTERM
 
-while getopts ircmbfh OPT; do
+while getopts rcmbfh OPT; do
     case $OPT in
-        i)
-            DO_INFERENCES="yes"
-            ;;
         r)
             MODE="rsf"
             ;;
@@ -76,10 +73,9 @@ while getopts ircmbfh OPT; do
         h)
             echo "\`undertaker-kconfigdump' generates models for Linux, busybox and coreboot"
             echo ""
-            echo "Usage: ${0##*/} [-r] [-c] [-i] [-h] [-f] [-b]"
+            echo "Usage: ${0##*/} [-r] [-c] [-h] [-f] [-b]"
             echo " -r  generate Format 1.0 (RSF) Models (default)"
             echo " -c  generate Format 2.0 (CNF) Models"
-            echo " -i  calculate inferences (file preconditions) and append them to models"
             echo " -h  displays this message"
             echo " -f  create .fm files for all Linux arches in a Linux-tree"
             echo " -b  use busyfix to transform a Busybox tree"
@@ -153,7 +149,7 @@ mkdir -p "$MODELS"
 # Parameter {arch}
 function cleanup_empty_intermediates_for_arch() {
     # Remove stale, zero-sized intermediate files of the specified arch.
-    for suffix in "inferences" "whitelist" "blacklist" "model" "cnf"; do
+    for suffix in "whitelist" "blacklist" "model" "cnf" "preconditions" "minigolem-errors"; do
         f="$MODELS/$1.$suffix"
         if [ ! -s $f ]; then
             rm -f $f
@@ -162,26 +158,17 @@ function cleanup_empty_intermediates_for_arch() {
 }
 
 # Parameters {project/arch}
-function do_inference() {
-    if [ $DO_INFERENCES = "yes" ]; then
-        echo "Calculating makefile inferences for $1"
-        if SUBARCH=$1 ARCH=$1 golem -i 2> $MODELS/$1.golem-errors | sort -u > \
-            "$MODELS/$1.inferences"; then
-            # Filter out "AttributeError" messages. This is a known upstream
-            # python bug, cf: http://bugs.python.org/issue14308
-            sed -i "/'_DummyThread' object has no attribute '_Thread__block'/d"\
-                $MODELS/$1.golem-errors
-        else
-            echo "Failed to extract inferences for $1"
-        fi
-    else
-        touch "$MODELS/$1.inferences"
+function calculate_preconditions() {
+    echo "Calculating file preconditions from Makefiles for $1"
+    if ! minigolem -a "$1" 2>> "$MODELS/$1.minigolem-errors" | sort -u > \
+            "$MODELS/$1.preconditions";
+    then
+        echo "Failed to calculate preconditions for $1"
     fi
 }
 
 # Parameters {project/arch} {path to config} {ALWAYS_OFF_ITEMS} {ALWAYS_ON_ITEMS}
 function do_rsf_or_satyr_call() {
-
     if [ "$MODE" = "rsf" ]; then
         dumpconf $2 > "$MODELS/$1.rsf"
 
@@ -192,12 +179,8 @@ function do_rsf_or_satyr_call() {
             sed -i "/^UNDERTAKER_SET ALWAYS_ON/s|$| \"$i\"|" "$MODELS/$1.model"
         done
 
-        # Create inferences (or at least an empty file).
-        do_inference $1
-        cat "$MODELS/$1.inferences" >> "$MODELS/$1.model"
-
-        # Remove all golem warnings and errors from the model file.
-        sed -i "/^[EWI]: /d" "$MODELS/$1.model"
+        calculate_preconditions $1
+        cat "$MODELS/$1.preconditions" >> "$MODELS/$1.model"
     fi
 
     if [ "$MODE" = "cnf" ]; then
@@ -216,19 +199,18 @@ function do_rsf_or_satyr_call() {
         echo "Calculating CNF model for '$1'"
         satyr $2 -c "$MODELS/$1.cnf"
 
-        # Create inferences (or at least an empty file).
-        do_inference $1
-
+        calculate_preconditions $1
         echo "Calling rsf2cnf..."
         rsf2cnf \
-            -m "$MODELS/$1.inferences" \
+            -m "$MODELS/$1.preconditions" \
             -c "$MODELS/$1.cnf" \
             -B "$MODELS/$1.blacklist" \
             -W "$MODELS/$1.whitelist" \
             > "$MODELS/$1.cnf2"
-        mv $MODELS/$1.cnf2 $MODELS/$1.cnf
+        mv "$MODELS/$1.cnf2" "$MODELS/$1.cnf"
     fi
 
+    rm -f "$MODELS/$1.preconditions"
     cleanup_empty_intermediates_for_arch $1
 }
 
@@ -347,13 +329,30 @@ function do_convert() {
         SUBARCH=$ARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
 
         rsf2model_conversion $ARCH
+
+        calculate_preconditions $ARCH
+        cat "$MODELS/$ARCH.preconditions" >> "$MODELS/$ARCH.model"
     fi
 
     if [ $MODE = "cnf" ]; then
         echo "Calculating CNF model for $ARCH"
         # Run satyr to generate CNF models.
         SUBARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
+
+        calculate_preconditions $ARCH
+        echo "Calling rsf2cnf for arch $ARCH..."
+        touch "$MODELS/$ARCH.whitelist" "$MODELS/$ARCH.blacklist"
+        rsf2cnf \
+            -m "$MODELS/$ARCH.preconditions" \
+            -c "$MODELS/$ARCH.cnf" \
+            -B "$MODELS/$ARCH.blacklist" \
+            -W "$MODELS/$ARCH.whitelist" \
+            > "$MODELS/$ARCH.cnf2"
+        mv "$MODELS/$ARCH.cnf2" "$MODELS/$ARCH.cnf"
     fi
+
+    cleanup_empty_intermediates_for_arch $ARCH
+    rm -f "$MODELS/$1.preconditions"
 }
 
 # Parameter {arch}
@@ -441,30 +440,6 @@ done
 
 while [ $(jobs -r | wc -l) -gt 0 ]; do
     sleep 0.5
-done
-
-for ARCH in $ARCHS; do
-    do_inference $ARCH
-
-    if [ $MODE = "rsf" ]; then
-        cat "$MODELS/$ARCH.inferences" >> "$MODELS/$ARCH.model"
-        # Remove all golem warnings and errors from the model file.
-        sed -i "/^[EWI]: /d" "$MODELS/$ARCH.model"
-    fi
-
-    if [ $MODE = "cnf" ]; then
-        echo "Calling rsf2cnf for arch $ARCH..."
-        touch "$MODELS/$ARCH.whitelist" "$MODELS/$ARCH.blacklist"
-        rsf2cnf \
-            -m "$MODELS/$ARCH.inferences" \
-            -c "$MODELS/$ARCH.cnf" \
-            -B "$MODELS/$ARCH.blacklist" \
-            -W "$MODELS/$ARCH.whitelist" \
-            > "$MODELS/$ARCH.cnf2"
-        mv $MODELS/$ARCH.cnf2 $MODELS/$ARCH.cnf
-    fi
-
-    cleanup_empty_intermediates_for_arch $ARCH
 done
 
 exit 0

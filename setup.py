@@ -20,3 +20,15 @@ setup (name='vamos',
                 'python/busyfix',
                 ],
        )
+
+setup (name='kbuildparse',
+       version=version,
+       package_dir={'kbuildparse': 'python/kbuildparse'},
+       packages=['kbuildparse',
+                 'kbuildparse.linux',
+                 'kbuildparse.coreboot',
+                 'kbuildparse.busybox',
+                 ],
+       scripts=['python/minigolem',
+                ],
+       )
