@@ -172,6 +172,17 @@ def main():
         print "----------------------- Reporting dead and undead blocks " + \
               "-----------------------"
         for srcfile in defects:
+            arch = opts.arch
+            # if we're inside arch/*/, set the correct main model
+            is_arch_file = re.match(r"^arch/(\w+)/.*", srcfile)
+            if is_arch_file:
+                file_arch = is_arch_file.group(1)
+                new_mainmodel = [model for model in models if \
+                                 model.path.endswith("%s.model" % file_arch)]
+                if len(new_mainmodel) == 1:
+                    mainmodel = new_mainmodel[0]
+                    arch = file_arch
+
             for block in defects[srcfile]:
                 # repaired defects don't require further checks
                 if 'repaired' in block.report:
@@ -180,7 +191,7 @@ def main():
 
                 if "missing" in block.defect:
                     defect_analysis.check_missing_defect(block, mainmodel,
-                                                         models, opts.arch)
+                                                         models, arch)
                 elif "kconfig" in block.defect:
                     defect_analysis.check_kconfig_defect(block, mainmodel)
                 elif "code" in block.defect:
