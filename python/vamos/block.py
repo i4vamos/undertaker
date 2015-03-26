@@ -75,7 +75,9 @@ class Block(object):
 
         (deps, _) = tools.execute("undertaker -j interesting -m %s %s"
                                   % (model.path, items))
-        items = set(tools.get_kconfig_items(deps[0]))
+        items = set()
+        for dep in deps:
+            items.update(tools.get_kconfig_items(dep))
 
         # filter Undertaker internal choice items (e.g., 'CONFIG_CHOICE_42')
         choice_regex = re.compile(r"CONFIG\_CHOICE\_\d+$")
