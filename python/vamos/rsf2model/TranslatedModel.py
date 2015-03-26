@@ -111,6 +111,10 @@ class TranslatedModel(tools.UnicodeMixin):
             return
 
         [state, cond] = dependency
+        # don't try to translate defaults with empty string as value
+        if state == '':
+            return
+
         if state == "y" and cond == "y" \
                         and not option.has_depends():
             self.always_on.add(option.symbol())

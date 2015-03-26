@@ -1,5 +1,7 @@
 /*
  * Copyright (C) 2009 Reinhard Tartler
+ * Copyright (C) 2015 Stefan Hengelein <stefan.hengelein@fau.de>
+ *
  * Released under the terms of the GNU GPL v2.0.
  */
 
@@ -118,7 +120,6 @@ void my_print_symbol(FILE *out, struct menu *menu)
 	struct symbol *sym = menu->sym;
 	struct property *prop;
 	static char buf[12];
-	tristate is_tristate = no;
 
 	if (sym_is_choice(sym)) {
 		fprintf(out, "#startchoice\n");
@@ -149,11 +150,9 @@ void my_print_symbol(FILE *out, struct menu *menu)
 		switch (sym->type) {
 		case S_BOOLEAN:
 			fputs("\tboolean\n", out);
-			is_tristate = yes;
 			break;
 		case S_TRISTATE:
 			fputs("\ttristate\n", out);
-			is_tristate = mod;
 			break;
 		case S_STRING:
 			fputs("\tstring\n", out);
@@ -170,43 +169,41 @@ void my_print_symbol(FILE *out, struct menu *menu)
 		}
 	}
 
-	if (menu->dep || is_tristate != no) {
-		char itemname[50];
-		int has_prompts = 0;
+	char itemname[50];
+	int has_prompts = 0;
 
-		if (sym->name)
-			snprintf(itemname, sizeof itemname, "%s", sym->name);
-		else {
-			snprintf(itemname, sizeof itemname, "CHOICE_%d", choice_count);
-			choicestring = buf;
-		}
-		if (menu->dep) {
-		    fprintf(out, "Depends\t%s\t\"", itemname);
-		    my_expr_fprint(menu->dep, out);
-		    fprintf(out, "\"\n");
-		}
-
-		for_all_prompts(sym, prop)
-			has_prompts++;
-
-		fprintf(out, "HasPrompts\t%s\t%d\n", itemname, has_prompts);
-
-		for_all_properties(sym, prop, P_DEFAULT) {
-			fprintf(out, "Default\t%s\t\"", itemname);
-			expr_fprint(prop->expr, out);
-			fprintf(out, "\"\t\"");
-			expr_fprint(prop->visible.expr, out);
-			fprintf(out, "\"\n");
-		}
-		for_all_properties(sym, prop, P_SELECT) {
-			fprintf(out, "ItemSelects\t%s\t\"", itemname);
-			my_expr_fprint(prop->expr, out);
-			fprintf(out, "\"\t\"");
-			my_expr_fprint(prop->visible.expr, out);
-			fprintf(out, "\"\n");
-		}
-		fprintf(out, "Definition\t%s\t\"%s\"\n", itemname, menu->file->name);
+	if (sym->name)
+		snprintf(itemname, sizeof itemname, "%s", sym->name);
+	else {
+		snprintf(itemname, sizeof itemname, "CHOICE_%d", choice_count);
+		choicestring = buf;
 	}
+	if (menu->dep) {
+		fprintf(out, "Depends\t%s\t\"", itemname);
+		my_expr_fprint(menu->dep, out);
+		fprintf(out, "\"\n");
+	}
+
+	for_all_prompts(sym, prop)
+		has_prompts++;
+
+	fprintf(out, "HasPrompts\t%s\t%d\n", itemname, has_prompts);
+
+	for_all_properties(sym, prop, P_DEFAULT) {
+		fprintf(out, "Default\t%s\t\"", itemname);
+		expr_fprint(prop->expr, out);
+		fprintf(out, "\"\t\"");
+		expr_fprint(prop->visible.expr, out);
+		fprintf(out, "\"\n");
+	}
+	for_all_properties(sym, prop, P_SELECT) {
+		fprintf(out, "ItemSelects\t%s\t\"", itemname);
+		my_expr_fprint(prop->expr, out);
+		fprintf(out, "\"\t\"");
+		my_expr_fprint(prop->visible.expr, out);
+		fprintf(out, "\"\n");
+	}
+	fprintf(out, "Definition\t%s\t\"%s\"\n", itemname, menu->file->name);
 
 	for (prop = sym->prop; prop; prop = prop->next) {
 		if (prop->menu != menu)
