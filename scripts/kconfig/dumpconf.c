@@ -205,6 +205,7 @@ void my_print_symbol(FILE *out, struct menu *menu)
 			my_expr_fprint(prop->visible.expr, out);
 			fprintf(out, "\"\n");
 		}
+		fprintf(out, "Definition\t%s\t\"%s\"\n", itemname, menu->file->name);
 	}
 
 	for (prop = sym->prop; prop; prop = prop->next) {

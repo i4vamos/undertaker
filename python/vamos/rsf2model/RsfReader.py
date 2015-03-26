@@ -30,7 +30,7 @@ class RsfReader:
     def __init__(self, fd):
         """Read rsf file and store all relations within in database"""
         keys = ["Item", "HasPrompts", "Default", "ItemSelects", "Depends",
-                "Choice", "ChoiceItem"]
+                "Choice", "ChoiceItem", "Definition"]
 
         self.database = {}
         for key in keys:
