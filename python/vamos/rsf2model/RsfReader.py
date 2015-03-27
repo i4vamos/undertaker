@@ -129,11 +129,7 @@ class RsfReader:
 
     def get_type(self, symbol):
         """Get data type of symbol. Returns 'None' if item is not found"""
-
-        for (item, kconfig_type) in self.database["Item"]:
-            if item == symbol:
-                return kconfig_type
-        return None
+        return self.collect("Item").get(symbol, [None])[0]
 
 class ItemRsfReader(dict):
 
