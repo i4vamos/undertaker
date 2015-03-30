@@ -28,13 +28,10 @@ struct choice_list {
 static struct menu *current_choice = 0;
 static int choice_count = 0;
 
-extern char *choicestring;
-
 void my_expr_print(struct expr *e, void (*fn)(void *, struct symbol *, const char *), void *data, int prevtoken)
 {
 	static char buf[20];
 	snprintf(buf, sizeof buf, "CHOICE_%d", choice_count);
-	choicestring = buf;
 	if (!e) {
 		fn(data, NULL, "y");
 		return;
@@ -47,11 +44,11 @@ void my_expr_print(struct expr *e, void (*fn)(void *, struct symbol *, const cha
 		if (e->left.sym->name)
 		fn(data, e->left.sym, e->left.sym->name);
 		else
-		fn(data, NULL, choicestring);
+		fn(data, NULL, buf);
 		break;
 	case E_NOT:
 		fn(data, NULL, "!");
-		expr_print(e->left.expr, fn, data, E_NOT);
+		my_expr_print(e->left.expr, fn, data, E_NOT);
 		break;
 	case E_EQUAL:
 		if (e->left.sym->name)
@@ -70,20 +67,20 @@ void my_expr_print(struct expr *e, void (*fn)(void *, struct symbol *, const cha
 		fn(data, e->right.sym, e->right.sym->name);
 		break;
 	case E_OR:
-		expr_print(e->left.expr, fn, data, E_OR);
+		my_expr_print(e->left.expr, fn, data, E_OR);
 		fn(data, NULL, " || ");
-		expr_print(e->right.expr, fn, data, E_OR);
+		my_expr_print(e->right.expr, fn, data, E_OR);
 		break;
 	case E_AND:
-		expr_print(e->left.expr, fn, data, E_AND);
+		my_expr_print(e->left.expr, fn, data, E_AND);
 		fn(data, NULL, " && ");
-		expr_print(e->right.expr, fn, data, E_AND);
+		my_expr_print(e->right.expr, fn, data, E_AND);
 		break;
 	case E_LIST:
 		fn(data, e->right.sym, e->right.sym->name);
 		if (e->left.expr) {
 		fn(data, NULL, " ^ ");
-		expr_print(e->left.expr, fn, data, E_LIST);
+		my_expr_print(e->left.expr, fn, data, E_LIST);
 		}
 		break;
 	case E_RANGE:
@@ -176,7 +173,6 @@ void my_print_symbol(FILE *out, struct menu *menu)
 		snprintf(itemname, sizeof itemname, "%s", sym->name);
 	else {
 		snprintf(itemname, sizeof itemname, "CHOICE_%d", choice_count);
-		choicestring = buf;
 	}
 	if (menu->dep) {
 		fprintf(out, "Depends\t%s\t\"", itemname);
@@ -191,9 +187,9 @@ void my_print_symbol(FILE *out, struct menu *menu)
 
 	for_all_properties(sym, prop, P_DEFAULT) {
 		fprintf(out, "Default\t%s\t\"", itemname);
-		expr_fprint(prop->expr, out);
+		my_expr_fprint(prop->expr, out);
 		fprintf(out, "\"\t\"");
-		expr_fprint(prop->visible.expr, out);
+		my_expr_fprint(prop->visible.expr, out);
 		fprintf(out, "\"\n");
 	}
 	for_all_properties(sym, prop, P_SELECT) {

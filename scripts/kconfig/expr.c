@@ -12,8 +12,6 @@
 
 #define DEBUG_EXPR	0
 
-char *choicestring = "<choice>.....\0";
-
 struct expr *expr_alloc_symbol(struct symbol *sym)
 {
 	struct expr *e = malloc(sizeof(*e));
@@ -1071,7 +1069,7 @@ void expr_print(struct expr *e, void (*fn)(void *, struct symbol *, const char *
 		if (e->left.sym->name)
 			fn(data, e->left.sym, e->left.sym->name);
 		else
-			fn(data, NULL, choicestring);
+			fn(data, NULL, "<choice>.....\0");
 		break;
 	case E_NOT:
 		fn(data, NULL, "!");
