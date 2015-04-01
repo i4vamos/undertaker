@@ -6,114 +6,82 @@
  */
 
 #include <locale.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 
 #define LKC_DIRECT_LINK
 #include "lkc.h"
 
 
-struct choice_list {
-	struct choice_list *next;
-	struct menu *item;
-};
-
-
 static struct menu *current_choice = 0;
 static int choice_count = 0;
 
-void my_expr_print(struct expr *e, void (*fn)(void *, struct symbol *, const char *), void *data, int prevtoken)
-{
-	static char buf[20];
-	snprintf(buf, sizeof buf, "CHOICE_%d", choice_count);
+// based on expr_print() from expr.c
+void my_expr_print(struct expr *e, void *out, int prevtoken) {
 	if (!e) {
-		fn(data, NULL, "y");
+		fputs("y", out);
 		return;
 	}
 
 	if (expr_compare_type(prevtoken, e->type) > 0)
-	fn(data, NULL, "(");
+		fputs("(", out);
 	switch (e->type) {
 	case E_SYMBOL:
 		if (e->left.sym->name)
-		fn(data, e->left.sym, e->left.sym->name);
+			fputs(e->left.sym->name, out);
 		else
-		fn(data, NULL, buf);
+			fprintf(out, "CHOICE_%d", choice_count);
 		break;
 	case E_NOT:
-		fn(data, NULL, "!");
-		my_expr_print(e->left.expr, fn, data, E_NOT);
+		fputs("!", out);
+		my_expr_print(e->left.expr, out, E_NOT);
 		break;
 	case E_EQUAL:
 		if (e->left.sym->name)
-		fn(data, e->left.sym, e->left.sym->name);
+			fputs(e->left.sym->name, out);
 		else
-		fn(data, NULL, "<choice>");
-		fn(data, NULL, "=");
-		fn(data, e->right.sym, e->right.sym->name);
+			fputs("<choice>", out);
+		fputs("=", out);
+		fputs(e->right.sym->name, out);
 		break;
 	case E_UNEQUAL:
 		if (e->left.sym->name)
-		fn(data, e->left.sym, e->left.sym->name);
+			fputs(e->left.sym->name, out);
 		else
-		fn(data, NULL, "<choice>");
-		fn(data, NULL, "!=");
-		fn(data, e->right.sym, e->right.sym->name);
+			fputs("<choice>", out);
+		fputs("!=", out);
+		fputs(e->right.sym->name, out);
 		break;
 	case E_OR:
-		my_expr_print(e->left.expr, fn, data, E_OR);
-		fn(data, NULL, " || ");
-		my_expr_print(e->right.expr, fn, data, E_OR);
+		my_expr_print(e->left.expr, out, E_OR);
+		fputs(" || ", out);
+		my_expr_print(e->right.expr, out, E_OR);
 		break;
 	case E_AND:
-		my_expr_print(e->left.expr, fn, data, E_AND);
-		fn(data, NULL, " && ");
-		my_expr_print(e->right.expr, fn, data, E_AND);
+		my_expr_print(e->left.expr, out, E_AND);
+		fputs(" && ", out);
+		my_expr_print(e->right.expr, out, E_AND);
 		break;
 	case E_LIST:
-		fn(data, e->right.sym, e->right.sym->name);
+		fputs(e->right.sym->name, out);
 		if (e->left.expr) {
-		fn(data, NULL, " ^ ");
-		my_expr_print(e->left.expr, fn, data, E_LIST);
+			fputs(" ^ ", out);
+			my_expr_print(e->left.expr, out, E_LIST);
 		}
 		break;
 	case E_RANGE:
-		fn(data, NULL, "[");
-		fn(data, e->left.sym, e->left.sym->name);
-		fn(data, NULL, " ");
-		fn(data, e->right.sym, e->right.sym->name);
-		fn(data, NULL, "]");
+		fprintf(out, "[%s %s]", e->left.sym->name, e->right.sym->name);
 		break;
 	default:
-		{
-		char buf[32];
-		sprintf(buf, "<unknown type %d>", e->type);
-		fn(data, NULL, buf);
+		fprintf(out, "<unknown type %d>", e->type);
 		break;
-		}
 	}
 	if (expr_compare_type(prevtoken, e->type) > 0)
-	fn(data, NULL, ")");
+		fputs(")", out);
 }
 
-static void my_expr_print_file_helper(void *data, struct symbol *sym, const char *str)
-{
-	xfwrite(str, strlen(str), 1, data);
-}
-
-void my_expr_fprint(struct expr *e, FILE *out)
-{
-	my_expr_print(e, my_expr_print_file_helper, out, E_NONE);
-}
-
-void my_print_symbol(FILE *out, struct menu *menu)
-{
+void my_print_symbol(FILE *out, struct menu *menu) {
 	struct symbol *sym = menu->sym;
 	struct property *prop;
 	static char buf[12];
@@ -123,11 +91,11 @@ void my_print_symbol(FILE *out, struct menu *menu)
 		current_choice = menu;
 		choice_count++;
 
-		fprintf(out, "Choice\tCHOICE_%d", choice_count);
 		snprintf(buf, sizeof buf, "CHOICE_%d", choice_count);
+		fprintf(out, "Choice\t%s", buf);
 
 		// optional, i.e. all items can be deselected
-		if (current_choice->sym->flags & SYMBOL_OPTIONAL)
+		if (sym_is_optional(sym))
 			fprintf(out, "\toptional");
 		else
 			fprintf(out, "\trequired");
@@ -143,27 +111,7 @@ void my_print_symbol(FILE *out, struct menu *menu)
 		if (current_choice)
 			fprintf(out, "ChoiceItem\t%s\t%s\n", sym->name, buf);
 
-		fprintf(out, "Item\t%s", sym->name);
-		switch (sym->type) {
-		case S_BOOLEAN:
-			fputs("\tboolean\n", out);
-			break;
-		case S_TRISTATE:
-			fputs("\ttristate\n", out);
-			break;
-		case S_STRING:
-			fputs("\tstring\n", out);
-			break;
-		case S_INT:
-			fputs("\tinteger\n", out);
-			break;
-		case S_HEX:
-			fputs("\thex\n", out);
-			break;
-		default:
-			fputs("\t???\n", out);
-			break;
-		}
+		fprintf(out, "Item\t%s\t%s\n", sym->name, sym_type_name(sym->type));
 	}
 
 	char itemname[50];
@@ -176,7 +124,7 @@ void my_print_symbol(FILE *out, struct menu *menu)
 	}
 	if (menu->dep) {
 		fprintf(out, "Depends\t%s\t\"", itemname);
-		my_expr_fprint(menu->dep, out);
+		my_expr_print(menu->dep, out, E_NONE);
 		fprintf(out, "\"\n");
 	}
 
@@ -187,84 +135,49 @@ void my_print_symbol(FILE *out, struct menu *menu)
 
 	for_all_properties(sym, prop, P_DEFAULT) {
 		fprintf(out, "Default\t%s\t\"", itemname);
-		my_expr_fprint(prop->expr, out);
+		my_expr_print(prop->expr, out, E_NONE);
 		fprintf(out, "\"\t\"");
-		my_expr_fprint(prop->visible.expr, out);
+		my_expr_print(prop->visible.expr, out, E_NONE);
 		fprintf(out, "\"\n");
 	}
 	for_all_properties(sym, prop, P_SELECT) {
 		fprintf(out, "ItemSelects\t%s\t\"", itemname);
-		my_expr_fprint(prop->expr, out);
+		my_expr_print(prop->expr, out, E_NONE);
 		fprintf(out, "\"\t\"");
-		my_expr_fprint(prop->visible.expr, out);
+		my_expr_print(prop->visible.expr, out, E_NONE);
 		fprintf(out, "\"\n");
 	}
 	fprintf(out, "Definition\t%s\t\"%s\"\n", itemname, menu->file->name);
 
-	for (prop = sym->prop; prop; prop = prop->next) {
-		if (prop->menu != menu)
-			continue;
-		switch (prop->type) {
-		case P_CHOICE:
-			fputs("#choice value\n", out);
-			break;
-#if 0
-                case P_DEFAULT:
-                    fprintf(out, "#default\t%s\t%s\t\"", sym->name, prop->text);
-                    expr_fprint(prop->visible.expr, out);
-                    fprintf(out, "\"\n");
-                    break;
-                case P_SELECT:
-                    fprintf(out, "#select\t%s\t\"", sym->name);
-                    expr_fprint(prop->expr, out);
-                    fprintf(out, "\"\t\"");
-                    expr_fprint(prop->visible.expr, out);
-                    fprintf(out, "\"\n");
-                    break;
-                case P_PROMPT:
-		    fprintf(out, "#prompt\t%s\t", prop->sym->name);
-		    expr_fprint(prop->visible.expr, out);
-		    fprintf(out, "\n");
-		    break;
-#endif
-		default:
-//			fprintf(out, "  unknown prop %d!\n", prop->type);
-			break;
-		}
-	}
+	if (sym_is_choice_value(sym))
+		fputs("#choice value\n", out);
 }
 
-void myconfdump(FILE *out)
-{
-	struct property *prop;
-	struct symbol *sym;
-	struct menu *menu;
+void myconfdump(FILE *out) {
+	struct menu *menu = rootmenu.list;
 
-	menu = rootmenu.list;
 	while (menu) {
-		if ((sym = menu->sym))
+		if (menu->sym)
 			my_print_symbol(out, menu);
-		else if ((prop = menu->prompt)) {
-		}
 
 		if (menu->list)
 			menu = menu->list;
 		else if (menu->next)
 			menu = menu->next;
-		else while ((menu = menu->parent)) {
-			if (current_choice)
-				fprintf(out, "#endchoice\n");
-			current_choice = 0;
-			if (menu->next) {
-				menu = menu->next;
-				break;
+		else
+			while ((menu = menu->parent)) {
+				if (current_choice)
+					fprintf(out, "#endchoice\n");
+				current_choice = 0;
+				if (menu->next) {
+					menu = menu->next;
+					break;
+				}
 			}
-		}
 	}
 }
 
-int main(int ac, char **av)
-{
+int main(int ac, char **av) {
 	struct stat tmpstat;
 	char *arch = getenv("ARCH");
 
@@ -278,13 +191,13 @@ int main(int ac, char **av)
 	}
 
 	if (!arch) {
-		fputs("setting arch", stderr);
-		arch = strdup ("x86");
+		fputs("setting arch to default: x86\n", stderr);
+		arch = "x86";
+		setenv("ARCH", arch, 1);
 	}
 	fprintf(stderr, "using arch %s\n", arch);
-	setenv("ARCH", arch, 1);
 	setenv("KERNELVERSION", "2.6.30-vamos", 1);
 	conf_parse(av[1]);
 	myconfdump(stdout);
-	return 0;
+	return EXIT_SUCCESS;
 }
