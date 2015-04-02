@@ -48,6 +48,8 @@ class RsfReader:
             if len(row) > 1 and row[0] in keys:
                 self.database[row[0]].append(row[1:])
 
+        self.has_ignored_symbol = False
+
     @staticmethod
     def symbol(name):
         if " " in name:

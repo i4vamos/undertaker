@@ -62,6 +62,9 @@ class TranslatedModel(tools.UnicodeMixin):
                         # Parsing of a substring failed, just ignore it
                         pass
 
+        if self.rsf.has_ignored_symbol:
+            self.symbols.append("CONFIG_CADOS_IGNORED")
+
     def translate_option(self, option):
         # Generate symbols
         symbol = option.symbol()

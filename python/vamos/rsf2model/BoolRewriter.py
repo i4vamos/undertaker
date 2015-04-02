@@ -134,6 +134,7 @@ class BoolRewriter(tools.UnicodeMixin):
             if tree == "m":
                 if self.eval_to_module:
                     # m is true, if the expression can evaluate to module
+                    self.rsf.has_ignored_symbol = True
                     return tools.new_free_item()
                 else:
                     # otherwise it is false, because expr = y is needed
