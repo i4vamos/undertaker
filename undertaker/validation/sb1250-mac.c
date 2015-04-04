@@ -2720,7 +2720,7 @@ I: loaded rsf model for xtensa
 I: found 26 models
 I: Using x86 as primary model
 I: creating sb1250-mac.c.B0.code.globally.undead
-I: creating sb1250-mac.c.B1.missing.x86.dead
+I: creating sb1250-mac.c.B1.missing.locally.dead
 I: creating sb1250-mac.c.B10.code.globally.undead
 I: creating sb1250-mac.c.B12.code.globally.undead
 I: creating sb1250-mac.c.B13.code.globally.undead
@@ -2729,21 +2729,21 @@ I: creating sb1250-mac.c.B15.code.globally.undead
 I: creating sb1250-mac.c.B16.code.globally.dead
 I: creating sb1250-mac.c.B17.code.globally.dead
 I: creating sb1250-mac.c.B19.code.globally.undead
-I: creating sb1250-mac.c.B2.missing.x86.dead
+I: creating sb1250-mac.c.B2.missing.locally.dead
 I: creating sb1250-mac.c.B20.code.globally.dead
-I: creating sb1250-mac.c.B21.missing.x86.dead
-I: creating sb1250-mac.c.B22.missing.x86.undead
-I: creating sb1250-mac.c.B23.missing.x86.dead
+I: creating sb1250-mac.c.B21.missing.locally.dead
+I: creating sb1250-mac.c.B22.missing.locally.undead
+I: creating sb1250-mac.c.B23.missing.locally.dead
 I: creating sb1250-mac.c.B26.code.globally.undead
-I: creating sb1250-mac.c.B24.missing.x86.dead
-I: creating sb1250-mac.c.B25.missing.x86.undead
+I: creating sb1250-mac.c.B24.missing.locally.dead
+I: creating sb1250-mac.c.B25.missing.locally.undead
 I: creating sb1250-mac.c.B27.code.globally.dead
 I: creating sb1250-mac.c.B29.code.globally.undead
-I: creating sb1250-mac.c.B3.missing.x86.undead
+I: creating sb1250-mac.c.B3.missing.locally.undead
 I: creating sb1250-mac.c.B30.code.globally.dead
-I: creating sb1250-mac.c.B4.missing.x86.dead
-I: creating sb1250-mac.c.B5.missing.x86.dead
-I: creating sb1250-mac.c.B6.missing.x86.undead
+I: creating sb1250-mac.c.B4.missing.locally.dead
+I: creating sb1250-mac.c.B5.missing.locally.dead
+I: creating sb1250-mac.c.B6.missing.locally.undead
 I: creating sb1250-mac.c.B9.code.globally.undead
  * check-output-end
  */

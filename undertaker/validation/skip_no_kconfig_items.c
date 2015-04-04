@@ -47,7 +47,7 @@ I: loaded rsf model for x86
 I: loaded rsf model for xtensa
 I: found 26 models
 I: Using x86 as primary model
-I: creating skip_no_kconfig_items.c.B1.kconfig.x86.undead
-I: creating skip_no_kconfig_items.c.B2.kconfig.x86.dead
+I: creating skip_no_kconfig_items.c.B1.kconfig.locally.undead
+I: creating skip_no_kconfig_items.c.B2.kconfig.locally.dead
  * check-output-end
  */

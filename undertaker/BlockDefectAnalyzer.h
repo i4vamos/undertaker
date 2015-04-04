@@ -67,8 +67,6 @@ public:
     void setDefectType(DEFECTTYPE d) { _defectType = d; }
     bool isGlobal() const { return _isGlobal; }  //!< return if the defect applies to all models
     void markAsGlobal() { _isGlobal = true; }    //!< mark defect als valid on all models
-    const std::string &getArch() const { return _arch; }
-    void setArch(std::string arch) { _arch = std::move(arch); }
     bool needsCrosscheck() const;  //!< defect will be present on every model
     std::string getDefectReportFilename() const;
     bool isNoKconfigDefect(const ConfigurationModel *model) const;
@@ -76,33 +74,25 @@ public:
     /**
      * \brief Write out a report to a file.
      *
-     * Write out a report to a file. The Filename is calculated based on the
-     * defect type.  Examples:
+     * Write out a report to a file. The Filename is calculated based on the defect type.
+     * Examples:
      *
      * \verbatim
-     * filename                    |  meaning: dead because...
+     * filename                  |  meaning: dead because...
      * ---------------------------------------------------------------------------------
-     * $block.$arch.code.dead     -> only considering the CPP structure and expressions
-     * $block.$arch.kconfig.dead  -> additionally considering kconfig constraints
-     * $block.$arch.missing.dead  -> additionally setting symbols not found in kconfig
-     *                               to false (grounding these variables)
-     * $block.globally.dead       -> dead on every checked arch
+     * $block.code.dead          -> only considering the CPP structure and expressions
+     * $block.kconfig.dead       -> additionally considering kconfig constraints
+     * $block.kbuild.dead        -> additionally considering kbuild constraints
+     * $block.missing.dead       -> additionally setting symbols not found in kconfig
+     *                              to false (grounding these variables)
+     * $block.no_kconfig.dead    -> no symbol in the configuration system is mentioned
+     *                              but there is a contradiction
+     *
+     * $block.globally.dead      -> dead on every checked arch
+     * $block.locally.dead       -> dead on a few architectures but not all
      * \endverbatim
-     *
-     * By default this method will only create the report if the defect
-     * references at least one item that is controlled by the
-     * configuration system. Technically, this is implemented by
-     * checking if at least one item is inside the configuration space
-     * of the given model. This behavior can be overridden with the
-     * only_in_model parameter.
-     *
-     * This method returns 'true' if the file was successfully
-     * written. The return code 'false' indicates a file-system
-     * permission problem, or if skip_no_kconfig is set to true,
-     * indicating that only items in the configurations space will
-     * be reported.
      */
-    bool writeReportToFile(bool skip_no_kconfig) const;
+    void writeReportToFile(bool skip_no_kconfig) const;
 
 protected:
     explicit BlockDefect(ConditionalBlock *cb) : _cb(cb) {}
@@ -110,7 +100,6 @@ protected:
     bool _isGlobal = false;
 
     std::string _formula;
-    std::string _arch;
     std::string _suffix;
     ConditionalBlock *_cb = nullptr;
 

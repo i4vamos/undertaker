@@ -32,6 +32,6 @@ I: loaded rsf model for x86
 I: loaded rsf model for xtensa
 I: found 26 models
 I: Using x86 as primary model
-I: creating always_on.c.B0.kconfig.x86.dead
+I: creating always_on.c.B0.kconfig.locally.dead
  * check-output-end
  */

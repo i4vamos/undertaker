@@ -83,7 +83,7 @@ I: creating no_kconfig_items.c.B6.no_kconfig.globally.dead
 I: creating no_kconfig_items.c.B7.no_kconfig.globally.undead
 I: creating no_kconfig_items.c.B8.no_kconfig.globally.dead
 I: creating no_kconfig_items.c.B9.no_kconfig.globally.dead
-I: creating no_kconfig_items.c.B10.kconfig.x86.undead
+I: creating no_kconfig_items.c.B10.kconfig.locally.undead
 I: creating no_kconfig_items.c.B11.no_kconfig.globally.dead
  * check-output-end
  */

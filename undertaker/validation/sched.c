@@ -9435,23 +9435,23 @@ I: loaded rsf model for xtensa
 I: found 26 models
 I: loaded 0 items to ignorelist
 I: Using x86 as primary model
-I: creating sched.c.B91.missing.x86.undead
-I: creating sched.c.B92.missing.x86.dead
-I: creating sched.c.B93.missing.x86.undead
-I: creating sched.c.B132.missing.x86.dead
-I: creating sched.c.B133.missing.x86.dead
+I: creating sched.c.B91.missing.locally.undead
+I: creating sched.c.B92.missing.locally.dead
+I: creating sched.c.B93.missing.locally.undead
+I: creating sched.c.B132.missing.locally.dead
+I: creating sched.c.B133.missing.locally.dead
 I: creating sched.c.B134.kconfig.globally.dead
-I: creating sched.c.B135.missing.x86.dead
-I: creating sched.c.B147.missing.x86.dead
-I: creating sched.c.B151.missing.x86.dead
-I: creating sched.c.B156.missing.x86.dead
-I: creating sched.c.B162.missing.x86.dead
+I: creating sched.c.B135.missing.locally.dead
+I: creating sched.c.B147.missing.locally.dead
+I: creating sched.c.B151.missing.locally.dead
+I: creating sched.c.B156.missing.locally.dead
+I: creating sched.c.B162.missing.locally.dead
 I: creating sched.c.B166.kconfig.globally.dead
 I: creating sched.c.B193.kconfig.globally.undead
 I: creating sched.c.B195.kconfig.globally.undead
 I: creating sched.c.B203.missing.globally.dead
 I: creating sched.c.B204.no_kconfig.globally.dead
-I: creating sched.c.B208.kconfig.x86.dead
+I: creating sched.c.B208.kconfig.locally.dead
  * check-output-end
  */
 

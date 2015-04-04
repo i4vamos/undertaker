@@ -2125,13 +2125,13 @@ I: loaded rsf model for x86
 I: loaded rsf model for xtensa
 I: found 26 models
 I: Using x86 as primary model
-I: creating exec.c.B0.kconfig.x86.undead
-I: creating exec.c.B1.missing.x86.dead
-I: creating exec.c.B2.kconfig.x86.dead
-I: creating exec.c.B3.kconfig.x86.undead
-I: creating exec.c.B4.missing.x86.dead
-I: creating exec.c.B5.missing.x86.undead
-I: creating exec.c.B6.missing.x86.dead
-I: creating exec.c.B7.missing.x86.undead
+I: creating exec.c.B0.kconfig.locally.undead
+I: creating exec.c.B1.missing.locally.dead
+I: creating exec.c.B2.kconfig.locally.dead
+I: creating exec.c.B3.kconfig.locally.undead
+I: creating exec.c.B4.missing.locally.dead
+I: creating exec.c.B5.missing.locally.undead
+I: creating exec.c.B6.missing.locally.dead
+I: creating exec.c.B7.missing.locally.undead
  * check-output-end
  */

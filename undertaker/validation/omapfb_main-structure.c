@@ -64,19 +64,19 @@ I: loaded rsf model for x86
 I: loaded rsf model for xtensa
 I: found 26 models
 I: Using x86 as primary model
-I: creating omapfb_main-structure.c.B0.missing.x86.dead
-I: creating omapfb_main-structure.c.B1.missing.x86.undead
-I: creating omapfb_main-structure.c.B10.missing.x86.dead
-I: creating omapfb_main-structure.c.B11.missing.x86.dead
-I: creating omapfb_main-structure.c.B12.missing.x86.undead
-I: creating omapfb_main-structure.c.B13.missing.x86.dead
-I: creating omapfb_main-structure.c.B14.missing.x86.dead
-I: creating omapfb_main-structure.c.B2.missing.x86.dead
-I: creating omapfb_main-structure.c.B3.missing.x86.undead
-I: creating omapfb_main-structure.c.B4.missing.x86.dead
-I: creating omapfb_main-structure.c.B5.missing.x86.dead
-I: creating omapfb_main-structure.c.B6.missing.x86.dead
-I: creating omapfb_main-structure.c.B7.missing.x86.dead
-I: creating omapfb_main-structure.c.B8.missing.x86.dead
+I: creating omapfb_main-structure.c.B0.missing.locally.dead
+I: creating omapfb_main-structure.c.B1.missing.locally.undead
+I: creating omapfb_main-structure.c.B10.missing.locally.dead
+I: creating omapfb_main-structure.c.B11.missing.locally.dead
+I: creating omapfb_main-structure.c.B12.missing.locally.undead
+I: creating omapfb_main-structure.c.B13.missing.locally.dead
+I: creating omapfb_main-structure.c.B14.missing.locally.dead
+I: creating omapfb_main-structure.c.B2.missing.locally.dead
+I: creating omapfb_main-structure.c.B3.missing.locally.undead
+I: creating omapfb_main-structure.c.B4.missing.locally.dead
+I: creating omapfb_main-structure.c.B5.missing.locally.dead
+I: creating omapfb_main-structure.c.B6.missing.locally.dead
+I: creating omapfb_main-structure.c.B7.missing.locally.dead
+I: creating omapfb_main-structure.c.B8.missing.locally.dead
  * check-output-end
  */

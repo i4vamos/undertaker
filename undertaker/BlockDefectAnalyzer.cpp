@@ -100,19 +100,14 @@ static const BlockDefect *analyzeBlock_helper(ConditionalBlock *block,
     if (!main_model || !defect->needsCrosscheck())
         return defect;
 
-    const std::string &oldarch = defect->getArch();
-    BlockDefect::DEFECTTYPE original_classification = defect->defectType();
     for (const auto &entry : ModelContainer::getInstance()) { // pair<string, ConfigurationModel *>
         const ConfigurationModel *model = entry.second;
         // don't check the main model twice
         if (model == main_model)
             continue;
 
-        if (!defect->isDefect(model)) {
-            if (original_classification == BlockDefect::DEFECTTYPE::Configuration)
-                defect->setArch(oldarch);
+        if (!defect->isDefect(model))
             return defect;
-        }
     }
     defect->markAsGlobal();
     return defect;
@@ -177,7 +172,7 @@ std::string BlockDefect::getDefectReportFilename() const {
     if (_isGlobal || _defectType == DEFECTTYPE::NoKconfig)
         fname_joiner.push_back("globally");
     else
-        fname_joiner.push_back(_arch);
+        fname_joiner.push_back("locally");
 
     fname_joiner.push_back(_suffix);
     return fname_joiner.join(".");
@@ -210,17 +205,17 @@ bool BlockDefect::isNoKconfigDefect(const ConfigurationModel *model) const {
     return true;
 }
 
-bool BlockDefect::writeReportToFile(bool skip_no_kconfig) const {
+void BlockDefect::writeReportToFile(bool skip_no_kconfig) const {
     if ((skip_no_kconfig && _defectType == DEFECTTYPE::NoKconfig)
         || _defectType == DEFECTTYPE::None)
-        return false;
+        return;
     const std::string filename = getDefectReportFilename();
 
     std::ofstream out(filename);
 
     if (!out.good()) {
         Logging::error("failed to open ", filename, " for writing ");
-        return false;
+        return;
     }
     Logging::info("creating ", filename);
     out << "#" << _cb->getName() << ":" << _cb->filename() << ":" << _cb->lineStart() << ":"
@@ -240,7 +235,6 @@ bool BlockDefect::writeReportToFile(bool skip_no_kconfig) const {
             return retstr;
         }();
     out.close();
-    return true;
 }
 
 /************************************************************************/
@@ -276,9 +270,6 @@ void DeadBlockDefect::reportMUS(ConfigurationModel *main_model) const {
 bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_model) {
     StringJoiner formula;
 
-    if (_arch == "")
-        _arch = ModelContainer::lookupArch(model);
-
     std::string code_formula = _cb->getCodeConstraints();
     formula.push_back(_cb->getName());
     formula.push_back(code_formula);
@@ -308,9 +299,6 @@ bool DeadBlockDefect::isDefect(const ConfigurationModel *model, bool is_main_mod
     if (model->getModelVersionIdentifier() == "cnf")
         sc.loadCnfModel(model);
     if (!sc(kconfig_formula)) {
-        if (_defectType != DEFECTTYPE::Configuration)
-            // Wasn't already identified as Configuration defect
-            _arch = ModelContainer::lookupArch(model);
         _formula = formula.join("\n&&\n");
         // save formula for mus analysis when we are analysing the main_model
         if (is_main_model)
@@ -374,9 +362,6 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     if (!parent)
         return false;
 
-    if (_arch == "")
-        _arch = ModelContainer::lookupArch(model);
-
     std::string code_formula = _cb->getCodeConstraints();
     formula.push_back("( " + parent->getName() + " && ! " + _cb->getName() + " )");
     formula.push_back(code_formula);
@@ -405,9 +390,6 @@ bool UndeadBlockDefect::isDefect(const ConfigurationModel *model, bool) {
     if (model->getModelVersionIdentifier() == "cnf")
         sc.loadCnfModel(model);
     if (!sc(kconfig_formula)) {
-        if (_defectType != DEFECTTYPE::Configuration)
-            // Wasn't already identified as Configuration defect
-            _arch = ModelContainer::lookupArch(model);
         _formula = formula.join("\n&&\n");
         if (_defectType != DEFECTTYPE::BuildSystem)
             _defectType = DEFECTTYPE::Configuration;
