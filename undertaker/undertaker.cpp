@@ -722,20 +722,23 @@ void process_file_symbolpc(const std::string &symbol) {
         Logging::error("for symbolpc models must be loaded");
         std::exit(EXIT_FAILURE);
     }
-    std::set<std::string> missingItems;
-    Logging::info("Symbol Precondition for `", symbol, "'");
+    if (main_model->containsSymbol(symbol)) {
+        Logging::info("Symbol Precondition for `", symbol, "'");
+    } else {
+        Logging::error("Symbol `", symbol, "' not contained in main model"
+                       ", not possible to calculate precondition!");
+        std::exit(EXIT_FAILURE);
+    }
 
     /* Find all items that are related to the given item */
     std::string result;
-    int valid_items = main_model->doIntersect(symbol, nullptr, missingItems, result);
+    std::set<std::string> missingItems;
+    main_model->doIntersect(symbol, nullptr, missingItems, result);
     std::cout << result << std::endl;
 
-    if (missingItems.size() > 0) {
-        /* given symbol is in the model */
-        if (valid_items != 0)
-            std::cout << "\n&&" << std::endl;
-        std::cout << ConfigurationModel::getMissingItemsConstraints(missingItems);
-    }
+    if (missingItems.size() > 0)
+        std::cout << "\n&&\n" << ConfigurationModel::getMissingItemsConstraints(missingItems);
+
     std::cout << std::endl;
 }
 
