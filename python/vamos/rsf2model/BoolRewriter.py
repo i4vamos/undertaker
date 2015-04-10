@@ -177,11 +177,9 @@ class BoolRewriter(tools.UnicodeMixin):
                   [BoolParser.AND, # Or everything disabled
                    [BoolParser.NOT, left_y], [BoolParser.NOT, right_y]]]
 
-        if not left in self.rsf.options() or not right in self.rsf.options():
-            return result
-
-        # if both items are tristate, add comparison between tristate symbols
-        if self.rsf.options()[left].tristate() and self.rsf.options()[right].tristate():
+        # if both items are tristate, add comparisons between tristate symbols
+        if left in self.rsf.options() and right in self.rsf.options() \
+                and self.rsf.options()[left].tristate() and self.rsf.options()[right].tristate():
             result[-1].append([BoolParser.NOT, left_m])
             result[-1].append([BoolParser.NOT, right_m])
             result.append([BoolParser.AND, left_m, right_m]) # both m
@@ -206,12 +204,19 @@ class BoolRewriter(tools.UnicodeMixin):
             return [BoolParser.NOT, left_m]
         elif right == "n":
             return [BoolParser.OR, left_m, left_y]
-        else:
-            return [BoolParser.OR,
-                    [BoolParser.AND, left_y, [BoolParser.NOT, right_y]],
-                    [BoolParser.AND, left_m, [BoolParser.NOT, right_m]],
-                    [BoolParser.AND, [BoolParser.NOT, left_y], right_y],
-                    [BoolParser.AND, [BoolParser.NOT, left_m], right_m]]
+
+        # Symbol != Symbol
+        result = [BoolParser.OR,
+                  [BoolParser.AND, left_y, [BoolParser.NOT, right_y]],
+                  [BoolParser.AND, [BoolParser.NOT, left_y], right_y]]
+
+        # if both items are tristate, add comparisons between tristate symbols
+        if left in self.rsf.options() and right in self.rsf.options() \
+                and self.rsf.options()[left].tristate() and self.rsf.options()[right].tristate():
+            result.append([BoolParser.AND, left_m, [BoolParser.NOT, right_m]])
+            result.append([BoolParser.AND, [BoolParser.NOT, left_m], right_m])
+
+        return result
 
 
     def dump(self):

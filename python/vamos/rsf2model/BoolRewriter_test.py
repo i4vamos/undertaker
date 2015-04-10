@@ -75,8 +75,8 @@ CRAP CARASDD"""
                 + "|| (CONFIG_FOO_MODULE && CONFIG_BAR_MODULE))")
 
         rewrite("FOO!=BAR", "((CONFIG_FOO && !CONFIG_BAR) "
-                + "|| (CONFIG_FOO_MODULE && !CONFIG_BAR_MODULE) "
                 + "|| (!CONFIG_FOO && CONFIG_BAR) "
+                + "|| (CONFIG_FOO_MODULE && !CONFIG_BAR_MODULE) "
                 + "|| (!CONFIG_FOO_MODULE && CONFIG_BAR_MODULE))")
 
         rewrite("A && C", "(CONFIG_A && CONFIG_C)")
