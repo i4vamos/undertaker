@@ -68,8 +68,9 @@ std::set<std::string> ConfigurationModel::doIntersect(const std::string exp,
             // if we are given a checker for items, skip if it doesn't pass the test
             if (c && !c(str))
                 continue;
-            /* free variables are never missing */
-            if (!undertaker::starts_with(str, "__FREE__"))
+            /* free variables or constant values are never missing */
+            if (!undertaker::starts_with(str, "__FREE__")
+                    && !undertaker::starts_with(str, "CONFIG_CVALUE_"))
                 missing.insert(str);
         }
     }

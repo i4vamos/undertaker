@@ -5,6 +5,7 @@
  * Released under the terms of the GNU GPL v2.0.
  */
 
+#include <ctype.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,56 @@
 #define LKC_DIRECT_LINK
 #include "lkc.h"
 
+
+static bool isHex(const char *str) {
+	if (str[0] != '0' || !(str[1] == 'x' || str[1] == 'X'))
+		return false;
+	str += 2;
+	int i = *str++;
+	do {
+		if (!isxdigit(i))
+			return false;
+	} while ((i = *str++));
+	return true;
+}
+
+static bool isInt(const char *str) {
+	int ch = *str++;
+	if (ch == '-')
+		ch = *str++;
+	if (!isdigit(ch) || (ch == '0' && *str != 0))
+		return false;
+	while ((ch = *str++))
+		if (!isdigit(ch))
+			return false;
+	return true;
+}
+
+static void printSymbol(FILE *out, struct symbol *sym, char *choice) {
+	if (sym == &symbol_mod)
+		fputs("m", out);
+	else if (sym == &symbol_yes)
+		fputs("y", out);
+	else if (sym == &symbol_no)
+		fputs("n", out);
+	else if (sym->flags & SYMBOL_CONST || (sym->type == S_UNKNOWN
+										   && (isHex(sym->name) || isInt(sym->name))))
+		fprintf(out, "CVALUE_%s", sym->name);
+//	else if (sym->type == S_INT || sym->type == S_HEX || sym->type == S_STRING)
+//		fprintf(out, "-%s-", sym->name);
+//	else if (sym->type == S_UNKNOWN)		// mostly missing symbols
+//		fprintf(out, "'%s'", sym->name);
+	else if (sym->name)
+		fputs(sym->name, out);
+	else if (choice)
+		fputs(choice, out);
+	else if (sym->flags & SYMBOL_AUTO)
+		// if a symbol has a "depends on m" statement, kconfig will create an internal symbol
+		// with flag SYMBOL_AUTO in the dependency, with no name. Ignore it.
+		fputs("CADOS_IGNORED", out);
+	else
+		fprintf(out, "SYM@%p", sym);
+}
 
 static int choice_count = 0;
 
@@ -27,34 +78,21 @@ static void my_expr_print(struct expr *e, void *out, int prevtoken, char *choice
 		fputs("(", out);
 	switch (e->type) {
 	case E_SYMBOL:
-		if (e->left.sym->name)
-			fputs(e->left.sym->name, out);
-		else if (choice)
-			fputs(choice, out);
-		else
-			// if a symbol has a "depends on m" statement, kconfig will create an internal symbol
-			// with flag SYMBOL_AUTO in the dependency, with no name. Ignore it.
-			fputs("CADOS_IGNORED", out);
+		printSymbol(out, e->left.sym, choice);
 		break;
 	case E_NOT:
 		fputs("!", out);
 		my_expr_print(e->left.expr, out, E_NOT, choice);
 		break;
 	case E_EQUAL:
-		if (e->left.sym->name)
-			fputs(e->left.sym->name, out);
-		else
-			fputs("<choice>", out);
+		printSymbol(out, e->left.sym, choice);
 		fputs("=", out);
-		fputs(e->right.sym->name, out);
+		printSymbol(out, e->right.sym, choice);
 		break;
 	case E_UNEQUAL:
-		if (e->left.sym->name)
-			fputs(e->left.sym->name, out);
-		else
-			fputs("<choice>", out);
+		printSymbol(out, e->left.sym, choice);
 		fputs("!=", out);
-		fputs(e->right.sym->name, out);
+		printSymbol(out, e->right.sym, choice);
 		break;
 	case E_OR:
 		my_expr_print(e->left.expr, out, E_OR, choice);
@@ -67,14 +105,18 @@ static void my_expr_print(struct expr *e, void *out, int prevtoken, char *choice
 		my_expr_print(e->right.expr, out, E_AND, choice);
 		break;
 	case E_LIST:
-		fputs(e->right.sym->name, out);
+		printSymbol(out, e->right.sym, choice);
 		if (e->left.expr) {
 			fputs(" ^ ", out);
 			my_expr_print(e->left.expr, out, E_LIST, choice);
 		}
 		break;
 	case E_RANGE:
-		fprintf(out, "[%s %s]", e->left.sym->name, e->right.sym->name);
+		fputs("[", out);
+		printSymbol(out, e->left.sym, choice);
+		fputs(" ", out);
+		printSymbol(out, e->right.sym, choice);
+		fputs("]", out);
 		break;
 	default:
 		fprintf(out, "<unknown type %d>", e->type);
@@ -126,6 +168,14 @@ static void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
 		fprintf(out, "\"\n");
 	}
 	fprintf(out, "Definition\t%s\t\"%s:%d\"\n", itemname, menu->file->name, menu->lineno);
+
+//	for_all_properties(sym, prop, P_RANGE) {
+//		fprintf(out, "Range\t%s\t\"", itemname);
+//		my_expr_print(prop->expr, out, E_NONE, choice);
+//		fprintf(out, "\"\t\"");
+//		my_expr_print(prop->visible.expr, out, E_NONE, choice);
+//		fprintf(out, "\"\n");
+//	}
 
 	if (sym_is_choice_value(sym))
 		fputs("#choice value\n", out);
