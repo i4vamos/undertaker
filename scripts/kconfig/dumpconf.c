@@ -17,7 +17,7 @@
 static int choice_count = 0;
 
 // based on expr_print() from expr.c
-void my_expr_print(struct expr *e, void *out, int prevtoken, char *choice) {
+static void my_expr_print(struct expr *e, void *out, int prevtoken, char *choice) {
 	if (!e) {
 		fputs("y", out);
 		return;
@@ -84,7 +84,7 @@ void my_expr_print(struct expr *e, void *out, int prevtoken, char *choice) {
 		fputs(")", out);
 }
 
-void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
+static void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
 	struct symbol *sym = menu->sym;
 
 	if (!sym_is_choice(sym)) {
@@ -131,9 +131,9 @@ void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
 		fputs("#choice value\n", out);
 }
 
-void handleChoice(FILE *out, struct menu *menu);
+static void handleChoice(FILE *out, struct menu *menu);
 
-void handleSymbol(FILE *out, struct menu *menu, char *choice) {
+static void handleSymbol(FILE *out, struct menu *menu, char *choice) {
 	struct menu *child;
 	bool was_choice = false;
 	if (menu->sym) {
@@ -151,7 +151,7 @@ void handleSymbol(FILE *out, struct menu *menu, char *choice) {
 			handleSymbol(out, child, choice);
 }
 
-void handleChoice(FILE *out, struct menu *menu) {
+static void handleChoice(FILE *out, struct menu *menu) {
 	char buf[12];
 	struct menu *child;
 
@@ -182,7 +182,7 @@ void handleChoice(FILE *out, struct menu *menu) {
 	fprintf(out, "#endchoice\t%s\n", buf);
 }
 
-void myconfdump(FILE *out) {
+static void myconfdump(FILE *out) {
 	struct menu *child;
 	for (child = &rootmenu; child; child = child->next)
 		handleSymbol(out, child, NULL);
