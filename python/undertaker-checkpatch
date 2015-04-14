@@ -79,6 +79,9 @@ def parse_options():
                       default=False,
                       help="Generate minimally unsatisfiable subformulas (MUS) "
                            "for dead Kconfig defects")
+    parser.add_option('', '--only-new', dest='only_new', action='store_true',
+                      default=False,
+                      help="Report only new reports")
 
     (opts, args) = parser.parse_args()
 
@@ -169,8 +172,8 @@ def main():
 
     # check each defect (dead and undead block) and print its report
     if cpp_defects:
-        print "----------------------- Reporting dead and undead blocks " + \
-              "-----------------------"
+        cpp_reports = []
+
         for srcfile in defects:
             # if we're inside arch/*/, set the correct main model
             is_arch_file = re.match(r"^arch/(\w+)/.*", srcfile)
@@ -187,8 +190,8 @@ def main():
 
             for block in defects[srcfile]:
                 # repaired defects don't require further checks
-                if 'repaired' in block.report:
-                    print block.report
+                if not opts.only_new and 'repaired' in block.report:
+                    cpp_reports.append(block.report)
                     continue
 
                 if "missing" in block.defect:
@@ -198,8 +201,22 @@ def main():
                     defect_analysis.check_kconfig_defect(block, mainmodel)
                 elif "code" in block.defect:
                     defect_analysis.check_code_defect(block)
-                print block.report
-        print ""
+
+                if opts.only_new:
+                    if "New defect:" in block.report:
+                        cpp_reports.append(block.report)
+                    continue
+
+                cpp_reports.append(block.report)
+
+        if cpp_reports:
+            print "----------------------- Reporting dead and undead " + \
+                  "blocks -----------------------"
+            print "\n".join(cpp_reports)
+            print ""
+        else:
+            # avoid to check MUS reports
+            cpp_defects = False
 
     # check patch for referential integrity violations
     violations = check_referential_integrity(removals, additions, models)
@@ -212,13 +229,22 @@ def main():
 
     # if specified, print MUS reports
     if opts.mus and cpp_defects:
-        print "----------------------- Reporting paths to MUS formulas " + \
-              "-----------------------"
+        mus_reports = []
+
         for srcfile in defects:
             for block in defects[srcfile]:
                 if block.mus:
-                    print block.mus
-        print ""
+                    if opts.only_new:
+                        if "New defect:" in block.report:
+                            mus_reports.append(block.mus)
+                        continue
+                    mus_reports.append(block.mus)
+
+        if mus_reports:
+            print "----------------------- Reporting paths to MUS formulas " + \
+                  "-----------------------"
+            print "\n".join(mus_reports)
+            print ""
 
     # revert previously applied patch
     apply_patch(patchfile, "-R")
