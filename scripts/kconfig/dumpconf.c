@@ -125,7 +125,7 @@ void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
 		my_expr_print(prop->visible.expr, out, E_NONE, choice);
 		fprintf(out, "\"\n");
 	}
-	fprintf(out, "Definition\t%s\t\"%s\"\n", itemname, menu->file->name);
+	fprintf(out, "Definition\t%s\t\"%s:%d\"\n", itemname, menu->file->name, menu->lineno);
 
 	if (sym_is_choice_value(sym))
 		fputs("#choice value\n", out);
