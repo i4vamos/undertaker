@@ -23,11 +23,11 @@
 #endif
 
 #include "CnfConfigurationModel.h"
-#include "StringJoiner.h"
 #include "Logging.h"
 #include "PicosatCNF.h"
+#include "StringJoiner.h"
+#include "Tools.h"
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
@@ -78,7 +78,7 @@ std::string CnfConfigurationModel::getType(const std::string &feature_name) cons
 }
 
 bool CnfConfigurationModel::containsSymbol(const std::string &symbol) const {
-    return boost::starts_with(symbol, "FILE_") || _cnf->getAssociatedSymbol(symbol) != nullptr;
+    return undertaker::starts_with(symbol, "FILE_") || _cnf->getAssociatedSymbol(symbol) != nullptr;
 }
 
 void CnfConfigurationModel::addMetaValue(const std::string &key, const std::string &val) const {

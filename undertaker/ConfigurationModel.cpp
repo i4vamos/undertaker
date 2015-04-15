@@ -24,8 +24,6 @@
 #include "Tools.h"
 #include "Logging.h"
 
-#include <boost/algorithm/string/predicate.hpp>
-
 
 std::string ConfigurationModel::getMissingItemsConstraints(const std::set<std::string> &missing) {
     StringJoiner sj;
@@ -71,7 +69,7 @@ std::set<std::string> ConfigurationModel::doIntersect(const std::string exp,
             if (c && !c(str))
                 continue;
             /* free variables are never missing */
-            if (!boost::starts_with(str, "__FREE__"))
+            if (!undertaker::starts_with(str, "__FREE__"))
                 missing.insert(str);
         }
     }

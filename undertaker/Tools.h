@@ -28,5 +28,8 @@
 namespace undertaker {
     //! returns all (configuration) items of the given string
     std::set<std::string> itemsOfString(const std::string &);
+    //! returns true if 'val' ends with the substring 'end'
+    bool ends_with(const std::string &val, const std::string &end);
+    bool starts_with(const std::string &val, const std::string &start);
 } // namespace undertaker
 #endif

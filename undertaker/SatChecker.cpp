@@ -32,10 +32,10 @@
 #include "CNFBuilder.h"
 #include "exceptions/CNFBuilderError.h"
 #include "cpp14.h"
+#include "Tools.h"
 #include "StringJoiner.h"
 
 #include <Puma/TokenStream.h>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/regex.hpp>
 #include <pstreams/pstream.h>
 
@@ -263,8 +263,9 @@ int SatChecker::AssignmentMap::formatKconfig(std::ostream &out,
         const std::string &item = entry.first;
         const state &stat = entry.second;
 
-        if (boost::starts_with(item, "CONFIG_CHOICE_") || boost::starts_with(item, "__FREE__")
-            || item == "CONFIG_n" || item == "CONFIG_y")
+        if (undertaker::starts_with(item, "CONFIG_CHOICE_")
+            || undertaker::starts_with(item, "__FREE__") || item == "CONFIG_n"
+            || item == "CONFIG_y")
             continue;
 
         if (selection.find(item) != selection.end())
@@ -318,7 +319,7 @@ int SatChecker::AssignmentMap::formatCPP(std::ostream &out,
             continue;
 
         // ignoring symbols that can be defined
-        if (boost::algorithm::ends_with(name, "."))
+        if (undertaker::ends_with(name, "."))
             continue;
 
         // ignoring invalid cpp flags

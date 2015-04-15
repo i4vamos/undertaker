@@ -17,12 +17,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Tools.h"
 #include "BoolExpSymbolSet.h"
+#include "Tools.h"
+
+#include <algorithm>
 
 std::set<std::string> undertaker::itemsOfString(const std::string &str) {
     kconfig::BoolExp *e = kconfig::BoolExp::parseString(str);
     kconfig::BoolExpSymbolSet symset(e);
     delete e;
     return symset.getSymbolSet();
+}
+
+bool undertaker::ends_with(const std::string &val, const std::string &end) {
+    if (end.size() > val.size())
+        return false;
+    return std::equal(end.rbegin(), end.rend(), val.rbegin());
+}
+
+bool undertaker::starts_with(const std::string &val, const std::string &start) {
+    if (start.size() > val.size())
+        return false;
+    return std::equal(start.begin(), start.end(), val.begin());
 }
