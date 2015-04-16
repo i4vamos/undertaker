@@ -304,11 +304,10 @@ def load_models(model_path, arch):
     return models, mainmodel
 
 
-def search_item_tree(item):
-    """Return a list of files referencing @item."""
-    # this regex excludes substring matches and includes end of string ($)
-    regex = r"\b%s\b\|\b%s\b$" % (item, item)
-    (references, _) = tools.execute("git grep -n '%s'" % regex)
+def search_item_tree(regex):
+    """Return a list of files referencing @regex."""
+    # the -w parameter forces grep to match at word boundaries
+    (references, _) = tools.execute("git grep -wn '%s'" % regex)
     # if there is no reference we get [""]
     if references[0] == "":
         return []
