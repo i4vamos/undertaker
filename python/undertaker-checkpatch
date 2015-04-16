@@ -318,14 +318,14 @@ def search_item_tree(item):
 def get_line(grep):
     """Return line information as int from @grep. Note that @grep has the
     following format: file path:line number:line content."""
-    match = re.search(r":([0-9]+):", grep)
+    match = re.search(r"^[^:]+:(\d+):.+", grep)
     return int(match.groups()[0])
 
 
 def get_file(grep):
     """Return the file path from @grep. Note that @grep has the following
     format: file path:line number:line content."""
-    match = re.search(r"^(.*):[0-9]+:", grep)
+    match = re.search(r"^([^:]+):\d+:.+", grep)
     return match.groups()[0]
 
 
