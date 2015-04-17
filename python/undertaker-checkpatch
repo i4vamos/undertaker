@@ -331,11 +331,10 @@ def get_file(grep):
 def get_references(feature):
     """Return a list of files referencing @feature. Note that Kconfig features
     are prefixed with 'CONFIG_' and may also be suffixed with '_MODULE' in C
-    code. Hence, we need to grep 3 times to find all possible representations of
-    a Kconfig feature."""
-    references = search_item_tree(r"D\{,1\}" + feature)
-    references.extend(search_item_tree(feature[len('CONFIG_'):]))
-    references.extend(search_item_tree(r"D\{,1\}" + feature + '_MODULE'))
+    code. Hence, we have 3 optional groups around feature to represent optional
+    pre/-suffixes. """
+    feature = feature[len('CONFIG_'):]
+    references = search_item_tree(r"\(\(-D\)\?CONFIG_\)\?" + feature + r"\(_MODULE\)\?")
     # multi-level sorting: 1st key is the file, 2nd key is the line
     return sorted(set(references), key=lambda x: (get_file(x), get_line(x)))
 
