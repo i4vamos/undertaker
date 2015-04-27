@@ -304,10 +304,12 @@ def load_models(model_path, arch):
     return models, mainmodel
 
 
-def search_item_tree(regex):
-    """Return a list of files referencing @regex."""
+def search_item_tree(regex, fileregex=""):
+    """Return a list of files referencing @regex. Specify @fileregex to only
+    grep files that match this pattern."""
     # the -w parameter forces grep to match at word boundaries
-    (references, _) = tools.execute("git grep -Iwn '%s'" % regex)
+    (references, _) = tools.execute("git grep -Iwn '%s' -- '%s'"
+                                    % (regex, fileregex))
     # if there is no reference we get [""]
     if references[0] == "":
         return []
@@ -334,7 +336,8 @@ def get_references(feature):
     code. Hence, we have 3 optional groups around feature to represent optional
     pre/-suffixes. """
     feature = feature[len('CONFIG_'):]
-    references = search_item_tree(r"\(\(-D\)\?CONFIG_\)\?" + feature + r"\(_MODULE\)\?")
+    references = search_item_tree(r"\(-D\)\?CONFIG_" + feature + r"\(_MODULE\)\?")
+    references.extend(search_item_tree(feature, "*Kconfig*"))
     # multi-level sorting: 1st key is the file, 2nd key is the line
     return sorted(set(references), key=lambda x: (get_file(x), get_line(x)))
 
