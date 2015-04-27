@@ -307,7 +307,7 @@ def load_models(model_path, arch):
 def search_item_tree(regex):
     """Return a list of files referencing @regex."""
     # the -w parameter forces grep to match at word boundaries
-    (references, _) = tools.execute("git grep -wn '%s'" % regex)
+    (references, _) = tools.execute("git grep -Iwn '%s'" % regex)
     # if there is no reference we get [""]
     if references[0] == "":
         return []
