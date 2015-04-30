@@ -141,12 +141,14 @@ bool SatChecker::checkMUS() {
     return true;
 }
 
-void SatChecker::writeMUS(std::ostream &out) const {
-    out << "ATTENTION: This formula _might_ be incomplete or even inconclusive!" << std::endl;
-    out << "Minimized Formula from:" << std::endl;
-    out << "p cnf " << _cnf->getVarCount() << " " << _cnf->getClauseCount() << std::endl;
-    out << "to" << std::endl;
-    out << "p cnf " << musData.vars        << " " << musData.lines          << std::endl;
+void SatChecker::writeMUS(std::ostream &out, bool writeStatistics) const {
+    if (writeStatistics) {
+        out << "ATTENTION: This formula _might_ be incomplete or even inconclusive!" << std::endl;
+        out << "Minimized Formula from:" << std::endl;
+        out << "p cnf " << _cnf->getVarCount() << " " << _cnf->getClauseCount() << std::endl;
+        out << "to" << std::endl;
+        out << "p cnf " << musData.vars << " " << musData.lines << std::endl;
+    }
     out << musData.minimized_formula << std::endl;
 }
 

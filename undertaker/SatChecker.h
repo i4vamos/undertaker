@@ -191,7 +191,7 @@ public:
     void loadCnfModel(const ConfigurationModel *);
 
     bool checkMUS();
-    void writeMUS(std::ostream &out) const;
+    void writeMUS(std::ostream &out, bool writeStatistics = true) const;
 
 protected:
     std::unique_ptr<kconfig::PicosatCNF> _cnf;
