@@ -79,8 +79,9 @@ class Block(object):
         for dep in deps:
             items.update(tools.get_kconfig_items(dep))
 
-        # filter Undertaker internal choice items (e.g., 'CONFIG_CHOICE_42')
-        choice_regex = re.compile(r"CONFIG\_CHOICE\_\d+$")
+        # filter Undertaker internal choice items (e.g., 'CONFIG_CHOICE_42',
+        # 'CONFIG_CHOICE_42_MODULE', 'CONFIG_CHOICE_42_META')
+        choice_regex = re.compile(r"CONFIG\_CHOICE\_\d+((?:_MODULE)|(?:_META)){,1}$")
         items = itertools.ifilterfalse(choice_regex.match, items)
         return sorted(items)
 
