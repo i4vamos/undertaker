@@ -41,7 +41,7 @@ scripts/kconfig/dumpconf: scripts/kconfig/conf FORCE
 	$(MAKE) -f Makefile.kbuild $(@F)
 
 picosat/libpicosat.a:
-	cd picosat && ./configure -static -O
+	cd picosat && CFLAGS= ./configure -static -O
 	$(MAKE) -C picosat
 
 ###################################################################################################
