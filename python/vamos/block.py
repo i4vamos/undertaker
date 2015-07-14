@@ -86,6 +86,12 @@ class Block(object):
         return sorted(items)
 
     @staticmethod
+    def sort(blocks):
+        """Sort blocks in ascending order with the block id as primary key."""
+        # the second key is needed to have 'B00' before 'B0'
+        return sorted(blocks, key=lambda x: (int(x.bid[1:]), -len(x.bid)))
+
+    @staticmethod
     def parse_blocks(path):
         """Parse C source file and return a dictionary of
         blocks {block id:  block}."""

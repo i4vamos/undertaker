@@ -128,7 +128,7 @@ def compare_blocks(blocks_a, blocks_b):
             block_b.report += "\n                 TO: %s" % block_b
             defects.append(block_b)
 
-    return sorted(defects, key=lambda x: x.bid)
+    return Block.sort(defects)
 
 
 def in_models(feature, models, arch=""):
