@@ -35,6 +35,7 @@ from vamos.model import RsfModel
 import re
 import glob
 import logging
+import tempfile
 import whatthepatch
 from optparse import OptionParser
 from collections import OrderedDict
@@ -73,12 +74,18 @@ def parse_options():
                            "more)")
     parser.add_option('-a', '--arch', dest='arch', action='store', default="",
                       help="Generate models only for this architecture")
+    parser.add_option('-c', '--commit', dest='commit', action='store',
+                      default="",
+                      help="Check this commit instead of a patch file")
     parser.add_option('-m', '--models', dest='models', action='store',
                       default="", help="Use these models for analysis")
     parser.add_option('-u', '--mus', dest='mus', action='store_true',
                       default=False,
                       help="Generate minimally unsatisfiable subformulas (MUS) "
                            "for dead Kconfig defects")
+    parser.add_option('', '--force', dest='force', action='store_true',
+                      default=False,
+                      help="Reset current git tree even when it's dirty")
     parser.add_option('', '--only-new', dest='only_new', action='store_true',
                       default=False,
                       help="Report only new reports")
@@ -88,10 +95,21 @@ def parse_options():
     tools.setup_logging(opts.verbose)
 
     if not args or not os.path.exists(args[0]):
-        sys.exit("Please specify a valid patch file.")
+        if not opts.commit:
+            sys.exit("Please specify a valid patch file or commit.")
 
     if opts.models and not os.path.exists(opts.models):
         sys.exit("The specified models do not exist.")
+
+    if opts.commit and tree_is_dirty() and not opts.force:
+        sys.exit("The current git tree is dirty (see 'git status').  "
+                 "Running this tool may\ndelete important data since it calls "
+                 "'git reset --hard' for some performance\nreasons.   Please "
+                 "run this tool in a clean git tree or pass '--force' if you\n"
+                 "want to ignore this warning and continue.")
+
+    if opts.commit:
+        return (opts, args)
 
     if not apply_patch(args[0]):
         sys.exit("The specified patch cannot be applied.")
@@ -110,11 +128,21 @@ def main():
     if not kbuild.is_linux():
         sys.exit("This tool needs to run inside a Linux tree.")
 
-    patchfile = args[0]
     model_path = opts.models.rstrip('/')
     blocks_a = {}
     blocks_b = {}
     kconfig_change = False
+    patchfile = ""
+    old_head = ""
+
+    if opts.commit:
+        old_head = git_head()
+        patchfile = tempfile.NamedTemporaryFile().name
+        tools.execute("git show %s > %s" % (opts.commit, patchfile))
+        git_reset(opts.commit + '~')
+    else:
+        patchfile = args[0]
+
     (worklist_a, worklist_b, removals, additions) = parse_patch(patchfile)
 
     for item in list(worklist_a):
@@ -141,8 +169,12 @@ def main():
     # detect defects before applying the patch
     blocks_a = defect_analysis.batch_analysis(worklist_a, model_path, "")
 
-    # apply patch and update block ranges
-    apply_patch(patchfile)
+    if opts.commit:
+        # set HEAD to opts.commit
+        git_reset(opts.commit)
+    else:
+        # apply patch and update block ranges
+        apply_patch(patchfile)
     Block.parse_patchfile(patchfile, blocks_a)
 
     # for any Kconfig change we need to generate new models
@@ -246,8 +278,37 @@ def main():
             print "\n".join(mus_reports)
             print ""
 
-    # revert previously applied patch
-    apply_patch(patchfile, "-R")
+    if opts.commit:
+        # revert to previous HEAD
+        git_reset(old_head)
+    else:
+        # revert previously applied patch
+        apply_patch(patchfile, "-R")
+
+
+def tree_is_dirty():
+    """Return True if the current working tree is dirty (i.e., if any file has
+    been added, deleted, modified, renamed or copied but not committed)."""
+    (out, err) = tools.execute("git status --porcelain")
+    if err != 0:
+        sys.exit('\n'.join(out))
+    for line in out:
+        if re.findall(r"[URMADC]{1}", line[:2]):
+            return True
+    return False
+
+
+def git_head():
+    """Return commit hash of current HEAD."""
+    (out, _) = tools.execute("git rev-parse HEAD")
+    return out[0]
+
+
+def git_reset(commit):
+    """Reset current HEAD to commit.  Exit in case of an error."""
+    (out, err) = tools.execute("git reset --hard %s" % commit)
+    if err != 0:
+        sys.exit('\n'.join(out))
 
 
 def apply_patch(patchfile, flags=""):
