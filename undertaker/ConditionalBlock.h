@@ -93,8 +93,8 @@ public:
 
     const std::function<bool(std::string)> getDefineChecker() const {
         return [this](std::string item) {
-            const std::map<std::string, CppDefine *> *defines = getDefines();
-            return defines->find(item.substr(0, item.find('.'))) == defines->end();
+            const std::map<std::string, CppDefine *> &defines = define_map;
+            return defines.find(item.substr(0, item.find('.'))) == defines.end();
         };
     }
 };
