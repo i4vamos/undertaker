@@ -30,7 +30,7 @@ import vamos.tools as tools
 import vamos.golem.kbuild as kbuild
 import vamos.defect_analysis as defect_analysis
 from vamos.block import Block
-from vamos.model import RsfModel
+from vamos.model import RsfModel, find_similar_symbols
 
 import re
 import glob
@@ -251,7 +251,8 @@ def main():
             cpp_defects = False
 
     # check patch for referential integrity violations
-    violations = check_referential_integrity(removals, additions, models)
+    violations = check_referential_integrity(removals, additions, models,
+                                             mainmodel)
     if violations:
         print "------------------ Reporting referential integrity " + \
               "violations ------------------"
@@ -412,7 +413,7 @@ def get_kconfig_definition(line):
         return None
 
 
-def check_referential_integrity(removals, additions, models):
+def check_referential_integrity(removals, additions, models, mainmodel):
     """Check removed Kconfig features and all added lines for violations of the
     referential integrity. Return a list of violation reports."""
     if not removals and not additions:
@@ -439,6 +440,9 @@ def check_referential_integrity(removals, additions, models):
         references = get_references(feature)
         for reference in references:
             violations.append("\t" + reference)
+        sims = find_similar_symbols(feature, mainmodel)
+        sims = [x[len("CONFIG_"):] for x in sims]
+        violations.append("\n\tSimilar symbols: %s" % ', '.join(sims))
 
     return violations
 

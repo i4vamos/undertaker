@@ -21,6 +21,7 @@ import os
 import tempfile
 import vamos.tools as tools
 from vamos.block import Block
+from vamos.model import find_similar_symbols
 
 
 def defect_analysis(srcfile, models, flag=""):
@@ -159,6 +160,8 @@ def check_missing_defect(block, mainmodel, models, arch=""):
         else:
             block.report += "\n\t%s is in dependencies but not defined in " \
                             "Kconfig" % item
+        sims = find_similar_symbols(item, mainmodel)
+        block.report += "\n\n\tSimilar symbols: %s" % ', '.join(sims)
 
     if missing_found:
         return

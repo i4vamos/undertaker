@@ -21,6 +21,7 @@
 
 from vamos.rsf2model.RsfReader import ItemRsfReader, RsfReader
 
+import difflib
 import logging
 import re
 import os
@@ -42,6 +43,12 @@ def parse_model(path, shallow=False):
     if path.endswith('.cnf'):
         return CnfModel(path)
     return RsfModel(path, shallow=shallow)
+
+
+def find_similar_symbols(symbol, model):
+    """Return a list of max. three Kconfig symbols in %model that are
+    string-similar to %symbol."""
+    return difflib.get_close_matches(symbol, model.keys())
 
 
 class RsfModel(dict):
