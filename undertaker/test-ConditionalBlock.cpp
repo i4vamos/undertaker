@@ -70,13 +70,13 @@ START_TEST(cond_getConstraints) {
                      "B00");
 
     ck_assert_str_eq(block_a->getConstraintsHelper().c_str(),
-                     "( B0 <-> ! A. )");
+                     "( B0 <-> (! A.) )");
 
     ck_assert_str_eq(block_b->getConstraintsHelper().c_str(),
-                     "( B1 <-> B.. )");
+                     "( B1 <-> (B..) )");
 
     ck_assert_str_eq(block_ifdef->getConstraintsHelper().c_str(),
-                     "( B2 <-> B1 && X. )");
+                     "( B2 <-> B1 && (X.) )");
 
     ck_assert_str_eq(block_elsif->getConstraintsHelper().c_str(),
                       "( B3 <-> B1 && ( ! (B2) ) )");

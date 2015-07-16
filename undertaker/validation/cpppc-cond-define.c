@@ -16,10 +16,10 @@
  * check-name: Complex Conditions
  * check-command: undertaker -j cpppc $file
  * check-output-start
-( B0 <-> X )
-&& ( B1 <-> B0 && A )
-&& ( B2 <-> B0 && B )
-&& ( B3 <-> C.. )
+( B0 <-> (X) )
+&& ( B1 <-> B0 && (A) )
+&& ( B2 <-> B0 && (B) )
+&& ( B3 <-> (C..) )
 && (B1 -> !C.)
 && (B2 -> C..)
 && (!B1 -> (C <-> C.))

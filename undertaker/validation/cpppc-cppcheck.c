@@ -20,8 +20,8 @@ int main(void) {
  * check-name: Complex Conditions
  * check-command: undertaker -j cpppc $file
  * check-output-start
-( B0 <-> FOO )
-&& ( B1 <-> B0 && BAR. )
+( B0 <-> (FOO) )
+&& ( B1 <-> B0 && (BAR.) )
 && ( B2 <-> B0 && ( ! (B1) ) )
 && (!B0 -> (BAR <-> BAR.))
 && (B0 -> BAR.)

@@ -12,8 +12,8 @@
  * check-name: Transform #define FOO 0 -> #undef FOO
  * check-command: undertaker -j cpppc $file
  * check-output-start
-( B0 <-> CONFIG_FOO. )
-&& ( B1 <-> CONFIG_BOO. )
+( B0 <-> (CONFIG_FOO.) )
+&& ( B1 <-> (CONFIG_BOO.) )
 && (B00 -> CONFIG_BOO.)
 && (!B00 -> (CONFIG_BOO <-> CONFIG_BOO.))
 && (B00 -> !CONFIG_FOO.)

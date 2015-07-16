@@ -274,7 +274,9 @@ std::string ConditionalBlock::getConstraintsHelper(UniqueStringJoiner *and_claus
     if (_parent != cpp_file->topBlock())
         innerClause.push_back(_parent->getName());
 
-    innerClause.push_back(ifdefExpression());
+    if (ifdefExpression() != "")
+        innerClause.push_back("(" + ifdefExpression() + ")");
+
     const ConditionalBlock *block = this;
 
     while(block) {

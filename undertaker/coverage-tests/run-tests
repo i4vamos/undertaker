@@ -7,6 +7,30 @@ export PATH LC_MESSAGES
 passed=0
 total=0
 
+
+function test_sb1250-mac_differences() {
+    total=$(( $total + 1 ))
+    if diff -q sb1250-mac.c.config$1; then
+        echo "FAILED: configs for sb1250-mac.c must be different"
+    else
+        passed=$(( $passed + 1 ))
+    fi
+
+    total=$(( $total + 1 ))
+    if diff -q sb1250-mac.c.source$1; then
+        echo "FAILED: sources for sb1250-mac.c must be different"
+    else
+        passed=$(( $passed + 1 ))
+    fi
+
+    total=$(( $total + 1 ))
+    if diff -q sb1250-mac.c.cppflags$1; then
+        echo "FAILED: cppflags for sb1250-mac.c must be different"
+    else
+        passed=$(( $passed + 1 ))
+    fi
+}
+
 for f in *.c; do
   if ! ./test-coverage.py -v0 $f; then
     echo "FAILED $f";
@@ -19,33 +43,23 @@ done
 
 # now test the combined mode on sb1250-mac.c
 undertaker -q -j coverage -C min -O combined sb1250-mac.c
-if test "`ls -1 sb1250-mac.c.config? | wc -l`" -eq 2; then
+if test "`ls -1 sb1250-mac.c.config? | wc -l`" -eq 3; then
     passed=$(( $passed + 1 ))
 fi
 
-if test "`ls -1 sb1250-mac.c.source? | wc -l`" -eq 2; then
+if test "`ls -1 sb1250-mac.c.source? | wc -l`" -eq 3; then
     passed=$(( $passed + 1 ))
 fi
 
-if test "`ls -1 sb1250-mac.c.cppflags? | wc -l`" -eq 2; then
+if test "`ls -1 sb1250-mac.c.cppflags? | wc -l`" -eq 3; then
     passed=$(( $passed + 1 ))
 fi
 
 total=$(( $total + 3 ))
 
-total=$(( $total + 1 ))
-if diff -q sb1250-mac.c.config?; then
-    echo "FAILED: configs for sb1250-mac.c must be different"
-else
-    passed=$(( $passed + 1 ))
-fi
-
-total=$(( $total + 1 ))
-if diff -q sb1250-mac.c.source?; then
-    echo "FAILED: sources for sb1250-mac.c must be different"
-else
-    passed=$(( $passed + 1 ))
-fi
+test_sb1250-mac_differences [01]
+test_sb1250-mac_differences [02]
+test_sb1250-mac_differences [12]
 
 # test formatCommented functionality
 total=$(( $total + 1 ))
@@ -53,13 +67,6 @@ undertaker -q -j coverage -O exec:cat coverage-cat.c > coverage-cat.c.got
 if ! diff -q coverage-cat.c.got coverage-cat.c.expected; then
     echo "FAILED: output for coverage-cat.c differs"
     diff -u coverage-cat.c.got coverage-cat.c.expected
-else
-    passed=$(( $passed + 1 ))
-fi
-
-total=$(( $total + 1 ))
-if diff -q sb1250-mac.c.cppflags?; then
-    echo "FAILED: cppflags for sb1250-mac.c must be different"
 else
     passed=$(( $passed + 1 ))
 fi
