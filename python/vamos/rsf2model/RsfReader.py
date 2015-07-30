@@ -97,7 +97,6 @@ class RsfReader:
 
         return result
 
-
     @tools.memoized
     def collect(self, key, col = 0, multival = False):
         """Collect all database keys and put them by the n'th column in a dict"""
@@ -125,14 +124,47 @@ class RsfReader:
                 deps[k] = v
         return deps
 
-    def is_bool_tristate(self, symbol):
-        """Returns true if symbol is boolean or tristate, otherwise false is returned."""
+    @tools.memoized
+    def get_defined_symbols(self):
+        """ Return all defined symbols as a list.  Note that the list may
+        include duplicates. """
+        symbols = self.database.get('Item')
+        symbols.extend(self.database.get('ChoiceItem'))
+        return [x[0] for x in symbols]
 
+    def is_defined(self, symbol):
+        """Returns True if @symbol is defined, otherwise False is returned."""
+        return symbol in self.get_defined_symbols()
+
+    def is_bool_tristate(self, symbol):
+        """Returns True if symbol is boolean or tristate, otherwise False is
+        returned."""
         return self.get_type(symbol) in ["boolean", "tristate"]
 
     def get_type(self, symbol):
-        """Get data type of symbol. Returns 'None' if item is not found"""
-        return self.collect("Item").get(symbol, [None])[0]
+        """Get data type of symbol. Returns 'None' if item is not found."""
+        return self.collect("Item", 0, True).get(symbol, [[None]])[0][0]
+
+    def get_depends(self, symbol):
+        """Get dependencies of symbol. Returns 'None' if item is not found."""
+        return self.collect("Depends").get(symbol, [None])[0]
+
+    def get_selects(self, symbol):
+        """Get selects of symbol. Returns [] if item is not found."""
+        return self.collect("ItemSelects", 0, True).get(symbol, [])
+
+    def get_prompts(self, symbol):
+        """Get prompts of symbol. Returns 'None' if item is not found."""
+        return self.collect("HasPrompts").get(symbol, [None])[0]
+
+    def get_defaults(self, symbol):
+        """Get default of symbol. Returns [] if item is not found."""
+        return self.collect("Default", 0, True).get(symbol, [])
+
+    def get_definition(self, symbol):
+        """Get definition of symbol. Returns 'None' if item is not found."""
+        return self.collect("Definition").get(symbol, [None])[0]
+
 
 class ItemRsfReader(dict):
 
