@@ -77,29 +77,34 @@ class RsfModel(dict):
                 logging.warning("no rsf file for model %s was found", path)
 
     def parse(self, fd):
-        for line in fd.readlines():
+        counter = 0
+        lines = fd.readlines()
+        # read the meta data
+        for line in lines:
             line = line.strip()
-            if line.startswith("UNDERTAKER_SET ALWAYS_ON"):
-                line = line.split(" ")[2:]
-                always_on_items = [l.strip(" \t\"") for l in line]
-                for item in always_on_items:
-                    self[item] = None
-                    self.always_on_items.add(item)
-            elif line.startswith("UNDERTAKER_SET ALWAYS_OFF"):
-                line = line.split(" ")[2:]
-                always_off_items = [l.strip(" \t\"") for l in line]
-                for item in always_off_items:
-                    self[item] = None
-                    self.always_off_items.add(item)
-            elif line.startswith("I:") or line.startswith("UNDERTAKER_SET"):
+            if line.startswith("UNDERTAKER_SET"):
+                line = line.split(" ")[1:]
+                if line[0] == "ALWAYS_ON":
+                    always_on_items = [l.strip(" \t\"") for l in line[1:]]
+                    self.always_on_items.update(always_on_items)
+                elif line[0] == "ALWAYS_OFF":
+                    always_off_items = [l.strip(" \t\"") for l in line[1:]]
+                    self.always_off_items.update(always_off_items)
+            elif line.startswith("I:"):
                 pass
             else:
-                line = line.split(" ", 1)
-                if len(line) == 1:
-                    self[line[0]] = None
-                elif len(line) == 2:
-                    self[line[0]] = line[1].strip(" \"\t\n")
+                break
 
+            counter += 1
+
+        # read the actual "symbol -> condition" pairs unconditionally
+        while counter < len(lines):
+            line = lines[counter].strip().split(" ", 1)
+            counter += 1
+            if len(line) == 1:
+                self[line[0]] = None
+            else:
+                self[line[0]] = line[1].strip(" \"\t\n")
 
     def mentioned_items(self, key):
         """
