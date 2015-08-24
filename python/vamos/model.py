@@ -64,6 +64,7 @@ class RsfModel(dict):
 
         if not rsf and path.endswith(".model"):
             rsf = path[:-len(".model")] + ".rsf"
+            self.arch = os.path.basename(path)[:-len(".model")]
 
         if readrsf and rsf:
             try:

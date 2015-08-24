@@ -1,6 +1,8 @@
-# Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
 
 """Utilities to detect and analyze defects in a given source file."""
+
+# Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
+# Copyright (C) 2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +22,11 @@ import re
 import os
 import tempfile
 import vamos.tools as tools
+import vamos.golem.kbuild as kbuild
 from vamos.block import Block
 from vamos.model import find_similar_symbols
 
+from collections import defaultdict
 
 def defect_analysis(srcfile, models, flag=""):
     """Defect analysis using the Undertaker tool.
@@ -85,8 +89,9 @@ def batch_analysis(srclist, models, flags=""):
 
 
 def compare_blocks(blocks_a, blocks_b):
-    """Compare both lists of blocks to detect if a defect is introduced, repaired,
-    changed or unchanged. Return a sorted list of defect affected blocks."""
+    """Compare both lists of blocks to detect if a defect is introduced,
+    repaired, changed or unchanged. Return a sorted list of defect affected
+    blocks."""
     defects = []
 
     for block_a in blocks_a:
@@ -170,6 +175,53 @@ def check_missing_defect(block, mainmodel, models, arch=""):
     block.report += "\n\tcould not detect cause of defect"
 
 
+def check_kbuild_defect(block, models):
+    """Check the kbuild defect and extend the defect report. Currently, the
+    file precondition from the build system as well as the presence condition for
+    the analysed block are printed. This could be misleading as the error could
+    be in the transitive dependencies of the file precondition."""
+
+    reason = "contradiction"
+    if "undead" in block.defect:
+        reason = "tautology"
+
+    block.report += "\n\tFile preconditions from build system create" \
+                    " a %s" % (reason)
+
+    fp_var = "FILE_" + kbuild.normalize_filename(block.srcfile)
+    fp_dict = defaultdict(list)
+    for model in models:
+        if model.is_defined(fp_var):
+            fp_dict[model[fp_var]].append(model.arch)
+
+    if fp_dict:
+        for condition in fp_dict:
+            arch_string = "architecture"
+            if len(fp_dict[condition]) > 1:
+                arch_string += "s"
+            block.report += "\n\n\tFile precondition for %s %s: %s" % \
+                            (arch_string, str(sorted(fp_dict[condition])),
+                             condition)
+
+    # Do not check block conditions for block B00
+    if block.range[0] != 0:
+        block.report += "\n\n\tBlock has the following preconditions:"
+        for condition in block.precondition:
+            block.report += "\n\t%s" % condition
+
+    if reason == "tautology":
+        block.report += "\n\n\tNote: If the file precondition and block"      \
+                        " conditions do not directly show a tautology, the"   \
+                        " dependencies of features referenced in the file"    \
+                        " preconditions need to be checked."
+    else:
+        block.report += "\n\n\tNote: If the file precondition and block"      \
+                        " conditions are not contradictory, their respective" \
+                        " constraints need to be checked. In this case,"      \
+                        " consider running undertaker-checkpatch again with"  \
+                        " \"--mus\" to identify the symbol causing the defect."
+
+
 def check_kconfig_defect(block, model):
     """Check the kconfig defect and extend its defect report. This function only
     covers the trivial case of a kconfig defect being caused by referencing
@@ -203,11 +255,8 @@ def check_code_defect(block):
         reason = "Tautology"
     block.report += "\n\t%s in the block's precondition:" % reason
 
-    block_loc = block.srcfile + ":" + str(block.range[0]+1) + ":1"
-    (output, _) = tools.execute("undertaker -j blockpc %s" % block_loc,
-                                failok=False)
-    for out in output:
-        block.report += "\n\t%s" % out
+    for cond in block.precondition:
+        block.report += "\n\t%s" % cond
 
     cpp_items = []
 

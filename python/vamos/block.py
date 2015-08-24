@@ -1,6 +1,8 @@
-# Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
 
 """Utilities for conditional CPP blocks."""
+
+# Copyright (C) 2014-2015 Valentin Rothberg <valentinrothberg@gmail.com>
+# Copyright (C) 2015 Andreas Ruprecht <andreas.ruprecht@fau.de>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +22,7 @@ import re
 import whatthepatch
 import itertools
 import vamos.tools as tools
+import vamos.golem.kbuild as kbuild
 
 #pylint: disable=R0902
 
@@ -37,6 +40,7 @@ class Block(object):
         self.match = None
         self.ref_items = set()
         self.mus = ""  # path to the MUS report
+        self.precondition = []
 
     def update_range(self, pos, value):
         """Update the block's ranges with respect to the given position."""
@@ -110,8 +114,12 @@ class Block(object):
             if block.range[0] != 0:
                 (precond, _) = tools.execute("undertaker -j blockpc %s:%i:1" %
                                              (path, block.range[0]+1))
+                block.precondition = precond
                 for pre in precond:
                     block.ref_items.update(tools.get_kconfig_items(pre))
+            # Add the file variable to the list of referenced items in order to
+            #  make it visible to block.get_transitive_items()
+            block.ref_items.add("FILE_" + kbuild.normalize_filename(block.srcfile))
             blocks[block.bid] = block
         return blocks
 
