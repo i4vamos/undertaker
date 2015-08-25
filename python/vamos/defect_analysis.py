@@ -246,6 +246,10 @@ def check_kconfig_defect(block, model):
                 block.report += "\n\t%s is in dependencies and always off" \
                                 % item
 
+    block.report += "\n\n\tBlock has the following preconditions:"
+    for condition in block.precondition:
+        block.report += "\n\t%s" % condition
+
 
 def check_code_defect(block):
     """Check the code defect and extend its defect report."""
