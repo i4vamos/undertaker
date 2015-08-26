@@ -240,6 +240,8 @@ def check_kconfig_defect(block, model):
                 block.report += "\n\t%s is in dependencies and always on" \
                                 % item
         elif item in model.always_off_items:
+            if item == "CONFIG_COMPARE_WITH_NONEXISTENT":
+                continue
             if item in block.ref_items:
                 block.report += "\n\t%s is referenced and always off" % item
             else:
