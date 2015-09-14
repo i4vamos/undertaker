@@ -219,16 +219,8 @@ def main(argv):
 
     # Default to the project default parser if -c was not given
     if project and not args.classes:
-        # If called from repository
-        class_path = os.path.dirname(os.path.realpath(__file__)) + \
-            "/kbuildparse/" + project + "/"
-        if not os.path.isdir(class_path):
-            # Otherwise, try path if called from an installation
-            class_path = os.path.dirname(os.path.realpath(__file__)) + \
-                "/../lib/python2.7/dist-packages/kbuildparse/" + project + "/"
-
-        if os.path.isdir(class_path):
-            args.classes = class_path
+        project_module = importlib.import_module("kbuildparse" + "." + project)
+        args.classes = os.path.dirname(project_module.__file__)
 
     if args.classes:
         additional_path = os.path.abspath(args.classes)
