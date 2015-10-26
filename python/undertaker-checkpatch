@@ -91,6 +91,10 @@ def parse_options():
     parser.add_option('', '--only-new', dest='only_new', action='store_true',
                       default=False,
                       help="Report only new reports")
+    parser.add_option('', '--archive', dest='archive',
+                      action='store_true', default=False,
+                      help="Archive all defects and their analysis reports in "
+                           "'reports.zip'")
 
     (opts, args) = parser.parse_args()
 
@@ -227,6 +231,9 @@ def main():
 
     # First, detect defects with _old_ models
     blocks_a = defect_analysis.batch_analysis(worklist_a, old_model_path, "")
+    # remove defect reports
+    remove_reports(blocks_a)
+
     # Now, move to the new state yet again to analyse the new state
     if opts.commit:
         git_reset(opts.commit)
@@ -257,6 +264,7 @@ def main():
     # check each defect (dead and undead block) and print its report
     if cpp_defects:
         cpp_reports = []
+        cpp_defects = []
 
         for srcfile in defects:
             # if we're inside arch/*/, set the correct main model
@@ -290,9 +298,14 @@ def main():
                 if opts.only_new:
                     if "New defect:" in block.report:
                         cpp_reports.append(block.report)
+                        cpp_defects.append(block)
                     continue
 
                 cpp_reports.append(block.report)
+                cpp_defects.append(block)
+
+        if opts.archive and cpp_defects:
+            archive_defects(cpp_defects)
 
         if cpp_reports:
             print "----------------------- Reporting dead and undead " + \
@@ -339,8 +352,39 @@ def main():
         # revert previously applied patch
         apply_patch(patchfile, "-R")
 
-    # Clean up old models
+    # Clean up old models and defect reports
     shutil.rmtree("./models_old")
+    remove_reports(blocks_b)
+
+
+def remove_reports(srcfiles):
+    """Remove the defect reports of all blocks of all srcfiles."""
+    for sfile in srcfiles:
+        for block in srcfiles[sfile]:
+            if block.defect != "no_defect":
+                path = "%s.%s.%s" % (block.srcfile, block.bid, block.defect)
+                os.remove(path)
+                if os.path.exists("%s.analysis" % path):
+                    os.remove("%s.analysis" % path)
+
+
+def archive_defects(defects):
+    """Archive all defects and their analyses (i.e., block.report) in
+    'report.zip'."""
+    # write reports and analysis files to temporary file
+    tmp = tempfile.NamedTemporaryFile().name
+    with open(tmp, 'w') as fdtmp:
+        for block in defects:
+            path = "%s.%s.%s" % (block.srcfile, block.bid, block.defect)
+            fdtmp.write("%s\n" % path)
+            fdtmp.write("%s.analysis\n" % path)
+
+            with open('%s.analysis' % path, 'w') as fdanal:
+                fdanal.write(block.report)
+
+    # archive reports
+    tools.execute('zip -@ reports.zip < %s' % tmp)
+    os.remove(tmp)
 
 
 def tree_is_dirty():

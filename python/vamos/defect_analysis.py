@@ -41,14 +41,7 @@ def defect_analysis(srcfile, models, flag=""):
         matches = defect_pattern.findall(report)
         if matches:
             defect = matches[0].strip()
-            if not defect.endswith(".mus"):
-                # we just need to know if there is a defect, but do not need
-                # the defect report
-                os.remove(defect)
-            # no_kconfig defects cannot be correlated to problems
-            # with Kconfig itself (e.g., #ifdef DEBUG), so we ignore them
-            if "globally" in defect and not "no_kconfig" in defect:
-                reports.append(defect)
+            reports.append(defect)
     return reports
 
 

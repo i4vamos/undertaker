@@ -67,8 +67,9 @@ class Block(object):
                 + self.defect
 
     def is_defect(self):
-        """Return true if the block is a defect."""
-        return self.defect != "no_defect"
+        """Return True if the block is a defect, hence it needs to be global and
+        not a no_kconfig defect."""
+        return "globally" in self.defect and not "no_kconfig" in self.defect
 
     def get_transitive_items(self, model):
         """Return a sorted list of all referenced items and items that are in
