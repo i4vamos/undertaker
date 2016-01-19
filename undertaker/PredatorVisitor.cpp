@@ -19,7 +19,6 @@
 
 #include "PredatorVisitor.h"
 #include <Puma/PreSonIterator.h>
-#include <Puma/StrCol.h>
 #include <Puma/CUnit.h>
 
 
@@ -28,6 +27,25 @@ void PredatorVisitor::iterateNodes (Puma::PreTree *node) {
 
     for (i.first(); !i.isDone(); i.next())
         i.currentItem()->accept(*this);
+}
+
+// Build a string from an unit.
+// Copied from Puma sources because in aspectc++-1.2, this got moved around (and refactored!) and
+// the goal is to be able to compile against many versions of Puma. This function is rather simple
+// and we want exactly this behavior, so copying should be an acceptable approach.
+static char *buildString(Puma::Unit *unit) {
+    if (!unit)
+        return (char *)0;
+
+    Puma::Token *token;
+    std::ostringstream str;
+
+    // Fill the return string buffer.
+    for (token = (Puma::Token *)unit->first(); token; token = (Puma::Token *)unit->next(token))
+        str << token->text();
+
+    // Duplicate and return the string.
+    return strdup(str.str().c_str());
 }
 
 std::string PredatorVisitor::buildExpression(Puma::PreTree *node) {
@@ -39,7 +57,7 @@ std::string PredatorVisitor::buildExpression(Puma::PreTree *node) {
     if(node->startToken() == node->endToken())
         tmp << *node->startToken();
     tmp << Puma::endu;
-    char *s = Puma::StrCol::buildString(&tmp);
+    char *s = buildString(&tmp);
     std::string ret(s);
     delete[] s;
     return ret;
