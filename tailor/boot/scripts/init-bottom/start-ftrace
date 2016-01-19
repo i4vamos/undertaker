@@ -23,7 +23,7 @@ touch /run/ftrace.boot.start
 [ -d "$MOUNTPOINT" ] || mkdir "$MOUNTPOINT"
 grep -q debugfs /proc/mounts || mount -t debugfs nodev "$MOUNTPOINT"
 touch /run/ftrace.boot.mounted
-if [ "$(cat /sys/kernel/debug/tracing/current_tracer)" == "function" ]; then
+if [ "$(cat /sys/kernel/debug/tracing/current_tracer)" = "function" ]; then
     touch /run/ftrace.kernelparam
 else
     sleep 1
