@@ -13,7 +13,11 @@ CC = g++
 
 LDFLAGS =
 BOOST_LIBS = -lboost_system -lboost_regex -lboost_filesystem -lboost_thread -lboost_chrono
-LDLIBS = $(BOOST_LIBS) -lpthread
+LDLIBS = $(BOOST_LIBS) -lpthread -lsubunit
+
+# get gcc version and strip "." to make it comparable (481 < 531)
+SEDMAGIC ='s/[^)]*) \([^ ]*\).*/\1/g'
+GCCVERSION := $(shell gcc --version | grep ^gcc | sed $(SEDMAGIC))
 
 # LDCOV = -coverage
 ifdef LDCOV
@@ -68,7 +72,17 @@ TESTPROGS = test-SatChecker test-ConditionalBlock test-ConfigurationModel \
 
 DEPFILES:=$(patsubst %.o,%.d,$(PARSEROBJ) $(SATYROBJ)) undertaker.d satyr.d
 
+
+# Determine which version of parser to use.  Since Make cannot compare version
+# strings, we use 'sort -V | head -n1'
+GCCVERCMP = $(shell echo -e "5.3.1\n$(GCCVERSION)" | sort -V | head -n1)
+
+# version below 5.3.1 should use the old parser files
+ifneq "$(GCCVERCMP)" "5.3.1"
+PARSERDIR = BoolExpLP_old
+else
 PARSERDIR = BoolExpLP
+endif
 
 all: $(PROGS)
 

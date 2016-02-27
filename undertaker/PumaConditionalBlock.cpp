@@ -52,7 +52,7 @@ static char* buildString (const PreTree* node) {
     assert(node);
 
     char *result, *ptr;
-    string str;
+    std::string str;
 
     // If subtree isn't empty concatenate all tokens to a single string.
     if (node->sons ()) {
@@ -65,7 +65,7 @@ static char* buildString (const PreTree* node) {
     }
 
     // eat trailing whitespace
-    string::size_type i = str.length();
+    std::string::size_type i = str.length();
     while (str[i-1] == ' ' || str[i-1] == '\t')
         --i;
     str.erase(i);
@@ -391,7 +391,7 @@ static inline Puma::Token *next_non_whitespace_token(Puma::Unit *unit, Puma::Tok
 }
 
 static inline std::string makro_transformation(Puma::Unit *unit, Puma::Token *s) {
-    ostringstream os;
+    std::ostringstream os;
     if (!strcmp(s->text(), "IS_BUILTIN")) {
         os << "defined(" << unit->next(unit->next(s))->text() << ")";
     } else if (!strcmp(s->text(), "IS_MODULE")) {

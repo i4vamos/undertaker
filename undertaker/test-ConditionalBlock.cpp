@@ -66,20 +66,21 @@ START_TEST(cond_parse_test)
 END_TEST;
 
 START_TEST(cond_getConstraints) {
-    ck_assert_str_eq(file->topBlock()->getConstraintsHelper().c_str(),
-                     "B00");
+    std::string s;
+    s = file->topBlock()->getConstraintsHelper();
+    ck_assert_str_eq(s.c_str(), "B00");
 
-    ck_assert_str_eq(block_a->getConstraintsHelper().c_str(),
-                     "( B0 <-> (! A.) )");
+    s = block_a->getConstraintsHelper();
+    ck_assert_str_eq(s.c_str(), "( B0 <-> (! A.) )");
 
-    ck_assert_str_eq(block_b->getConstraintsHelper().c_str(),
-                     "( B1 <-> (B..) )");
+    s = block_b->getConstraintsHelper();
+    ck_assert_str_eq(s.c_str(), "( B1 <-> (B..) )");
 
-    ck_assert_str_eq(block_ifdef->getConstraintsHelper().c_str(),
-                     "( B2 <-> B1 && (X.) )");
+    s = block_ifdef->getConstraintsHelper();
+    ck_assert_str_eq(s.c_str(), "( B2 <-> B1 && (X.) )");
 
-    ck_assert_str_eq(block_elsif->getConstraintsHelper().c_str(),
-                      "( B3 <-> B1 && ( ! (B2) ) )");
+    s = block_elsif->getConstraintsHelper();
+    ck_assert_str_eq(s.c_str(), "( B3 <-> B1 && ( ! (B2) ) )");
 
 } END_TEST;
 

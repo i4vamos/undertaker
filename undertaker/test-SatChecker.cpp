@@ -6,6 +6,7 @@
  * Copyright (C) 2010-2012 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
  * Copyright (C) 2012 Ralf Hackner <rh@ralf-hackner.de>
  * Copyright (C) 2014 Stefan Hengelein <stefan.hengelein@fau.de>
+ * Copyright (C) 2016 Valentin Rothberg <valentinrothberg@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,9 +62,11 @@ START_TEST(format_config_items_simple) {
     m.emplace("CONFIG_HURZ", true);
 
     std::stringstream ss;
+    std::string s;
     int c = m.formatKconfig(ss, dummy);
     ck_assert_int_eq(3, c);
-    ck_assert_str_eq(ss.str().c_str(),
+    s = ss.str();
+    ck_assert_str_eq(s.c_str(),
                      "CONFIG_BAR=n\n"
                      "CONFIG_FOO=y\n"
                      "CONFIG_HURZ=y\n");
@@ -77,9 +80,11 @@ START_TEST(format_config_items_module) {
     m.emplace("CONFIG_FOO_MODULE", true);
 
     std::stringstream ss;
+    std::string s;
     int c = m.formatKconfig(ss, dummy);
     ck_assert_int_eq(2, c);
-    ck_assert_str_eq(ss.str().c_str(),
+    s = ss.str();
+    ck_assert_str_eq(s.c_str(),
                      "CONFIG_BAR=n\n"
                      "CONFIG_FOO=m\n");
 } END_TEST
@@ -92,9 +97,11 @@ START_TEST(format_config_items_module_not_valid_in_kconfig) {
     m.emplace("CONFIG_FOO_MODULE", true);
 
     std::stringstream ss;
+    std::string s;
     int c = m.formatKconfig(ss, dummy);
     ck_assert_int_eq(2, c);
-    ck_assert_str_eq(ss.str().c_str(),
+    s = ss.str();
+    ck_assert_str_eq(s.c_str(),
                      "CONFIG_BAR=n\n"
                      "CONFIG_FOO=m\n");
 } END_TEST
