@@ -90,15 +90,15 @@ void RsfConfigurationModel::extendWithInterestingItems(std::set<std::string> &wo
 void RsfConfigurationModel::doIntersectPreprocess(std::set<std::string> &item_set,
                                                   StringJoiner &sj,
                                                   std::set<std::string> *exclude_set) const {
-    extendWithInterestingItems(item_set);
     const StringList *always_on = getWhitelist();
     const StringList *always_off = getBlacklist();
 
-    // ALWAYS_ON and ALWAYS_OFF items and their transitive dependencies always need to appear in
-    // the slice.
+    // ALWAYS_ON items and their transitive dependencies always need to appear in the slice.
     if (always_on)
         for (const std::string &str : *always_on)
             item_set.insert(str);
+
+    extendWithInterestingItems(item_set);
 
     if (exclude_set)
         for (const std::string &str : *exclude_set)
@@ -112,9 +112,12 @@ void RsfConfigurationModel::doIntersectPreprocess(std::set<std::string> &item_se
     }
     // There is no point in adding the formulae of always_off items into sj, since we push the
     // negated always_off symbol into sj, false -> {true,false}
-    if (always_off)
+    if (always_off) {
         for (const std::string &str : *always_off)
             item_set.insert(str);
+        // If there were ALWAYS_OFF items, add their transitive dependencies as well
+        extendWithInterestingItems(item_set);
+    }
 }
 
 bool RsfConfigurationModel::isBoolean(const std::string &item) const {
