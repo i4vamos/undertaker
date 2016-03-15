@@ -7,6 +7,7 @@
  * Copyright (C) 2012 Christoph Egger <siccegge@informatik.uni-erlangen.de>
  * Copyright (C) 2012 Ralf Hackner <sirahack@informatik.uni-erlangen.de>
  * Copyright (C) 2013-2014 Stefan Hengelein <stefan.hengelein@fau.de>
+ * Copyright (C) 2016 Valentin Rothberg <valentinrothberg@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -193,6 +194,7 @@ int SatChecker::AssignmentMap::formatKconfig(std::ostream &out,
         const std::string &name = entry.first;
         const bool &valid = entry.second;
         boost::match_results<std::string::const_iterator> what;
+        std::string item_type;
 
         if (valid && boost::regex_match(name, what, module_regexp)) {
             const std::string &tmpName = what[1];
@@ -216,25 +218,29 @@ int SatChecker::AssignmentMap::formatKconfig(std::ostream &out,
 
             Logging::debug("considering ", what[0]);
 
+            // skip item if the item is missing
             if (missingSet.find(what[0]) != missingSet.end()) {
                 Logging::debug("Ignoring 'missing' item ", what[0]);
                 other_variables[what[0]] = valid ? state::yes : state::no;
                 continue;
             }
 
-            // ignore entries if already set (e.g., by the module variant).
+            if (model) {
+                item_type = model->getType("CONFIG_" + item_name);
+                // skip item if it is a value-like item
+                if (!boost::regex_match(name, module_regexp) && \
+                        (!item_type.compare("INTEGER") ||       \
+                         !item_type.compare("HEX") ||           \
+                         !item_type.compare("STRING"))) {
+                    Logging::debug("Ignoring 'non-boolean' item ", what[0]);
+                    continue;
+                }
+            }
+
+            // assign value if not already set (e.g., by the module variant)
             if (selection.find(what[0]) == selection.end()) {
                 selection[what[0]] = valid ? state::yes : state::no;
                 Logging::debug("Setting ", what[0], " to ", valid);
-            }
-
-            // skip item if it is neither a 'boolean' nor a tristate one
-            if (!boost::regex_match(name, module_regexp) && model && !model->isBoolean(item_name)
-                && !model->isTristate(item_name)) {
-                Logging::debug("Ignoring 'non-boolean' item ", what[0]);
-
-                other_variables[what[0]] = valid ? state::yes : state::no;
-                continue;
             }
 
         } else if (boost::regex_match(name, block_regexp)) {
