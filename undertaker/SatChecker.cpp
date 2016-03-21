@@ -271,6 +271,9 @@ int SatChecker::AssignmentMap::formatKconfig(std::ostream &out,
         const std::string &item = entry.first;
         const state &stat = entry.second;
 
+        if (undertaker::ends_with(item, "_MODULE"))
+            continue;
+
         if (undertaker::starts_with(item, "CONFIG_CHOICE_")
             || undertaker::starts_with(item, "__FREE__") || item == "CONFIG_n"
             || item == "CONFIG_y")
