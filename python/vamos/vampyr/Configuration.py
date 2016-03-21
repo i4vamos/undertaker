@@ -232,10 +232,9 @@ class KbuildConfiguration(Configuration):
 
             all_items, violators = self.verify(self.expanded)
             if len(violators) > 0:
-                logging.warning("%d/%d mismatched items", len(violators), len(all_items))
+                logging.warning("%d/%d items differ in expanded configuration", len(violators), len(all_items))
                 for v in violators:
-                    logging.info("violating item: %s", v)
-                raise utils.ExpansionError("Config %s failed to expand properly" % self.kconfig)
+                    logging.warning(" item: %s", v)
             else:
                 logging.info("All items are set correctly")
 
