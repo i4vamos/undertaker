@@ -369,7 +369,7 @@ def parse_options():
                       default='alldefconfig',
                       help="Select how partial configurations get expanded")
     parser.add_option('', '--stdconfig', dest='stdconfig',
-                      default='allyesconfig',
+                      default=None,
                       help="Use the given default configuration. Can be one of "
                            "'allyesconfig', 'allnoconfig', 'allmodconfig', "
                            "'alldefconfig' (defaults to 'allyesconfig')")
@@ -446,6 +446,9 @@ def main():
         options['stdconfig'] = opts.stdconfig
         if opts.configfile:
             sys.exit("Trying to set a standard config together with a config file, aborting.")
+
+    if not opts.stdconfig:
+        options['stdconfig'] = "allyesconfig"
 
     if opts.configurations:
         if os.path.exists(opts.configurations):
