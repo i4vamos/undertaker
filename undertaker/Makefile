@@ -13,7 +13,7 @@ CC = g++
 
 LDFLAGS =
 BOOST_LIBS = -lboost_system -lboost_regex -lboost_filesystem -lboost_thread -lboost_chrono
-LDLIBS = $(BOOST_LIBS) -lpthread -lsubunit
+LDLIBS = $(BOOST_LIBS) -lpthread
 
 # get gcc version and strip "." to make it comparable (481 < 531)
 SEDMAGIC ='s/[^)]*) \([^ ]*\).*/\1/g'
@@ -141,7 +141,7 @@ endif
 	 @$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM -MG $< > $@
 
 test-%: test-%.cpp libparser.a ../picosat/libpicosat.a $(PUMALIB)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -g -O0 -o $@ $^ -lcheck -lrt -lsubunit $(LDFLAGS) $(LDLIBS)
 
 clean: clean-check
 	rm -rf *.o *.a *.gcda *.gcno *.d
