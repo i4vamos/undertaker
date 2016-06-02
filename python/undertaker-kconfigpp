@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """undertaker-kconfigpp - preprocess 'source' directives in Kconfig files"""
 
