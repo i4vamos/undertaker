@@ -25,8 +25,7 @@ class Testcase(t.TestCase):
 
     def test_minigolem(self):
         os.chdir("validation-minigolem/")
-        p = subprocess.Popen(["python", "../minigolem",
-                              "--check", "."],
+        p = subprocess.Popen(["../minigolem", "--check", "."],
                             stdout=subprocess.PIPE)
         exitcode = p.wait()
         assert(exitcode == 0)
