@@ -80,15 +80,14 @@ class Block(object):
 
         (deps, _) = tools.execute("undertaker -j interesting -m %s %s"
                                   % (model.path, items))
-        items = set()
+        items_set = set()
         for dep in deps:
-            items.update(tools.get_kconfig_items(dep))
+            items_set.update(tools.get_kconfig_items(dep))
 
         # filter Undertaker internal choice items (e.g., 'CONFIG_CHOICE_42',
         # 'CONFIG_CHOICE_42_MODULE', 'CONFIG_CHOICE_42_META')
         choice_regex = re.compile(r"CONFIG\_CHOICE\_\d+((?:_MODULE)|(?:_META)){,1}$")
-        items = itertools.ifilterfalse(choice_regex.match, items)
-        return sorted(items)
+        return sorted(itertools.ifilterfalse(choice_regex.match, items_set))
 
     @staticmethod
     def sort(blocks):
@@ -144,7 +143,7 @@ class Block(object):
     def parse_patchfile(patchfile, block_dict):
         """Parse the patchfile and update corresponding block ranges."""
         # https://pypi.python.org/pypi/whatthepatch/0.0.2
-        diffs = []
+        diffs = None
         with open(patchfile) as stream:
             diffs = whatthepatch.parse_patch(stream.read())
         for diff in diffs:

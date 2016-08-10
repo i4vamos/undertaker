@@ -44,6 +44,7 @@ def tree_change(func, tree):
 class BoolParserException(RuntimeError):
     def __init__(self, value):
         RuntimeError.__init__(self, value)
+        self.value = value
 
     def __unicode__(self):
         return "ERROR: " + self.value

@@ -264,7 +264,7 @@ def main():
     # check each defect (dead and undead block) and print its report
     if cpp_defects:
         cpp_reports = []
-        cpp_defects = []
+        cpp_defects_list = []
 
         for srcfile in defects:
             # if we're inside arch/*/, set the correct main model
@@ -298,14 +298,14 @@ def main():
                 if opts.only_new:
                     if "New defect:" in block.report:
                         cpp_reports.append(block.report)
-                        cpp_defects.append(block)
+                        cpp_defects_list.append(block)
                     continue
 
                 cpp_reports.append(block.report)
-                cpp_defects.append(block)
+                cpp_defects_list.append(block)
 
-        if opts.archive and cpp_defects:
-            archive_defects(cpp_defects)
+        if opts.archive and cpp_defects_list:
+            archive_defects(cpp_defects_list)
 
         if cpp_reports:
             print "----------------------- Reporting dead and undead " + \
@@ -576,7 +576,7 @@ def check_referential_integrity(removals, additions, models, mainmodel):
 def parse_patch(patchfile):
     """Parse @patchfile and return related data."""
     #pylint: disable=R0912
-    diffs = []
+    diffs = None
     worklist_a = set()
     worklist_b = set()
     removals = {}

@@ -20,7 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import vamos.vampyr.utils as utils
 import vamos.golem.kbuild as kbuild
 import vamos.tools as tools
 import vamos.model as Model
@@ -73,7 +72,9 @@ class Configuration:
     def __copy__(self):
         raise RuntimeError("Object <%s> is not copyable" % self)
 
-    def __deepcopy__(self):
+    # deepcopy takes a memo-dict as parameter which stores which objects are already copied
+    # https://docs.python.org/3/library/copy.html?highlight=deepcopy#copy.deepcopy
+    def __deepcopy__(self, memo):
         raise RuntimeError("Object <%s> is not copyable" % self)
 
     def get_config_h(self):

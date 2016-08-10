@@ -19,7 +19,6 @@
 
 
 import os.path
-from pprint import pprint
 from tempfile import NamedTemporaryFile
 
 import unittest2 as t
@@ -75,8 +74,9 @@ int main(void) {
             self.assertEqual(LOC, results['lines_total'])
             self.assertEqual(results['lines_total'], results['lines_covered'])
 
-            if 0:
-                pprint(results)
+#            if 0:
+#                from pprint import pprint
+#                pprint(results)
 
 if __name__ == '__main__':
     t.main()

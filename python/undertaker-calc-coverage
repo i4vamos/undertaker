@@ -318,7 +318,7 @@ def vamos_coverage(filename, results, options):
             logging.error(error)
             continue
 
-        value_errors = "#error"
+        value_errors = {"#error" : "n"}
         try:
             value_errors = verify_config(config)
             if len(value_errors) > 0:

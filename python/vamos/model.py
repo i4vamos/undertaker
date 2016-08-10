@@ -54,6 +54,7 @@ def find_similar_symbols(symbol, model):
 
 class RsfModel(dict):
     def __init__(self, path, rsf=None, readrsf=True, shallow=False):
+        # pylint: disable=R0204
         dict.__init__(self)
         self.path = path
         self.always_on_items = set()
@@ -241,20 +242,12 @@ class CnfModel(dict):
         if not symbol in self:
             return None
 
-        code = self[symbol]
-        if code == 1:
-            return 'boolean'
-        if code == 2:
-            return 'tristate'
-        if code == 3:
-            return 'integer'
-        if code == 4:
-            return 'hex'
-        if code == 5:
-            return 'string'
-        if code == 6:
-            return 'other'
-        raise RuntimeError("Unknown type code code %d" % code)
+        code = {1 : 'boolean', 2 : 'tristate', 3 : 'integer',
+                4 : 'hex', 5 : 'string', 6 : 'other'}
+        if self[symbol] not in code:
+            raise RuntimeError("Unknown type code code %d" % self[symbol])
+        else:
+            return code[self[symbol]]
 
 
     def is_bool_tristate(self, symbol):

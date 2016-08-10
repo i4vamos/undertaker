@@ -43,6 +43,7 @@ from optparse import OptionParser
 
 
 def do_inference(args, arch, subarch):
+    # pylint: disable=R0204
     path = ""
     if len(args) > 0 and os.path.isdir(args[0]):
         path = os.path.normpath(args[0])
@@ -51,8 +52,7 @@ def do_inference(args, arch, subarch):
     atoms = None
     if os.path.exists("src/Modules.ia32"):
         atoms = inference_atoms.FiascoInferenceAtoms()
-
-    if arch is "busybox":
+    elif arch is "busybox":
         atoms = inference_atoms.BusyboxInferenceAtoms(path)
     elif arch is "coreboot":
         atoms = inference_atoms.CorebootInferenceAtoms(path)
