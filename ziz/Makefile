@@ -4,7 +4,7 @@ DEBUG = -g3
 CFLAGS = -Wall -Wextra -O2 $(DEBUG)
 CXXFLAGS = $(CFLAGS) -std=gnu++11
 LDFLAGS =
-LDLIBS = -lboost_regex -lboost_wave -lboost_system $(LDCOV)
+LDLIBS = -lboost_regex -lboost_wave -lboost_system -lpthread $(LDCOV)
 
 HEADERS = $(wildcard *.h)
 
@@ -14,7 +14,7 @@ HEADERS = $(wildcard *.h)
 # On Ubuntu, that's the default case when you install the boost libraries.
 # ("locate libboost_filesystem.a" might help to ensure they are there)
 ifdef STATIC
-	LDFLAGS += -static -lpthread
+	LDFLAGS += -static
 endif
 ###################################################################################################
 
