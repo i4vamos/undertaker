@@ -2,7 +2,7 @@
 SUFFIXES += .d
 
 #We don't need to clean up when we're making these targets
-NODEPS:=clean clean-check clean-parsers clean-regenerate
+NODEPS:=clean clean-check
 
 CFLAGS = -Wall -Wextra -O2
 CPPFLAGS = -I../scripts/kconfig -I../picosat
@@ -14,10 +14,6 @@ CC = g++
 LDFLAGS =
 BOOST_LIBS = -lboost_system -lboost_regex -lboost_filesystem -lboost_thread -lboost_chrono
 LDLIBS = $(BOOST_LIBS) -lpthread
-
-# get gcc version and strip "." to make it comparable (481 < 531)
-SEDMAGIC ='s/[^)]*) \([^ ]*\).*/\1/g'
-GCCVERSION := $(shell gcc --version | grep ^gcc | sed $(SEDMAGIC))
 
 # LDCOV = -coverage
 ifdef LDCOV
@@ -73,17 +69,6 @@ TESTPROGS = test-SatChecker test-ConditionalBlock test-ConfigurationModel \
 DEPFILES:=$(patsubst %.o,%.d,$(PARSEROBJ) $(SATYROBJ)) undertaker.d satyr.d
 
 
-# Determine which version of parser to use.  Since Make cannot compare version
-# strings, we use 'sort -V | head -n1'
-GCCVERCMP = $(shell echo -e "5.3.1\n$(GCCVERSION)" | sort -V | head -n1)
-
-# version below 5.3.1 should use the old parser files
-ifneq "$(GCCVERCMP)" "5.3.1"
-PARSERDIR = BoolExpLP_old
-else
-PARSERDIR = BoolExpLP
-endif
-
 all: $(PROGS)
 
 undertaker: libparser.a ../picosat/libpicosat.a $(PUMALIB)
@@ -104,16 +89,20 @@ endif
 
 undertaker.d rsf2cnf.d satyr.d: ../version.h
 
-BoolExpLexer.d: BoolExpLexer.cpp BoolExpParser.hh location.hh stack.hh
+
+BoolExpLexer.cpp: BoolExpParser.cpp BoolExpLexer.l
+	flex -o$@ BoolExpLexer.l
+
+BoolExpParser.cpp: BoolExpParser.y
+	bison -o $@ --defines=BoolExpParser.h $<
+
+stack.hh location.hh postion.hh: BoolExpParser.cpp
+
+BoolExpLexer.d: BoolExpLexer.cpp BoolExpParser.h location.hh stack.hh
 BoolExpParser.d: BoolExpParser.cpp
 
+
 location.hh: position.hh
-
-%.hh: $(PARSERDIR)/%.hh
-	cat $< > $@
-
-%.cpp: $(PARSERDIR)/%.cpp_shipped
-	cat $< > $@
 
 bool.o: bool.cpp bool.h BoolExpParser.o
 
@@ -147,8 +136,6 @@ clean: clean-check
 	rm -rf *.o *.a *.gcda *.gcno *.d
 	rm -rf coverage-wl.cnf
 	rm -rf $(PROGS) $(TESTPROGS)
-
-clean-parsers:
 	rm -rf location.hh stack.hh position.hh BoolExpParser.hh
 	rm -rf BoolExpParser.cpp BoolExpLexer.cpp
 
@@ -230,23 +217,6 @@ run-lcov:
 
 ###################################################################################################
 # other targets
-ifdef REGENERATE_PARSERS
-
-.PRECIOUS: $(PARSERDIR)/BoolExpParser.hh $(PARSERDIR)/BoolExpParser.cpp_shipped
-
-regenerate_parsers: clean-parsers clean-regenerate
-	$(MAKE) $(PARSERDIR)/BoolExpLexer.cpp_shipped
-
-clean-regenerate:
-	rm -rf $(PARSERDIR)/*_shipped $(PARSERDIR)/*.hh
-
-$(PARSERDIR)/%.cpp_shipped: $(PARSERDIR)/%.l $(PARSERDIR)/BoolExpParser.cpp_shipped
-	flex -o $@ $<
-
-$(PARSERDIR)/%.cpp_shipped: $(PARSERDIR)/%.y
-	bison -o $@ --defines=$(PARSERDIR)/BoolExpParser.hh $<
-
-endif
 
 docs:
 	doxygen
@@ -254,4 +224,4 @@ docs:
 ###################################################################################################
 
 FORCE:
-.PHONY: all clean clean-% FORCE check check-% real-check run-lcov regenerate_parsers docs
+.PHONY: all clean clean-% FORCE check check-% real-check run-lcov docs

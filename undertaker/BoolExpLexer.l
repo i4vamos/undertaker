@@ -31,6 +31,8 @@ typedef kconfig::BoolExpParser::token_type token_type;
 
 #define yyterminate() return token::END
 
+using namespace std;
+
 %}
 
 
@@ -154,6 +156,14 @@ int KconfigFlexLexer::yylex() {
     return 0;
 }
 
-int KconfigFlexLexer::yywrap() {
+
+// See: http://bugs.openfoam.org/view.php?id=1974
+
+#if YY_FLEX_SUBMINOR_VERSION < 34 && YY_FLEX_MINOR_VERSION < 6
+extern "C" int yywrap()
+#else
+int KconfigFlexLexer::yywrap()
+#endif
+{
     return 1;
 }
