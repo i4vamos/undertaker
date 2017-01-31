@@ -252,13 +252,27 @@ void process_mergeblockconf(const std::string &filename) {
     while (std::getline(workfile, line))
         process_blockconf_helper(sj, filesolvable, line);
 
-    for (const std::string &str : KconfigWhitelist::getWhitelist())
+    ConfigurationModel *model = ModelContainer::lookupMainModel();
+
+    /* Add symbols from whitelist, but only if they exist in the model */
+    for (const std::string &str : KconfigWhitelist::getWhitelist()) {
+        if (!model->containsSymbol(str)) {
+            Logging::warn("Ignoring unknown symbol ", str, " from whitelist");
+            continue;
+        }
         sj.push_back(str);
+    }
 
-    for (const std::string &str : KconfigWhitelist::getBlacklist())
+    /* Add symbols from blacklist, but only if they exist in the model */
+    for (const std::string &str : KconfigWhitelist::getBlacklist()) {
+        if (!model->containsSymbol(str)) {
+            Logging::warn("Ignoring unknown symbol ", str, " from blacklist");
+            continue;
+        }
         sj.push_back("!" + str);
+    }
 
-    SatChecker sc(ModelContainer::lookupMainModel(), Picosat::SAT_MIN);
+    SatChecker sc(model, Picosat::SAT_MIN);
     // We want minimal configs, so we try to get many 'n's from the sat checker
     if (sc(sj.join("\n&&\n"))) {
         Logging::info("Solution found, result:");
