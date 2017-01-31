@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (C) 2012 Bernhard Heinloth <bernhard@heinloth.net>
 # Copyright (C) 2012 Valentin Rothberg <valentinrothberg@gmail.com>
-# Copyright (C) 2012 Andreas Ruprecht  <rupran@einserver.de>
+# Copyright (C) 2012-2017 Andreas Ziegler  <ziegler@einserver.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@ set -e
 
 function licence {
     echo '
- Copyright (c) 2012 Andreas Ruprecht  <rupran@einserver.de>,
-                    Bernhard Heinloth <bernhard@heinloth.net>
-                and Valentin Rothberg <valentinrothberg@gmail.com>
+ Copyright (c) 2012-2017 Andreas Ziegler   <ziegler@einserver.de>,
+                         Bernhard Heinloth <bernhard@heinloth.net>
+                     and Valentin Rothberg <valentinrothberg@gmail.com>
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -260,7 +260,7 @@ if [[ "$autoconf" = "true" ]] ; then
     dir_script="$(dirname "$path_script")"
     # determine, if we have 64 or 32 bit traces, use appropiate
     # white-/black-/ignore lists
-    if cat $file_tracefile | grep -q "ffffffff8" ; then
+    if grep -E -q "[a-z0-9]{16}" $file_tracefile ; then
         if [[ -z "$file_whitelist" ]] ; then
             file_whitelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" 2>/dev/null | grep "whitelist.x86_64" | head -n 1)"
         fi
