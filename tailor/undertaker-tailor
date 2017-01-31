@@ -262,22 +262,22 @@ if [[ "$autoconf" = "true" ]] ; then
     # white-/black-/ignore lists
     if grep -E -q "[a-z0-9]{16}" $file_tracefile ; then
         if [[ -z "$file_whitelist" ]] ; then
-            file_whitelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" 2>/dev/null | grep "whitelist.x86_64" | head -n 1)"
+            file_whitelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "whitelist.x86_64" 2>/dev/null | head -n 1)"
         fi
         if [[ -z "$file_blacklist" ]] ; then
-            file_blacklist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" 2>/dev/null | grep "blacklist.x86_64" | head -n 1)"
+            file_blacklist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "blacklist.x86_64" 2>/dev/null | head -n 1)"
         fi
     else
         if [[ -z "$file_whitelist" ]] ; then
-            file_whitelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" 2>/dev/null | grep "whitelist.i686" | head -n 1)"
+            file_whitelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "whitelist.i686" 2>/dev/null | head -n 1)"
         fi
         if [[ -z "$file_blacklist" ]] ; then
-            file_blacklist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" 2>/dev/null | grep "blacklist.i686" | head -n 1)"
+            file_blacklist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "blacklist.i686" 2>/dev/null | head -n 1)"
         fi
     fi
     # Default ignore list - circumvents errors from the undertaker
     if [[ -z "$file_ignorelist" ]] ; then
-        file_ignorelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" 2>/dev/null | grep "undertaker.ignore" | head -n 1)"
+        file_ignorelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "undertaker.ignore" 2>/dev/null | head -n 1)"
     fi
 
     # If you want a whole config, white-, black- and ignorelists MUST be defined
@@ -335,7 +335,7 @@ else
         path_vmlinux="$dir_kernelbinary/vmlinux"
     fi
     # check for vmlinux file in debug binary dir, if not given manually
-    if [[ ! -r "$path_vmlinux" && "$(find "$dir_kernelbinary" | grep vmlinux | wc -l)" -eq "0" ]] ; then
+    if [[ ! -r "$path_vmlinux" && "$(find "$dir_kernelbinary" -name "vmlinux" | wc -l)" -eq "0" ]] ; then
         output $QUIET "Cannot find vmlinux, $dir_kernelbinary does not look like a compiled source tree!"
         exit 1
     fi
@@ -373,7 +373,7 @@ else
         esac
     done
     rm -r "$tmp_addrdir"
-    if [[ "$(cat $tmptracefile | wc -l )" -eq "0" ]] ; then
+    if [[ "$(cat "$tmptracefile" | wc -l)" -eq "0" ]] ; then
         output $QUIET "Something went wrong while translating addresses - Aborting"
         exit 1
     fi
@@ -407,11 +407,11 @@ rm "$tmptracefile"
 # remove ignored files
 if [[ -n "$file_ignorelist" ]] ; then
     output $VERBOSE "Removing ignored lines described in $file_ignorelist"
-    ignore="$(cat "$file_ignorelist" | paste -sd "|" | sed -e "s/ //g" )"
+    ignore="$(paste -sd "|" "$file_ignorelist" | sed -e "s/ //g" )"
     output $DEBUG "Content lines are: $ignore"
     require egrep
     tmp_ignored="$(mktemp)"
-    cat "$tmp_addr2line" | egrep -v "$ignore" > "$tmp_ignored"
+    egrep -v "$ignore" "$tmp_addr2line" > "$tmp_ignored"
     cp "$tmp_ignored" "$tmp_addr2line"
     rm "$tmp_ignored"
 fi
@@ -472,19 +472,19 @@ output $DEBUG "$path_undertaker $parameters $tmp_addr2line"
 
 set +e
 "$path_undertaker" $parameters "$tmp_addr2line" 2>&1 | tee "$tmp_undertakeroutput" | egrep -i "$egrep" >&2
-cat "$tmp_undertakeroutput" | grep '^CONFIG_'
-cat "$tmp_undertakeroutput" | grep "E: Wasn't able to generate a valid configuration" && exit 1
+grep '^CONFIG_' "$tmp_undertakeroutput"
+grep "E: Wasn't able to generate a valid configuration" "$tmp_undertakeroutput" && exit 1
 
 # show stats of the undertaker run
 if [[ "$outputlevel" -gt "$QUIET" ]] ; then
     echo -e "\nStats:" >&2
-    echo "Calculated config in $(( $(date +%s) - $starttime )) seconds with $(cat "$tmp_undertakeroutput" | grep '^CONFIG_' | wc -l)/$(cat "$tmp_undertakeroutput" | wc -l) relevant config lines:" >&2
-    echo -e "\t $(cat "$tmp_undertakeroutput" | grep '^CONFIG_' | grep '=y' | wc -l)\t enabled" >&2
-    echo -e "\t $(cat "$tmp_undertakeroutput" | grep '^CONFIG_' | grep '=m' | wc -l)\t modules" >&2
-    echo -e "\t $(cat "$tmp_undertakeroutput" | grep '^CONFIG_' | grep '=n' | wc -l)\t disabled" >&2
+    echo "Calculated config in $(( $(date +%s) - $starttime )) seconds with $(grep -c '^CONFIG_' "$tmp_undertakeroutput")/$(cat "$tmp_undertakeroutput" | wc -l) relevant config lines:" >&2
+    echo -e "\t $(sed -e '/^CONFIG_/!d' -e '/=y/!d' "$tmp_undertakeroutput" | wc -l)\t enabled" >&2
+    echo -e "\t $(sed -e '/^CONFIG_/!d' -e '/=m/!d' "$tmp_undertakeroutput" | wc -l)\t modules" >&2
+    echo -e "\t $(sed -e '/^CONFIG_/!d' -e '/=n/!d' "$tmp_undertakeroutput" | wc -l)\t disabled" >&2
     echo >&2
-    echo "Trace file contains $(cat "$file_tracefile" | wc -l) lines which refer to $(cat "$tmp_addr2line" | sed -e 's/^\([^:]*\):.*/\1/' | sort -u | wc -l) files with $(cat "$file_tracefile" | grep " " | wc -l) module references:" >&2
-    cat "$file_tracefile" | grep " " | sed "s/^[a-f0-9]* /\t/g" | sort -u  >&2
+    echo "Trace file contains $(cat "$file_tracefile" | wc -l) lines which refer to $(sed -e 's/^\([^:]*\):.*/\1/' "$tmp_addr2line" | sort -u | wc -l) files with $(grep -c " " "$file_tracefile") module references:" >&2
+    grep " " "$file_tracefile" | sed "s/^[a-f0-9]* /\t/g" | sort -u  >&2
 fi
 
 # Generate configuration by using Kconfigs own allnoconfig
@@ -498,10 +498,10 @@ if [[ "$generate_configfile" = "true" ]] ; then
     fi
     # Strip away undertaker-only symbols
     tmp_baseconfig="$(mktemp)"
-    cat "$tmp_undertakeroutput" | grep "^CONFIG_" > "$tmp_baseconfig"
+    grep "^CONFIG_" "$tmp_undertakeroutput" > "$tmp_baseconfig"
     # Determine architecture of undertaker-generated config - needed for generating
     # 32bit kernels on 64bit machines
-    if [[ "$(cat "$tmp_undertakeroutput" | grep "CONFIG_64BIT=n" | wc -l )" -eq "1" ]] ; then
+    if [[ "$(grep -c "CONFIG_64BIT=n" "$tmp_undertakeroutput")" -eq "1" ]] ; then
         KCONFIG_ALLCONFIG="$tmp_baseconfig" ARCH=i386 make allnoconfig >$stream
     else
         KCONFIG_ALLCONFIG="$tmp_baseconfig" ARCH=x86_64 make allnoconfig >$stream
@@ -511,10 +511,10 @@ if [[ "$generate_configfile" = "true" ]] ; then
     if [[ -f "$dir_kernelsource/.config" ]] ; then
         if [[ "$outputlevel" -gt "$QUIET" ]] ; then
             echo >&2
-            echo "Calculated allnoconfig with $(cat "$dir_kernelsource/.config" | grep '^CONFIG_' | wc -l)/$(cat "$dir_kernelsource/.config" | wc -l) relevant config lines:" >&2
-            echo -e "\t $(cat "$dir_kernelsource/.config" | grep '^CONFIG_' | grep '=y' | wc -l)\t enabled" >&2
-            echo -e "\t $(cat "$dir_kernelsource/.config" | grep '^CONFIG_' | grep '=m' | wc -l)\t modules" >&2
-            echo -e "\t $(cat "$dir_kernelsource/.config" | grep '^CONFIG_' | grep '=n' | wc -l)\t disabled" >&2
+            echo "Calculated allnoconfig with $(grep -c '^CONFIG_' "$dir_kernelsource/.config")/$(cat "$dir_kernelsource/.config" | wc -l) relevant config lines:" >&2
+            echo -e "\t $(sed -e '/^CONFIG_/!d' -e '/=y/!d' "$dir_kernelsource/.config" | wc -l)\t enabled" >&2
+            echo -e "\t $(sed -e '/^CONFIG_/!d' -e '/=m/!d' "$dir_kernelsource/.config" | wc -l)\t modules" >&2
+            echo -e "\t $(sed -e '/^CONFIG_/!d' -e '/=n/!d' "$dir_kernelsource/.config" | wc -l)\t disabled" >&2
         fi
     else
         output $QUITE "Error during generation of $dir_kernelsource/.config ..."
