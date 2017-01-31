@@ -158,7 +158,7 @@ else
         c ) generate_configfile=true
             ;;
         d ) if [[ "$outputlevel" == "1" ]] ; then
-                outputlevel=5
+                outputlevel=10
             else
                 output $QUIET "Output level (-d): You can only set this level ONCE"
                 ((error+=1))
