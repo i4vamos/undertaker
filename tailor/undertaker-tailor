@@ -409,9 +409,8 @@ if [[ -n "$file_ignorelist" ]] ; then
     output $VERBOSE "Removing ignored lines described in $file_ignorelist"
     ignore="$(paste -sd "|" "$file_ignorelist" | sed -e "s/ //g" )"
     output $DEBUG "Content lines are: $ignore"
-    require egrep
     tmp_ignored="$(mktemp)"
-    egrep -v "$ignore" "$tmp_addr2line" > "$tmp_ignored"
+    grep -E -v "$ignore" "$tmp_addr2line" > "$tmp_ignored"
     cp "$tmp_ignored" "$tmp_addr2line"
     rm "$tmp_ignored"
 fi
@@ -459,19 +458,18 @@ if [[ "$outputlevel" -gt "$VERBOSE" ]] ; then
 fi
 
 # Process output of the undertaker tool
-require egrep
 tmp_undertakeroutput="$(mktemp)"
 trap "rm -f \"$tmp_undertakeroutput\" \"$tmp_addr2line\"" EXIT
 case "$outputlevel" in
-    "$QUIET" ) egrep="E: " ;;
-    "$NORMAL" ) egrep="E: " ;;
-    "$VERBOSE" ) egrep="E: |W: " ;;
-    *) egrep="" ;;
+    "$QUIET" ) grep_level="E: " ;;
+    "$NORMAL" ) grep_level="E: " ;;
+    "$VERBOSE" ) grep_level="E: |W: " ;;
+    *) grep_level="" ;;
 esac
 output $DEBUG "$path_undertaker $parameters $tmp_addr2line"
 
 set +e
-"$path_undertaker" $parameters "$tmp_addr2line" 2>&1 | tee "$tmp_undertakeroutput" | egrep -i "$egrep" >&2
+"$path_undertaker" $parameters "$tmp_addr2line" 2>&1 | tee "$tmp_undertakeroutput" | grep -E -i "$grep_level" >&2
 grep '^CONFIG_' "$tmp_undertakeroutput"
 grep "E: Wasn't able to generate a valid configuration" "$tmp_undertakeroutput" && exit 1
 
