@@ -223,13 +223,6 @@ docs:
 %.1.gz: %.1
 	gzip < $< > $@
 
-ifdef REGENERATE_PARSERS
-
-regenerate_parsers:
-	$(MAKE) -C undertaker regenerate_parsers
-
-endif
-
 ###################################################################################################
 
 FORCE:
