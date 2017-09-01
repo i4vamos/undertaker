@@ -41,9 +41,9 @@ typedef struct module {
 } module;
 
 //function declarations
-inline void readModules();
-inline bool addAddr(unsigned long long addr);
-inline bool addModuleAddr(unsigned long long addr);
-inline void ignoreFunc(char *name);
+undertaker_inline void readModules();
+undertaker_inline bool addAddr(unsigned long long addr);
+undertaker_inline bool addModuleAddr(unsigned long long addr);
+undertaker_inline void ignoreFunc(char *name);
 
 #endif

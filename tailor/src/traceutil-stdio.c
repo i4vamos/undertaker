@@ -41,7 +41,7 @@ int ignoreFileReopenCounter = 0;
  * later test whether a given address is inside a certain module's address range
  */
 
-inline void readModules() {
+undertaker_inline void readModules() {
     FILE * moduleFile;
     moduleFile = fopen (modulePath,"r");
     // On error, use old version of procmodules
@@ -71,7 +71,7 @@ inline void readModules() {
  * table yet, a call to addModuleAddr(addr) is triggered.
  */
 
-inline bool addAddr(unsigned long long addr) {
+undertaker_inline bool addAddr(unsigned long long addr) {
     // address new?
     if (hashadd(addr)) {
         // module address (if modules enabled)?
@@ -101,7 +101,7 @@ inline bool addAddr(unsigned long long addr) {
  * currently present.
  */
 
-inline bool addModuleAddr(unsigned long long addr) {
+undertaker_inline bool addModuleAddr(unsigned long long addr) {
     int currentModule = 0;
     // Look in every module
     while (currentModule < MODULESIZE) {
@@ -127,7 +127,7 @@ inline bool addModuleAddr(unsigned long long addr) {
  * functions are being encountered.
  */
 
-inline void ignoreFunc(char *name) {
+undertaker_inline void ignoreFunc(char *name) {
     // Otherwise, we add the function's name to the ignore list.
     if (ignoreFile == NULL
         || ++ignoreFileReopenCounter >= ignoreFileReopenUpperBound) {

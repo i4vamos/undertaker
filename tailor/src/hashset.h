@@ -52,7 +52,7 @@ int hashelementcounter = 0;
  * This has to be defined in the header since inlining only works if
  * a the inline-function is in the same translation unit
  */
-inline bool hashadd(uintptr_t address) {
+undertaker_inline bool hashadd(uintptr_t address) {
     unsigned int key = address % SETCAPACITY;
     hashsetaddr * hashiter;
     // we are full... sorry

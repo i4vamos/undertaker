@@ -76,8 +76,8 @@ char decToHexChar[16];
 
 //function declarations
 void readModules();
-inline bool addModuleAddr(unsigned long long addr);
-inline bool addAddr(unsigned long long addr);
-inline void ignoreFunc(char * funcbuf, int funcbufp);
+undertaker_inline bool addModuleAddr(unsigned long long addr);
+undertaker_inline bool addAddr(unsigned long long addr);
+undertaker_inline void ignoreFunc(char * funcbuf, int funcbufp);
 
 #endif

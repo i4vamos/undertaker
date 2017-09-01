@@ -168,7 +168,7 @@ void readModules() {
  * currently present.
  */
 
-inline bool addModuleAddr(unsigned long long addr) {
+undertaker_inline bool addModuleAddr(unsigned long long addr) {
     for (j=0; j<loadedModules; j++) {
         unsigned long long lowAddr = loadedModule[j].base;
         unsigned long long highAddr = lowAddr + loadedModule[j].length;
@@ -215,7 +215,7 @@ inline bool addModuleAddr(unsigned long long addr) {
  * table yet, a call to addModuleAddr(addr) is triggered.
  */
 
-inline bool addAddr(unsigned long long addr) {
+undertaker_inline bool addAddr(unsigned long long addr) {
     if (hashadd(addr)) {
         // Check if module
         if (modulePath != NULL && addr >= moduleBaseAddr) {
@@ -264,7 +264,7 @@ inline bool addAddr(unsigned long long addr) {
  * functions are being encountered.
  */
 
-inline void ignoreFunc(char * callerBuffer, int callerSize) {
+undertaker_inline void ignoreFunc(char * callerBuffer, int callerSize) {
     // Flushing does not work on debugfs, so we close and reopen the ignore file
     if (ignoreFile == -1
         || ++ignorePathReopenCounter >= ignorePathReopenUpperBound) {

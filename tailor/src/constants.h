@@ -22,4 +22,8 @@
 // Minimum lines to flush
 #define IGNOREFILEREOPENLOWERBOUND 8
 
+// an attribute before the inline keyword is required by GCC7
+// ( cf. https://wiki.debian.org/GCC7 )
+#define undertaker_inline __attribute__ ((always_inline)) inline
+
 #endif
