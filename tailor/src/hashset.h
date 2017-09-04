@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include "constants.h"
 
 // Capacity for hashing set size - the bigger the faster. And Primes are great.
 #define SETCAPACITY 31337
@@ -43,9 +44,13 @@ hashsetaddr hashelements[ELEMENTSCAPACITY];
 // How many places are filled
 int hashelementcounter = 0;
 
-/* For our purposes we only need to add stuff, but never delete.
+/* Returns false if address exists (else true)
+ * For our purposes we only need to add stuff, but never delete.
  * We check, if the hashmap is full, or the key already exists.
  * If it did not exists, we add the new address to the end of a bucket.
+ *
+ * This has to be defined in the header since inlining only works if
+ * a the inline-function is in the same translation unit
  */
 inline bool hashadd(uintptr_t address) {
     unsigned int key = address % SETCAPACITY;
@@ -59,8 +64,9 @@ inline bool hashadd(uintptr_t address) {
         hashset[key] = & hashelements[hashelementcounter];
     }
     // Check if it is at base
-    else if (hashset[key]->address == address)
+    else if (hashset[key]->address == address) {
         return false;
+    }
     // else go thru buckets
     else {
         hashiter = hashset[key];
