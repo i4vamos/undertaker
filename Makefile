@@ -109,7 +109,6 @@ clean:
 	@python2 setup.py clean
 
 distclean: clean
-	$(MAKE) -C undertaker clean-parsers
 	$(MAKE) -f Makefile.kbuild clean
 	test ! -f picosat/makefile || $(MAKE) -C picosat clean
 	test ! -f $(LOCALPUMA)/Makefile || $(MAKE) clean-Puma
