@@ -46,6 +46,7 @@ PROCESSORS=${PROCESSORS:-$(getconf _NPROCESSORS_ONLN)}
 MODE="rsf"
 USE_BUSYFIX="no"
 CALC_FM="no"
+CC=${CC:="gcc"}
 
 # Ensure the last (rightmost) non-zero exit status is used when piping results
 # into another program.
@@ -139,6 +140,7 @@ debug "rsf2model: $(which rsf2model)"
 debug "dumpconf: $(which dumpconf)"
 debug "satyr: $(which satyr)"
 debug "undertaker-kconfigpp: $(which undertaker-kconfigpp)"
+debug "cc: $CC"
 
 mkdir -p "$MODELS"
 
@@ -170,7 +172,7 @@ function calculate_preconditions() {
 # Parameters {project/arch} {path to config} {ALWAYS_OFF_ITEMS} {ALWAYS_ON_ITEMS}
 function do_rsf_or_satyr_call() {
     if [ "$MODE" = "rsf" ]; then
-        dumpconf $2 > "$MODELS/$1.rsf"
+        ARCH=$1 SRCARCH=$1 srctree=. dumpconf $2 > "$MODELS/$1.rsf"
 
         # Make model and append $3 and all items of $4.
         rsf2model "$MODELS/$1.rsf" > "$MODELS/$1.model"
@@ -322,11 +324,22 @@ function get_kconfig_file() {
 function do_convert() {
     # Convert the model files for the specified Linux arch.
     ARCH=$1
-    KCONFIG_FILE="$(get_kconfig_file $ARCH)"
+    KCONFIG_FILE=Kconfig
+    HARCH="$ARCH"
+    if [ "$ARCH" = "um" ]; then
+        HARCH="x86"
+        # If the UML Kconfig file defines a separate main menu, we need to
+        # start at this file. Otherwise, we can just use the regular toplevel
+        # file.
+        UM_FILE="$(get_kconfig_file um)"
+        if $(grep -q mainmenu $UM_FILE); then
+            KCONFIG_FILE=$UM_FILE
+        fi
+    fi
 
     if [ $MODE = "rsf" ]; then
         echo "Calculating RSF model for $ARCH"
-        SUBARCH=$ARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
+        CC=gcc srctree=. HEADER_ARCH=$HARCH SRCARCH=$ARCH SUBARCH=$ARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
 
         rsf2model_conversion $ARCH
 
@@ -337,7 +350,7 @@ function do_convert() {
     if [ $MODE = "cnf" ]; then
         echo "Calculating CNF model for $ARCH"
         # Run satyr to generate CNF models.
-        SUBARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
+        CC=gcc srctree=. HEADER_ARCH=$HARCH SRCARCH=$ARCH SUBARCH=$ARCH ARCH=$ARCH satyr $KCONFIG_FILE -c "$MODELS/$ARCH.cnf"
 
         calculate_preconditions $ARCH
         echo "Calling rsf2cnf for arch $ARCH..."
@@ -430,6 +443,13 @@ else
         exit $errors
     fi
 fi
+
+# Fix Kconfig syntax which breaks the new parser when generating models
+# for an older kernel tree
+for i in $(find -name "*Kconfig*"); do
+	sed -i -E 's/---\ help\ /---help/g' $i
+	sed -i -E 's/--\ help/---help---/g' $i
+done
 
 for ARCH in $ARCHS; do
     # Run converting processes in parallel. pwait() blocks until less than

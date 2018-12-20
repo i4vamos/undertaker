@@ -21,9 +21,6 @@
 #ifndef KCONFIG_SYMBOLTOOLS_H
 #define KCONFIG_SYMBOLTOOLS_H
 
-#ifndef LKC_DIRECT_LINK
-#define LKC_DIRECT_LINK
-#endif
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "lkc.h"
 #pragma GCC diagnostic warning "-Wunused-parameter"

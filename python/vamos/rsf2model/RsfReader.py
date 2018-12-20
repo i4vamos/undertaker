@@ -74,7 +74,7 @@ class RsfReader:
         omnipresent = {}
         options = set()
         for item in self.database["Item"]:
-            if not item[1].lower() in ["boolean", "tristate", "integer", "string", "hex"]:
+            if not item[1].lower() in ["boolean", "bool", "tristate", "integer", "string", "hex"]:
                 continue
             if len(item) < 2:
                 continue
@@ -139,7 +139,7 @@ class RsfReader:
     def is_bool_tristate(self, symbol):
         """Returns True if symbol is boolean or tristate, otherwise False is
         returned."""
-        return self.get_type(symbol) in ["boolean", "tristate"]
+        return self.get_type(symbol) in ["boolean", "bool", "tristate"]
 
     def get_type(self, symbol):
         """Get data type of symbol. Returns 'None' if item is not found."""
@@ -181,7 +181,7 @@ class ItemRsfReader(dict):
     def is_bool_tristate(self, symbol):
         """Returns true if symbol is boolean or tristate, otherwise false is returned."""
 
-        return self.get_type(symbol) in ["boolean", "tristate"]
+        return self.get_type(symbol) in ["boolean", "bool", "tristate"]
 
     def get_type(self, symbol):
         """ Get data type of symbol or None if item is not found."""

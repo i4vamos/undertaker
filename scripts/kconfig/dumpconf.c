@@ -6,7 +6,6 @@
  */
 
 #include <ctype.h>
-#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -57,7 +56,7 @@ static void printSymbol(FILE *out, struct symbol *sym, char *choice) {
 		fputs(sym->name, out);
 	else if (choice)
 		fputs(choice, out);
-	else if (sym->flags & SYMBOL_AUTO)
+	else if (sym->flags & SYMBOL_NO_WRITE)
 		// if a symbol has a "depends on m" statement, kconfig will create an internal symbol
 		// with flag SYMBOL_AUTO in the dependency, with no name. Ignore it.
 		fputs("CADOS_IGNORED", out);
@@ -167,6 +166,13 @@ static void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
 		my_expr_print(prop->visible.expr, out, E_NONE, choice);
 		fprintf(out, "\"\n");
 	}
+	for_all_properties(sym, prop, P_IMPLY) {
+		fprintf(out, "ItemImplies\t%s\t\"", itemname);
+		my_expr_print(prop->expr, out, E_NONE, choice);
+		fprintf(out, "\"\t\"");
+		my_expr_print(prop->visible.expr, out, E_NONE, choice);
+		fprintf(out, "\"\n");
+	}
 	fprintf(out, "Definition\t%s\t\"%s:%d\"\n", itemname, menu->file->name, menu->lineno);
 
 //	for_all_properties(sym, prop, P_RANGE) {
@@ -241,10 +247,6 @@ static void myconfdump(FILE *out) {
 int main(int ac, char **av) {
 	struct stat tmpstat;
 	char *arch = getenv("ARCH");
-
-	setlocale(LC_ALL, "");
-	bindtextdomain(PACKAGE, LOCALEDIR);
-	textdomain(PACKAGE);
 
 	if (stat(av[1], &tmpstat) != 0) {
 		fprintf(stderr, "could not open %s\n", av[1]);

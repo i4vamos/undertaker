@@ -50,7 +50,7 @@ static void addTypeInfo(kconfig::PicosatCNF &cnf, const std::string &rsf_file) {
         const std::string symbolname = entry.first;
         const std::string nameOfType = entry.second;
 
-        if (nameOfType == "boolean") {
+        if (nameOfType == "boolean" || nameOfType == "bool") {
             cnf.setSymbolType(symbolname, K_S_BOOLEAN);
         } else if (nameOfType == "tristate") {
             cnf.setSymbolType(symbolname, K_S_TRISTATE);

@@ -10,6 +10,7 @@
 #  include <config.h>
 #endif
 
+#include <stdlib.h>
 #include "lkc.h"
 #include "images.c"
 
@@ -22,7 +23,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include <stdlib.h>
 
 //#define DEBUG
 
@@ -101,8 +101,8 @@ const char *dbg_sym_flags(int val)
 		strcat(buf, "write/");
 	if (val & SYMBOL_CHANGED)
 		strcat(buf, "changed/");
-	if (val & SYMBOL_AUTO)
-		strcat(buf, "auto/");
+	if (val & SYMBOL_NO_WRITE)
+		strcat(buf, "no_write/");
 
 	buf[strlen(buf) - 1] = '\0';
 
@@ -137,7 +137,7 @@ void init_main_window(const gchar * glade_file)
 
 	xml = glade_xml_new(glade_file, "window1", NULL);
 	if (!xml)
-		g_error(_("GUI loading failed !\n"));
+		g_error("GUI loading failed !\n");
 	glade_xml_signal_autoconnect(xml);
 
 	main_wnd = glade_xml_get_widget(xml, "window1");
@@ -169,14 +169,6 @@ void init_main_window(const gchar * glade_file)
 	style = gtk_widget_get_style(main_wnd);
 	widget = glade_xml_get_widget(xml, "toolbar1");
 
-#if 0	/* Use stock Gtk icons instead */
-	replace_button_icon(xml, main_wnd->window, style,
-			    "button1", (gchar **) xpm_back);
-	replace_button_icon(xml, main_wnd->window, style,
-			    "button2", (gchar **) xpm_load);
-	replace_button_icon(xml, main_wnd->window, style,
-			    "button3", (gchar **) xpm_save);
-#endif
 	replace_button_icon(xml, main_wnd->window, style,
 			    "button4", (gchar **) xpm_single_view);
 	replace_button_icon(xml, main_wnd->window, style,
@@ -184,22 +176,6 @@ void init_main_window(const gchar * glade_file)
 	replace_button_icon(xml, main_wnd->window, style,
 			    "button6", (gchar **) xpm_tree_view);
 
-#if 0
-	switch (view_mode) {
-	case SINGLE_VIEW:
-		widget = glade_xml_get_widget(xml, "button4");
-		g_signal_emit_by_name(widget, "clicked");
-		break;
-	case SPLIT_VIEW:
-		widget = glade_xml_get_widget(xml, "button5");
-		g_signal_emit_by_name(widget, "clicked");
-		break;
-	case FULL_VIEW:
-		widget = glade_xml_get_widget(xml, "button6");
-		g_signal_emit_by_name(widget, "clicked");
-		break;
-	}
-#endif
 	txtbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_w));
 	tag1 = gtk_text_buffer_create_tag(txtbuf, "mytag1",
 					  "foreground", "red",
@@ -257,7 +233,7 @@ void init_left_tree(void)
 
 	column = gtk_tree_view_column_new();
 	gtk_tree_view_append_column(view, column);
-	gtk_tree_view_column_set_title(column, _("Options"));
+	gtk_tree_view_column_set_title(column, "Options");
 
 	renderer = gtk_cell_renderer_toggle_new();
 	gtk_tree_view_column_pack_start(GTK_TREE_VIEW_COLUMN(column),
@@ -285,8 +261,6 @@ void init_left_tree(void)
 static void renderer_edited(GtkCellRendererText * cell,
 			    const gchar * path_string,
 			    const gchar * new_text, gpointer user_data);
-static void renderer_toggled(GtkCellRendererToggle * cellrenderertoggle,
-			     gchar * arg1, gpointer user_data);
 
 void init_right_tree(void)
 {
@@ -302,7 +276,7 @@ void init_right_tree(void)
 
 	column = gtk_tree_view_column_new();
 	gtk_tree_view_append_column(view, column);
-	gtk_tree_view_column_set_title(column, _("Options"));
+	gtk_tree_view_column_set_title(column, "Options");
 
 	renderer = gtk_cell_renderer_pixbuf_new();
 	gtk_tree_view_column_pack_start(GTK_TREE_VIEW_COLUMN(column),
@@ -320,8 +294,6 @@ void init_right_tree(void)
 					    "inconsistent", COL_BTNINC,
 					    "visible", COL_BTNVIS,
 					    "radio", COL_BTNRAD, NULL);
-	/*g_signal_connect(G_OBJECT(renderer), "toggled",
-	   G_CALLBACK(renderer_toggled), NULL); */
 	renderer = gtk_cell_renderer_text_new();
 	gtk_tree_view_column_pack_start(GTK_TREE_VIEW_COLUMN(column),
 					renderer, FALSE);
@@ -333,7 +305,7 @@ void init_right_tree(void)
 
 	renderer = gtk_cell_renderer_text_new();
 	gtk_tree_view_insert_column_with_attributes(view, -1,
-						    _("Name"), renderer,
+						    "Name", renderer,
 						    "text", COL_NAME,
 						    "foreground-gdk",
 						    COL_COLOR, NULL);
@@ -357,7 +329,7 @@ void init_right_tree(void)
 						    COL_COLOR, NULL);
 	renderer = gtk_cell_renderer_text_new();
 	gtk_tree_view_insert_column_with_attributes(view, -1,
-						    _("Value"), renderer,
+						    "Value", renderer,
 						    "text", COL_VALUE,
 						    "editable",
 						    COL_EDIT,
@@ -396,7 +368,7 @@ static void text_insert_help(struct menu *menu)
 {
 	GtkTextBuffer *buffer;
 	GtkTextIter start, end;
-	const char *prompt = _(menu_get_prompt(menu));
+	const char *prompt = menu_get_prompt(menu);
 	struct gstr help = str_new();
 
 	menu_get_ext_help(menu, &help);
@@ -450,7 +422,7 @@ gboolean on_window1_delete_event(GtkWidget * widget, GdkEvent * event,
 	if (!conf_get_changed())
 		return FALSE;
 
-	dialog = gtk_dialog_new_with_buttons(_("Warning !"),
+	dialog = gtk_dialog_new_with_buttons("Warning !",
 					     GTK_WINDOW(main_wnd),
 					     (GtkDialogFlags)
 					     (GTK_DIALOG_MODAL |
@@ -464,7 +436,7 @@ gboolean on_window1_delete_event(GtkWidget * widget, GdkEvent * event,
 	gtk_dialog_set_default_response(GTK_DIALOG(dialog),
 					GTK_RESPONSE_CANCEL);
 
-	label = gtk_label_new(_("\nSave configuration ?\n"));
+	label = gtk_label_new("\nSave configuration ?\n");
 	gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialog)->vbox), label);
 	gtk_widget_show(label);
 
@@ -524,7 +496,7 @@ load_filename(GtkFileSelection * file_selector, gpointer user_data)
 					     (user_data));
 
 	if (conf_read(fn))
-		text_insert_msg(_("Error"), _("Unable to load configuration !"));
+		text_insert_msg("Error", "Unable to load configuration !");
 	else
 		display_tree(&rootmenu);
 }
@@ -533,7 +505,7 @@ void on_load1_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
 	GtkWidget *fs;
 
-	fs = gtk_file_selection_new(_("Load file..."));
+	fs = gtk_file_selection_new("Load file...");
 	g_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button),
 			 "clicked",
 			 G_CALLBACK(load_filename), (gpointer) fs);
@@ -552,7 +524,8 @@ void on_load1_activate(GtkMenuItem * menuitem, gpointer user_data)
 void on_save_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
 	if (conf_write(NULL))
-		text_insert_msg(_("Error"), _("Unable to save configuration !"));
+		text_insert_msg("Error", "Unable to save configuration !");
+	conf_write_autoconf(0);
 }
 
 
@@ -565,7 +538,7 @@ store_filename(GtkFileSelection * file_selector, gpointer user_data)
 					     (user_data));
 
 	if (conf_write(fn))
-		text_insert_msg(_("Error"), _("Unable to save configuration !"));
+		text_insert_msg("Error", "Unable to save configuration !");
 
 	gtk_widget_destroy(GTK_WIDGET(user_data));
 }
@@ -574,7 +547,7 @@ void on_save_as1_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
 	GtkWidget *fs;
 
-	fs = gtk_file_selection_new(_("Save file as..."));
+	fs = gtk_file_selection_new("Save file as...");
 	g_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button),
 			 "clicked",
 			 G_CALLBACK(store_filename), (gpointer) fs);
@@ -667,7 +640,7 @@ on_set_option_mode3_activate(GtkMenuItem *menuitem, gpointer user_data)
 void on_introduction1_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
 	GtkWidget *dialog;
-	const gchar *intro_text = _(
+	const gchar *intro_text = 
 	    "Welcome to gkc, the GTK+ graphical configuration tool\n"
 	    "For each option, a blank box indicates the feature is disabled, a\n"
 	    "check indicates it is enabled, and a dot indicates that it is to\n"
@@ -682,12 +655,12 @@ void on_introduction1_activate(GtkMenuItem * menuitem, gpointer user_data)
 	    "option.\n"
 	    "\n"
 	    "Toggling Show Debug Info under the Options menu will show \n"
-	    "the dependencies, which you can then match by examining other options.");
+	    "the dependencies, which you can then match by examining other options.";
 
 	dialog = gtk_message_dialog_new(GTK_WINDOW(main_wnd),
 					GTK_DIALOG_DESTROY_WITH_PARENT,
 					GTK_MESSAGE_INFO,
-					GTK_BUTTONS_CLOSE, intro_text);
+					GTK_BUTTONS_CLOSE, "%s", intro_text);
 	g_signal_connect_swapped(GTK_OBJECT(dialog), "response",
 				 G_CALLBACK(gtk_widget_destroy),
 				 GTK_OBJECT(dialog));
@@ -699,13 +672,13 @@ void on_about1_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
 	GtkWidget *dialog;
 	const gchar *about_text =
-	    _("gkc is copyright (c) 2002 Romain Lievin <roms@lpg.ticalc.org>.\n"
-	      "Based on the source code from Roman Zippel.\n");
+	    "gkc is copyright (c) 2002 Romain Lievin <roms@lpg.ticalc.org>.\n"
+	      "Based on the source code from Roman Zippel.\n";
 
 	dialog = gtk_message_dialog_new(GTK_WINDOW(main_wnd),
 					GTK_DIALOG_DESTROY_WITH_PARENT,
 					GTK_MESSAGE_INFO,
-					GTK_BUTTONS_CLOSE, about_text);
+					GTK_BUTTONS_CLOSE, "%s", about_text);
 	g_signal_connect_swapped(GTK_OBJECT(dialog), "response",
 				 G_CALLBACK(gtk_widget_destroy),
 				 GTK_OBJECT(dialog));
@@ -717,14 +690,14 @@ void on_license1_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
 	GtkWidget *dialog;
 	const gchar *license_text =
-	    _("gkc is released under the terms of the GNU GPL v2.\n"
+	    "gkc is released under the terms of the GNU GPL v2.\n"
 	      "For more information, please see the source code or\n"
-	      "visit http://www.fsf.org/licenses/licenses.html\n");
+	      "visit http://www.fsf.org/licenses/licenses.html\n";
 
 	dialog = gtk_message_dialog_new(GTK_WINDOW(main_wnd),
 					GTK_DIALOG_DESTROY_WITH_PARENT,
 					GTK_MESSAGE_INFO,
-					GTK_BUTTONS_CLOSE, license_text);
+					GTK_BUTTONS_CLOSE, "%s", license_text);
 	g_signal_connect_swapped(GTK_OBJECT(dialog), "response",
 				 G_CALLBACK(gtk_widget_destroy),
 				 GTK_OBJECT(dialog));
@@ -834,7 +807,7 @@ static void renderer_edited(GtkCellRendererText * cell,
 static void change_sym_value(struct menu *menu, gint col)
 {
 	struct symbol *sym = menu->sym;
-	tristate oldval, newval;
+	tristate newval;
 
 	if (!sym)
 		return;
@@ -851,7 +824,6 @@ static void change_sym_value(struct menu *menu, gint col)
 	switch (sym_get_type(sym)) {
 	case S_BOOLEAN:
 	case S_TRISTATE:
-		oldval = sym_get_tristate_value(sym);
 		if (!sym_tristate_within_range(sym, newval))
 			newval = yes;
 		sym_set_tristate_value(sym, newval);
@@ -886,35 +858,6 @@ static void toggle_sym_value(struct menu *menu)
 	}
 	else if (view_mode == SINGLE_VIEW)
 		display_tree_part();	//fixme: keep exp/coll
-}
-
-static void renderer_toggled(GtkCellRendererToggle * cell,
-			     gchar * path_string, gpointer user_data)
-{
-	GtkTreePath *path, *sel_path = NULL;
-	GtkTreeIter iter, sel_iter;
-	GtkTreeSelection *sel;
-	struct menu *menu;
-
-	path = gtk_tree_path_new_from_string(path_string);
-	if (!gtk_tree_model_get_iter(model2, &iter, path))
-		return;
-
-	sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree2_w));
-	if (gtk_tree_selection_get_selected(sel, NULL, &sel_iter))
-		sel_path = gtk_tree_model_get_path(model2, &sel_iter);
-	if (!sel_path)
-		goto out1;
-	if (gtk_tree_path_compare(path, sel_path))
-		goto out2;
-
-	gtk_tree_model_get(model2, &iter, COL_MENU, &menu, -1);
-	toggle_sym_value(menu);
-
-      out2:
-	gtk_tree_path_free(sel_path);
-      out1:
-	gtk_tree_path_free(path);
 }
 
 static gint column2index(GtkTreeViewColumn * column)
@@ -972,7 +915,7 @@ on_treeview2_button_press_event(GtkWidget * widget,
 			current = menu;
 			display_tree_part();
 			gtk_widget_set_sensitive(back_btn, TRUE);
-		} else if ((col == COL_OPTION)) {
+		} else if (col == COL_OPTION) {
 			toggle_sym_value(menu);
 			gtk_tree_view_expand_row(view, path, TRUE);
 		}
@@ -1107,7 +1050,7 @@ static gchar **fill_row(struct menu *menu)
 	bzero(row, sizeof(row));
 
 	row[COL_OPTION] =
-	    g_strdup_printf("%s %s", _(menu_get_prompt(menu)),
+	    g_strdup_printf("%s %s", menu_get_prompt(menu),
 			    sym && !sym_has_value(sym) ? "(NEW)" : "");
 
 	if (opt_mode == OPT_ALL && !menu_is_visible(menu))
@@ -1160,7 +1103,7 @@ static gchar **fill_row(struct menu *menu)
 
 		if (def_menu)
 			row[COL_VALUE] =
-			    g_strdup(_(menu_get_prompt(def_menu)));
+			    g_strdup(menu_get_prompt(def_menu));
 	}
 	if (sym->flags & SYMBOL_CHOICEVAL)
 		row[COL_BTNRAD] = GINT_TO_POINTER(TRUE);
@@ -1172,6 +1115,7 @@ static gchar **fill_row(struct menu *menu)
 			row[COL_BTNVIS] = GINT_TO_POINTER(TRUE);
 		if (sym_is_choice(sym))
 			break;
+		/* fall through */
 	case S_TRISTATE:
 		val = sym_get_tristate_value(sym);
 		switch (val) {
@@ -1310,7 +1254,6 @@ static void update_tree(struct menu *src, GtkTreeIter * dst)
 	gboolean valid;
 	GtkTreeIter *sibling;
 	struct symbol *sym;
-	struct property *prop;
 	struct menu *menu1, *menu2;
 
 	if (src == &rootmenu)
@@ -1319,7 +1262,6 @@ static void update_tree(struct menu *src, GtkTreeIter * dst)
 	valid = gtk_tree_model_iter_children(model2, child2, dst);
 	for (child1 = src->list; child1; child1 = child1->next) {
 
-		prop = child1->prompt;
 		sym = child1->sym;
 
 	      reparse:
@@ -1439,7 +1381,7 @@ static void display_tree(struct menu *menu)
 		    && (tree == tree2))
 			continue;
 /*
-                if (((menu != &rootmenu) && !(menu->flags & MENU_ROOT))
+		if (((menu != &rootmenu) && !(menu->flags & MENU_ROOT))
 		    || (view_mode == FULL_VIEW)
 		    || (view_mode == SPLIT_VIEW))*/
 
@@ -1506,14 +1448,6 @@ int main(int ac, char *av[])
 	char *env;
 	gchar *glade_file;
 
-#ifndef LKC_DIRECT_LINK
-	kconfig_load();
-#endif
-
-	bindtextdomain(PACKAGE, LOCALEDIR);
-	bind_textdomain_codeset(PACKAGE, "UTF-8");
-	textdomain(PACKAGE);
-
 	/* GTK stuffs */
 	gtk_set_locale();
 	gtk_init(&ac, &av);
@@ -1537,9 +1471,12 @@ int main(int ac, char *av[])
 		case 'a':
 			//showAll = 1;
 			break;
+		case 's':
+			conf_set_message_callback(NULL);
+			break;
 		case 'h':
 		case '?':
-			printf("%s <config>\n", av[0]);
+			printf("%s [-s] <config>\n", av[0]);
 			exit(0);
 		}
 		name = av[2];

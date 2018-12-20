@@ -122,7 +122,7 @@ void RsfConfigurationModel::doIntersectPreprocess(std::set<std::string> &item_se
 
 bool RsfConfigurationModel::isBoolean(const std::string &item) const {
     const std::string *value = _rsf->getValue(item);
-    if (value && *value == "boolean")
+    if (value && (*value == "boolean" || *value == "bool" ))
         return true;
     return false;
 }
@@ -145,6 +145,7 @@ std::string RsfConfigurationModel::getType(const std::string &feature_name) cons
         if (value) {
             std::string type = *value;
             std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+            if (type == "BOOL") type = "BOOLEAN";
             return type;
         } else {
             return "MISSING";

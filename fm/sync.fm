@@ -2,9 +2,9 @@
 
 menu "Synchronization"
 
-config Synchronization
+config Synchronisation
 	boolean
-	
+
 config einseitig
   boolean "einseitig"
 	select Synchronization
@@ -17,7 +17,7 @@ config unterdrueckend
 menu "mehrseitig"
 
 config mehrseitig
-  boolean 
+  boolean
 	select Synchronization
 
 config blockierend
@@ -29,5 +29,16 @@ config nichtblockierend
 	select mehrseitig
 
 endmenu
+
+config test
+  boolean "imply test"
+    imply bar
+    imply baz
+
+config bar
+  boolean "implied"
+
+config baz
+  boolean "implied too"
 
 endmenu

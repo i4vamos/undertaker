@@ -29,7 +29,6 @@
 #include "../version.h"
 
 #include <boost/filesystem.hpp>
-#include <locale.h>
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -119,9 +118,6 @@ int main(int argc, char **argv) {
         Logging::error("File '", filepath, "' does not exist");
         exit(EXIT_FAILURE);
     }
-    setlocale(LC_ALL, "");
-    bindtextdomain(PACKAGE, LOCALEDIR);
-    textdomain(PACKAGE);
 
     // to prevent some warnings we have to set environment variables that don't have an impact on
     // our formulae

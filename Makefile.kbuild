@@ -34,8 +34,10 @@ HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS   = -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
 HOSTCXXFLAGS = -O2
+LEX          = flex
+YACC         = yacc
 
-export HOSTCC HOSTCXX HOSTCFLAGS HOSTCXXFLAGS
+export HOSTCC HOSTCXX HOSTCFLAGS HOSTCXXFLAGS LEX YACC
 
 KBUILD_KCONFIG = $(CURDIR)/fm/main.fm
 export KBUILD_KCONFIG
@@ -67,7 +69,7 @@ config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
 dumpconf: scripts_basic FORCE
-	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) $(build)=scripts/kconfig scripts/kconfig/$@
 	scripts/kconfig/dumpconf $(KBUILD_KCONFIG)
 
 conf: scripts_basic FORCE
