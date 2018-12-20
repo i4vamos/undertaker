@@ -11,24 +11,24 @@ export PATH
 
 all: models cnfmodels
 
-models: $(DUMPCONF) $(MODELS)
+models: satyr dumpconf $(MODELS)
 
-cnfmodels: $(SATYR) $(CNF_MODELS)
+cnfmodels: satyr $(CNF_MODELS)
 
-../satyr:
-	make -C .. satyr
+satyr: dumpconf
+	$(MAKE) -C .. satyr
 
-../../scripts/kconfig/dumpconf:
-	make -C ../.. scripts/kconfig/dumpconf
+dumpconf:
+	$(MAKE) -C ../.. scripts/kconfig/dumpconf
 
-models/%.rsf: $(FM_DIR)/%.fm
+models/%.rsf: $(FM_DIR)/%.fm dumpconf
 	@mkdir -p models
 	ARCH=$* $(DUMPCONF) $(FM_DIR)/$*.fm | sort -u | grep -v '^#' > $@
 
-models/%.model: models/%.rsf
+models/%.model: models/%.rsf dumpconf
 	$(KCONFIGDUMP) -m $* intermediate
 
-cnfmodels/%.cnf: $(FM_DIR)/%.fm
+cnfmodels/%.cnf: $(FM_DIR)/%.fm satyr dumpconf
 	@mkdir -p cnfmodels
 	ARCH=$* $(SATYR) $< -c $@
 
@@ -37,5 +37,5 @@ clean:
 
 FORCE:
 
-.PHONY: FORCE all models cnfmodels
+.PHONY: FORCE all models cnfmodels dumpconf satyr
 .SECONDARY:
