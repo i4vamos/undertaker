@@ -1,6 +1,6 @@
 /*
  * check-name: find interesting items for symbol
- * check-command: undertaker -v -j checkexpr -m ../kconfig-dumps/models/x86.model 'CONFIG_SMP'
+ * check-command: undertaker -v -j checkexpr -m ../kconfig-dumps/models/x86.model 'CONFIG_SMP && CONFIG_HZ_1000'
  * check-output-start
 I: loaded rsf model for x86
 I: Using x86 as primary model

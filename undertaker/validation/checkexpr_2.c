@@ -1,6 +1,6 @@
 /*
  * check-name: find interesting items for symbol
- * check-command: undertaker -j checkexpr -m ../kconfig-dumps/models/x86.model 'CONFIG_SMP && !CONFIG_64BIT'
+ * check-command: undertaker -j checkexpr -m ../kconfig-dumps/models/x86.model 'CONFIG_SMP && !CONFIG_64BIT && CONFIG_HZ_1000'
  * check-output-start
 CONFIG_64BIT=n
 CONFIG_ACPI=y

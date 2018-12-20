@@ -1,6 +1,6 @@
 /*
  * check-name: find interesting items for symbol
- * check-command: undertaker -j checkexpr -m ../kconfig-dumps/models/x86.model CONFIG_SND_HDA_INTEL
+ * check-command: undertaker -j checkexpr -m ../kconfig-dumps/models/x86.model 'CONFIG_SND_HDA_INTEL && CONFIG_HZ_1000'
  * check-output-start
 CONFIG_64BIT=y
 CONFIG_ACPI=y
