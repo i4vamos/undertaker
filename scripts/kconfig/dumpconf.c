@@ -136,7 +136,7 @@ static void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
 		fprintf(out, "Item\t%s\t%s\n", sym->name, sym_type_name(sym->type));
 	}
 
-	char itemname[50];
+	char itemname[SYMBOL_MAXLENGTH];
 	int has_prompts = 0;
 	struct property *prop;
 
