@@ -14,6 +14,8 @@
 #include "lkc.h"
 
 
+static struct menu *cur_menu;
+
 static bool isHex(const char *str) {
 	if (str[0] != '0' || !(str[1] == 'x' || str[1] == 'X'))
 		return false;
@@ -47,7 +49,7 @@ static void printSymbol(FILE *out, struct symbol *sym, char *choice) {
 		fputs("n", out);
 	else if (sym->flags & SYMBOL_CONST || (sym->type == S_UNKNOWN
 										   && (isHex(sym->name) || isInt(sym->name))))
-		fprintf(out, "CVALUE_%s", sym->name);
+		fprintf(out, "CVALUE_%s_%s", cur_menu->sym->name, sym->name);
 //	else if (sym->type == S_INT || sym->type == S_HEX || sym->type == S_STRING)
 //		fprintf(out, "-%s-", sym->name);
 //	else if (sym->type == S_UNKNOWN)		// mostly missing symbols
@@ -140,6 +142,8 @@ static void my_print_symbol(FILE *out, struct menu *menu, char *choice) {
 	struct property *prop;
 
 	snprintf(itemname, sizeof itemname, "%s", sym->name ? sym->name : choice);
+
+	cur_menu = menu;
 
 	if (menu->dep) {
 		fprintf(out, "Depends\t%s\t\"", itemname);
