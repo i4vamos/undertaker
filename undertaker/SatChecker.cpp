@@ -191,6 +191,7 @@ int SatChecker::AssignmentMap::formatKconfig(std::ostream &out,
         static const boost::regex module_regexp("^CONFIG_(.*)_MODULE$");
         static const boost::regex block_regexp("^B\\d+$");
         static const boost::regex choice_regexp("^CONFIG_CHOICE_.*$");
+        static const boost::regex cvalue_regexp("^CVALUE_.*");
         const std::string &name = entry.first;
         const bool &valid = entry.second;
         boost::match_results<std::string::const_iterator> what;
@@ -217,6 +218,11 @@ int SatChecker::AssignmentMap::formatKconfig(std::ostream &out,
             const std::string &item_name = what[1];
 
             Logging::debug("considering ", what[0]);
+
+            if (boost::regex_match(item_name, cvalue_regexp)) {
+              Logging::debug("Ignoring 'constant' item ", what[0]);
+              continue;
+            }
 
             // skip item if the item is missing
             if (missingSet.find(what[0]) != missingSet.end()) {
