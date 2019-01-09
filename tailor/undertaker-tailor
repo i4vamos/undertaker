@@ -65,6 +65,9 @@ function help {
     -l           output source locations for addresses in tracefile
     -p <string>  if provided, this string will be stripped from the paths in
                  debug information. Otherwise the tool tries to derive it
+    -o <offset>  if provided, this offset is deducted from every address in
+                 vmlinux to map addresses randomized by KASLR to the non-
+                 randomized addresses in the vmlinux image
 
   Outputlevel
     -q           be quiet (only necessary output)
@@ -95,6 +98,7 @@ function require {
        }
 }
 
+bits="64"
 file_whitelist=""
 file_blacklist=""
 file_ignorelist=""
@@ -105,6 +109,7 @@ dir_kernelbinary="$(readlink -f . )"
 path_undertaker=""
 path_vmlinux=""
 strip_path=''
+kaslr_offset="auto"
 
 # Const values
 const_ulimit=0
@@ -144,7 +149,7 @@ if [[ "$#" -eq "1" && -f "$1" ]] ; then
     autoconf=true
 else
     # Parse Arguments
-    while getopts "ab:cde:fghi:k:lm:p:qs:u:vdw:" options; do
+    while getopts "ab:cde:fghi:k:lm:o:p:qs:u:vdw:" options; do
       case $options in
         a ) autoconf=true
             ;;
@@ -201,6 +206,8 @@ else
                 output $QUIET "Model (-m): Not a valid model file: $OPTARG"
                 ((error+=1))
             fi
+            ;;
+        o ) kaslr_offset="$OPTARG";
             ;;
         p ) strip_path="$OPTARG";
             ;;
@@ -261,6 +268,7 @@ if [[ "$autoconf" = "true" ]] ; then
     # determine, if we have 64 or 32 bit traces, use appropiate
     # white-/black-/ignore lists
     if grep -E -q "[a-z0-9]{16}" $file_tracefile ; then
+        bits="64"
         if [[ -z "$file_whitelist" ]] ; then
             file_whitelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "whitelist.x86_64" 2>/dev/null | head -n 1)"
         fi
@@ -268,6 +276,7 @@ if [[ "$autoconf" = "true" ]] ; then
             file_blacklist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "blacklist.x86_64" 2>/dev/null | head -n 1)"
         fi
     else
+        bits="32"
         if [[ -z "$file_whitelist" ]] ; then
             file_whitelist="$(find "$dir_script/..$dir_lists" "$dir_lists" "$dir_script" -name "whitelist.i686" 2>/dev/null | head -n 1)"
         fi
@@ -350,13 +359,39 @@ else
     output $VERBOSE "Starting translating addresses to files/lines..."
     tmp_addrdir="$(mktemp -d)"
     # Distinguish between LKMs and vmlinux code
-    cat "$file_tracefile" | while read line; do
+    while read line; do
         if [[ "$line" == *" "* ]] ; then
             echo "${line% *}" >> "${tmp_addrdir}/${line#* }.ko"
         else
-            echo "${line}" >> "${tmp_addrdir}/vmlinux"
+            echo "${line}" >> "${tmp_addrdir}/vmlinux.tmp"
+            if [[ -z "$bits" ]]; then
+                if [[ "${line}" =~ ^[0-9a-f]{16} ]]; then
+                    bits=64
+                elif [[ "${line}" =~ ^[0-9a-f]{8} ]]; then
+                    bits=32
+                fi
+            fi
         fi
-    done
+    done < "$file_tracefile"
+    output $VERBOSE "Assuming $bits bit addresses..."
+    # Try to find the offset to all addresses introduced by KASLR
+    if [[ "$kaslr_offset" == "auto" ]]; then
+        output $VERBOSE "Trying to derive KASLR offset..."
+        lowest_addr=$(sort "${tmp_addrdir}/vmlinux.tmp" | head -n1)
+        if [[ "$bits" == "64" ]]; then
+            randomize_base="$((16#$lowest_addr & 0xffffffffffc00000))"
+            text_base=0xffffffff81000000    # This is from the unrandomized image
+        else
+            randomize_base="$((16#lowest_addr & 0xffc00000))"
+            text_base=0xc1000000
+        fi
+        kaslr_offset="$(($randomize_base - $text_base))";
+        output $VERBOSE "... found $(printf %x $kaslr_offset)!"
+        while read line; do
+            printf "%x\n" "$((16#${line} - $kaslr_offset))" >> "${tmp_addrdir}/vmlinux"
+        done < "${tmp_addrdir}/vmlinux.tmp"
+        rm -f "${tmp_addrdir}/vmlinux.tmp"
+    fi
     shopt -s nullglob
     # Work through all modules and vmlinux,
     for modname in "$tmp_addrdir"/* ; do
