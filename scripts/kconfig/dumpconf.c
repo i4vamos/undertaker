@@ -120,7 +120,8 @@ static void my_expr_print(struct expr *e, void *out, int prevtoken, char *choice
 		fputs("]", out);
 		break;
 	default:
-		fprintf(out, "<unknown type %d>", e->type);
+		fprintf(stderr, "<unknown type %d> in symbol %s\n", e->type, cur_menu->sym->name);
+		fputs("unknown", out);
 		break;
 	}
 	if (expr_compare_type(prevtoken, e->type) > 0)

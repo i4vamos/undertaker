@@ -140,6 +140,8 @@ class BoolRewriter(tools.UnicodeMixin):
                     # otherwise it is false, because expr = y is needed
                     a = tools.new_free_item()
                     return [BoolParser.AND, a, [BoolParser.NOT, a]]
+            elif tree == "unknown":
+                return tools.new_free_item()
             return self.rsf.symbol(tree)
 
         if tree[0] in [BoolParser.NOT, BoolParser.AND, BoolParser.OR]:
