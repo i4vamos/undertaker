@@ -339,7 +339,7 @@ function do_convert() {
 
     if [ $MODE = "rsf" ]; then
         echo "Calculating RSF model for $ARCH"
-        CC=gcc srctree=. HEADER_ARCH=$HARCH SRCARCH=$ARCH SUBARCH=$ARCH ARCH=$ARCH dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
+        CC=gcc srctree=. HEADER_ARCH=$HARCH SRCARCH=$ARCH SUBARCH=$ARCH ARCH=$ARCH LD=ld dumpconf $KCONFIG_FILE > "$MODELS/$ARCH.rsf"
 
         rsf2model_conversion $ARCH
 
