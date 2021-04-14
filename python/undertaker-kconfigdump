@@ -447,8 +447,7 @@ fi
 # Fix Kconfig syntax which breaks the new parser when generating models
 # for an older kernel tree
 for i in $(find -name "*Kconfig*"); do
-	sed -i -E 's/---\ help\ /---help/g' $i
-	sed -i -E 's/--\ help/---help---/g' $i
+	sed -i -E 's/[-]+[ ]*help[ ]*[-]*$/---help---/g' $i
 done
 
 for ARCH in $ARCHS; do
