@@ -42,7 +42,7 @@ class BoolParser (ast.NodeTransformer):
             expr = re.sub("^ *", "", expr)
             self.tree = ast.parse(expr)
         except:
-            raise BoolParserException("Parsing failed: '" + expr + "'")
+            raise BoolParserException("Parsing failed: '" + str(bool_expr) + "'")
 
         if self.tree.__class__ != ast.Module \
                 or len(self.tree.body) > 1 \
