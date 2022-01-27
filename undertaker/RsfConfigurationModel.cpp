@@ -60,6 +60,11 @@ RsfConfigurationModel::RsfConfigurationModel(const std::string &filename) {
     if (_model->size() == 0)
         // if the model is empty (e.g., if /dev/null was loaded), it cannot possibly be complete
         _model->addMetaValue("CONFIGURATION_SPACE_INCOMPLETE", "1");
+
+    for (auto it = _model->begin(); it != _model->end(); ++it){
+        if (it->first.substr(0, 7) == ("CONFIG_"))
+            kconfigSymbols.insert(it->first);
+    }
 }
 
 RsfConfigurationModel::~RsfConfigurationModel() {
@@ -164,4 +169,8 @@ void RsfConfigurationModel::addMetaValue(const std::string &key, const std::stri
 
 const StringList *RsfConfigurationModel::getMetaValue(const std::string &key) const {
     return _model->getMetaValue(key);
+}
+
+const std::set<std::string> &RsfConfigurationModel::getKconfigSymbols() const {
+    return kconfigSymbols;
 }

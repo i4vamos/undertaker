@@ -77,6 +77,10 @@ void SatChecker::loadCnfModel(const ConfigurationModel *m) {
     _cnf->incrementWith(*dynamic_cast<const CnfConfigurationModel *>(m)->getCNF());
 }
 
+void SatChecker::resetAssignment() {
+    assignmentTable.clear();
+}
+
 const SatChecker::AssignmentMap &SatChecker::getAssignment() {
     for (const auto &entry : _cnf->getSymbolMap()) {  // pair<string, int>
         bool selected = this->_cnf->deref(entry.second);

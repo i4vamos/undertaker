@@ -61,5 +61,6 @@ public:
 
     bool containsSymbol(const std::string &symbol)         const final override;
     const StringList *getMetaValue(const std::string &key) const final override;
+    const std::set<std::string> &getKconfigSymbols()       const final override;
 };
 #endif

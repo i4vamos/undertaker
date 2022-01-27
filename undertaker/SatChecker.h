@@ -193,6 +193,7 @@ public:
     bool checkMUS();
     void writeMUS(std::ostream &out, bool writeStatistics = true) const;
 
+    void resetAssignment();
 protected:
     std::unique_ptr<kconfig::PicosatCNF> _cnf;
     AssignmentMap assignmentTable;

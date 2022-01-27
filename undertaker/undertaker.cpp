@@ -235,6 +235,65 @@ bool process_blockconf_helper(UniqueStringJoiner &sj, std::map<std::string, bool
     return true;
 }
 
+// Minimization Idea (koshimura:09:ceur):
+// P: set of all defined Kconfig variables
+// M: solution of the current sat() call (all true Kconfig symbols in solution)
+// M \intersect P: all Kconfig variables set to true
+// M_bar \intersect P: all Kconfig variables set to false
+// minimize(formula, M, P):
+//      formula_test = formula &&
+//                     not(and(var_a) for var_a in M \intersect P) &&
+//                     and(not(var_b) for var_b in M_bar \intersect P)
+//      if !sat(formula_test):
+//              M is minimal, return M
+//      else:
+//              cur_M = sc.getAssignment()
+//              return minimize(formula, cur_M, P)
+
+const SatChecker::AssignmentMap minimize(UniqueStringJoiner sj,
+                                         ConfigurationModel *model,
+                                         SatChecker &sc) {
+    std::set<std::string> symbols = model->getKconfigSymbols();
+    SatChecker::AssignmentMap lastAssignment(sc.getAssignment());
+    std::set<std::string> enabled_symbols;
+    std::set<std::string> disabled_symbols;
+
+    for (auto it = lastAssignment.begin(); it != lastAssignment.end(); ++it){
+        if (symbols.find(it->first) != symbols.end()){
+            if (it->second){
+                enabled_symbols.insert(it->first);
+            } else {
+                disabled_symbols.insert(it->first);
+            }
+        }
+    }
+    Logging::debug("minimize: enabled:  ", enabled_symbols.size());
+    Logging::debug("minimize: disabled: ", disabled_symbols.size());
+
+    sc.resetAssignment();
+
+    // M intersect P
+    StringJoiner subj;
+    for (auto it: enabled_symbols) {
+        subj.push_back(it);
+    }
+    sj.push_back("!(" + subj.join(" && ") + ")");
+
+    // M_bar intersect P
+    for (auto it: disabled_symbols) {
+        sj.push_back("!" + it);
+    }
+
+    // sj already contains the input formula
+    std::string formula2 = sj.join("\n&& ");
+    if (sc(formula2)){
+        return minimize(sj, model, sc);
+    } else {
+        Logging::debug("minimize: unsat!");
+        return lastAssignment;
+    }
+}
+
 void process_mergeblockconf(const std::string &filename) {
     /* Read files from worklist */
     std::ifstream workfile(filename);
@@ -276,7 +335,8 @@ void process_mergeblockconf(const std::string &filename) {
     // We want minimal configs, so we try to get many 'n's from the sat checker
     if (sc(sj.join("\n&&\n"))) {
         Logging::info("Solution found, result:");
-        sc.getAssignment().formatKconfig(std::cout, {});
+        auto v = minimize(sj, model, sc);
+        v.formatKconfig(std::cout, {});
     } else {
         Logging::error("Wasn't able to generate a valid configuration");
     }
@@ -289,8 +349,10 @@ void process_blockconf(const std::string &locationname) {
         std::exit(EXIT_FAILURE);
 
     SatChecker sc(ModelContainer::lookupMainModel(), Picosat::SAT_MIN);
-    if (sc(sj.join("\n&&\n")))
-        sc.getAssignment().formatKconfig(std::cout, {});
+    if (sc(sj.join("\n&&\n"))) {
+        auto v = minimize(sj, ModelContainer::lookupMainModel(), sc);
+        v.formatKconfig(std::cout, {});
+    }
 }
 
 void process_file_coverage_helper(const std::string &filename) {

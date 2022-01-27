@@ -51,6 +51,12 @@ CnfConfigurationModel::CnfConfigurationModel(const std::string &filename) {
         // if the model is empty (e.g., if /dev/null was loaded), it cannot possibly be complete
         _cnf->addMetaValue("CONFIGURATION_SPACE_INCOMPLETE", "1");
     }
+
+    // Maybe this needs filtering, not sure at the moment
+    auto symbolmap = _cnf->getSymbolMap();
+    for (auto it = symbolmap.begin(); it != symbolmap.end(); ++it){
+        kconfigSymbols.insert(it->first);
+    }
 }
 
 CnfConfigurationModel::~CnfConfigurationModel() { delete _cnf; }
@@ -87,4 +93,8 @@ void CnfConfigurationModel::addMetaValue(const std::string &key, const std::stri
 
 const StringList *CnfConfigurationModel::getMetaValue(const std::string &key) const {
     return _cnf->getMetaValue(key);
+}
+
+const std::set<std::string> &CnfConfigurationModel::getKconfigSymbols() const {
+    return kconfigSymbols;
 }

@@ -64,6 +64,8 @@ public:
 
     virtual const StringList *getMetaValue(const std::string &key) const = 0;
 
+    virtual const std::set<std::string> &getKconfigSymbols() const = 0;
+
 /************************************************************************/
 /* non virtual methods                                                  */
 /************************************************************************/
@@ -100,5 +102,6 @@ protected:
 
     std::string _name;
     boost::regex _inConfigurationSpace_regexp;
+    std::set<std::string> kconfigSymbols;
 };
 #endif
