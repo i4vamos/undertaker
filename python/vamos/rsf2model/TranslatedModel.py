@@ -180,11 +180,12 @@ class TranslatedModel(tools.UnicodeMixin):
             return
 
         # We only look on boolean selected options
-        if type(selected) == Choice or selected.tristate():
+        if type(selected) == Choice:# or selected.tristate():
             return
 
         imply = selected.symbol()
 
+        # non-MODULE symbol forces selected target to y
         if expr == "y":
             # select foo if y
             self.deps[option.symbol()].append(selected.symbol())
@@ -200,6 +201,15 @@ class TranslatedModel(tools.UnicodeMixin):
             self.selectedBy[selected.symbol()].append(option.symbol())
 
         if option.tristate():
+            if selected.tristate():
+                target = '(%s || %s)' % (selected.symbol(), selected.symbol_module())
+            else:
+                target = selected.symbol()
+                print('select tristate -> boolean: %s %s' % (option.symbol(), selected.symbol()))
+
+            # Select from tristate and _MODULE symbol can mean m or y for target
+            if expr != "" and expr != 'y':
+                imply = "((%s) -> %s)" %(expr, target)
             if selected.prompts() == 0:
                 self.selectedBy[selected.symbol()].append(option.symbol_module())
             self.deps[option.symbol_module()].append(imply)
